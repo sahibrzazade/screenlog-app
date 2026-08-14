@@ -41,6 +41,9 @@ yarn-error.log*
 # local planning docs (tracked in ClickUp instead)
 /tasks
 
+# local Claude Code tooling (skills, settings — not project source)
+/.claude
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
