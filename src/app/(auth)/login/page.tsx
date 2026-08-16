@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import Link from "next/link";
-import { login } from "@/app/(auth)/actions";
+import { login, loginWithGoogle } from "@/app/(auth)/actions";
 
 const LoginPage = () => {
   const [state, formAction, pending] = useActionState(login, undefined);
@@ -36,6 +36,9 @@ const LoginPage = () => {
         <button type="submit" disabled={pending}>
           {pending ? "Logging in..." : "Log in"}
         </button>
+      </form>
+      <form action={loginWithGoogle}>
+        <button type="submit">Continue with Google</button>
       </form>
       <p>
         Don&apos;t have an account? <Link href="/signup">Sign up</Link>
