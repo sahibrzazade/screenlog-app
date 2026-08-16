@@ -3,11 +3,12 @@ import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, waitFor, cleanup } from "@testing-library/react";
 import LoginPage from "@/app/(auth)/login/page";
 import SignupPage from "@/app/(auth)/signup/page";
-import { login, signup } from "@/app/(auth)/actions";
+import { login, signup, loginWithGoogle } from "@/app/(auth)/actions";
 
 vi.mock("@/app/(auth)/actions", () => ({
   login: vi.fn(),
   signup: vi.fn(),
+  loginWithGoogle: vi.fn(),
 }));
 
 afterEach(cleanup);
@@ -56,6 +57,14 @@ describe("LoginPage", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "Invalid login credentials",
     );
+  });
+
+  it("renders a Continue with Google button", () => {
+    render(<LoginPage />);
+    expect(
+      screen.getByRole("button", { name: "Continue with Google" }),
+    ).toBeInTheDocument();
+    expect(loginWithGoogle).toBeDefined();
   });
 });
 

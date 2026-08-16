@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 
 export type AuthFormState = { error: string } | undefined;
@@ -37,6 +38,21 @@ export const login = async (
   }
 
   redirect("/");
+};
+
+export const loginWithGoogle = async () => {
+  const origin = (await headers()).get("origin");
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: { redirectTo: `${origin}/auth/callback` },
+  });
+
+  if (error) {
+    redirect("/login");
+  }
+
+  redirect(data.url);
 };
 
 export const logout = async () => {
