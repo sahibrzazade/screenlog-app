@@ -1,26 +1,29 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { SearchBar } from "@/components/search-bar";
 import { MediaCard, type MediaCardItem } from "@/components/media-card";
 import type { TmdbSearchResponse, TmdbSearchResult } from "@/lib/tmdb/types";
 
-const toMediaCardItems = (
-  results: TmdbSearchResult[],
+const toMediaCardItem = (
+  result: TmdbSearchResult,
   mediaType: "movie" | "tv",
-): MediaCardItem[] =>
-  results.map((result) => ({
-    id: result.id,
-    mediaType,
-    title: (mediaType === "movie" ? result.title : result.name) ?? "Untitled",
-    year:
-      (mediaType === "movie" ? result.release_date : result.first_air_date)?.slice(0, 4) ||
-      null,
-    posterPath: result.poster_path,
-  }));
+): MediaCardItem => ({
+  id: result.id,
+  mediaType,
+  title: (mediaType === "movie" ? result.title : result.name) ?? "Untitled",
+  year:
+    (mediaType === "movie" ? result.release_date : result.first_air_date)?.slice(0, 4) || null,
+  posterPath: result.poster_path,
+});
 
-const SearchPage = () => {
-  const [query, setQuery] = useState("");
+const SearchPageContent = () => {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const [query, setQuery] = useState(() => searchParams.get("q") ?? "");
   const [results, setResults] = useState<MediaCardItem[]>([]);
   const [searchedQuery, setSearchedQuery] = useState<string | null>(null);
 
@@ -28,12 +31,19 @@ const SearchPage = () => {
 
   useEffect(() => {
     if (!trimmedQuery) {
+      if (new URLSearchParams(window.location.search).has("q")) {
+        router.replace(pathname, { scroll: false });
+      }
       return;
     }
 
     const controller = new AbortController();
 
     const timeout = setTimeout(async () => {
+      const params = new URLSearchParams(window.location.search);
+      params.set("q", trimmedQuery);
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+
       try {
         const [movieResponse, tvResponse] = await Promise.all([
           fetch(`/api/tmdb/search?q=${encodeURIComponent(trimmedQuery)}&type=movie`, {
@@ -48,10 +58,12 @@ const SearchPage = () => {
           tvResponse.json(),
         ]);
 
-        setResults([
-          ...toMediaCardItems(movieData.results ?? [], "movie"),
-          ...toMediaCardItems(tvData.results ?? [], "tv"),
-        ]);
+        const ranked = [
+          ...(movieData.results ?? []).map((result) => ({ result, mediaType: "movie" as const })),
+          ...(tvData.results ?? []).map((result) => ({ result, mediaType: "tv" as const })),
+        ].sort((a, b) => (b.result.popularity ?? 0) - (a.result.popularity ?? 0));
+
+        setResults(ranked.map(({ result, mediaType }) => toMediaCardItem(result, mediaType)));
         setSearchedQuery(trimmedQuery);
       } catch (error) {
         if ((error as Error).name !== "AbortError") {
@@ -65,7 +77,7 @@ const SearchPage = () => {
       clearTimeout(timeout);
       controller.abort();
     };
-  }, [trimmedQuery]);
+  }, [trimmedQuery, pathname, router]);
 
   const showPrompt = trimmedQuery === "";
   const isPending = !showPrompt && searchedQuery !== trimmedQuery;
@@ -97,5 +109,11 @@ const SearchPage = () => {
     </main>
   );
 };
+
+const SearchPage = () => (
+  <Suspense fallback={<main><h1>Search</h1></main>}>
+    <SearchPageContent />
+  </Suspense>
+);
 
 export default SearchPage;

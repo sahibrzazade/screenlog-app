@@ -1,11 +1,23 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, expect, it, vi, afterEach } from "vitest";
+import { describe, expect, it, vi, afterEach, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor, cleanup } from "@testing-library/react";
 import SearchPage from "@/app/search/page";
 
 vi.mock("next/image", () => ({
   default: (props: React.ComponentProps<"img">) => <img {...props} alt={props.alt ?? ""} />,
 }));
+
+const replaceMock = vi.fn();
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ replace: replaceMock, push: vi.fn() }),
+  usePathname: () => "/search",
+  useSearchParams: () => new URLSearchParams(window.location.search),
+}));
+
+beforeEach(() => {
+  window.history.replaceState(null, "", "/search");
+});
 
 afterEach(() => {
   cleanup();
@@ -84,5 +96,62 @@ describe("SearchPage", () => {
   it("shows a prompt before any search has been made", () => {
     render(<SearchPage />);
     expect(screen.getByText(/search for a movie or tv show/i)).toBeInTheDocument();
+  });
+
+  it("syncs the query to the URL after searching", async () => {
+    mockSearchResponses(
+      [{ id: 603, title: "The Matrix", poster_path: null, release_date: "1999-03-30" }],
+      [],
+    );
+
+    render(<SearchPage />);
+    fireEvent.change(screen.getByLabelText("Search"), { target: { value: "matrix" } });
+    await screen.findByText("The Matrix");
+
+    expect(replaceMock).toHaveBeenCalledWith("/search?q=matrix", { scroll: false });
+  });
+
+  it("clears the query param from the URL when the query is emptied", async () => {
+    mockSearchResponses(
+      [{ id: 603, title: "The Matrix", poster_path: null, release_date: "1999-03-30" }],
+      [],
+    );
+
+    render(<SearchPage />);
+    fireEvent.change(screen.getByLabelText("Search"), { target: { value: "matrix" } });
+    await screen.findByText("The Matrix");
+    window.history.replaceState(null, "", "/search?q=matrix");
+
+    fireEvent.change(screen.getByLabelText("Search"), { target: { value: "" } });
+    await waitFor(() => expect(replaceMock).toHaveBeenCalledWith("/search", { scroll: false }));
+  });
+
+  it("initializes the search input from a `q` URL param", () => {
+    window.history.replaceState(null, "", "/search?q=matrix");
+
+    render(<SearchPage />);
+
+    expect(screen.getByLabelText("Search")).toHaveValue("matrix");
+  });
+
+  it("orders combined results by popularity, most popular first", async () => {
+    mockSearchResponses(
+      [
+        { id: 1, title: "Obscure Movie", poster_path: null, release_date: "2001-01-01", popularity: 5 },
+        { id: 2, title: "Blockbuster Movie", poster_path: null, release_date: "2002-01-01", popularity: 500 },
+      ],
+      [{ id: 3, name: "Mid Show", poster_path: null, first_air_date: "2003-01-01", popularity: 100 }],
+    );
+
+    render(<SearchPage />);
+    fireEvent.change(screen.getByLabelText("Search"), { target: { value: "batman" } });
+    await screen.findByText("Blockbuster Movie");
+
+    const links = screen.getAllByRole("link").map((link) => link.textContent);
+    expect(links).toEqual([
+      expect.stringContaining("Blockbuster Movie"),
+      expect.stringContaining("Mid Show"),
+      expect.stringContaining("Obscure Movie"),
+    ]);
   });
 });
