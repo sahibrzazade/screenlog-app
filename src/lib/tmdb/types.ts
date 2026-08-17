@@ -8,6 +8,7 @@ export type TmdbSearchResult = {
   overview: string;
   release_date?: string;
   first_air_date?: string;
+  popularity?: number;
 };
 
 export type TmdbSearchResponse = {
