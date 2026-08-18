@@ -51,6 +51,20 @@ test("logs a movie end-to-end and persists it in Supabase", async ({ page }) => 
     expect(log.rating).toBe(3.5);
     expect(log.review).toBe("Great movie.");
     expect(log.watched_date).toBe("2020-01-01");
+
+    page.on("dialog", (dialog) => dialog.accept());
+    await page.getByRole("button", { name: "Delete log" }).click();
+
+    await expect(page.getByText("Log deleted")).toBeVisible();
+
+    const { data: deletedLog } = await adminClient
+      .from("movie_logs")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("tmdb_movie_id", THE_MATRIX_TMDB_ID)
+      .maybeSingle();
+
+    expect(deletedLog).toBeNull();
   } finally {
     await adminClient.auth.admin.deleteUser(userId);
   }
