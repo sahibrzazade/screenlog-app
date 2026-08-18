@@ -6,6 +6,7 @@ import { LogShowForm } from "@/components/log-show-form";
 import type { TmdbShowDetails } from "@/lib/tmdb/types";
 
 const TMDB_POSTER_BASE_URL = "https://image.tmdb.org/t/p/w500";
+const TMDB_PROFILE_BASE_URL = "https://image.tmdb.org/t/p/w185";
 
 type ShowPageProps = {
   params: Promise<{ id: string }>;
@@ -21,7 +22,9 @@ const ShowPage = async ({ params }: ShowPageProps) => {
 
   let show: TmdbShowDetails;
   try {
-    show = await tmdbFetch<TmdbShowDetails>(`/tv/${showId}`);
+    show = await tmdbFetch<TmdbShowDetails>(`/tv/${showId}`, {
+      append_to_response: "credits",
+    });
   } catch {
     notFound();
   }
@@ -41,6 +44,8 @@ const ShowPage = async ({ params }: ShowPageProps) => {
     .eq("user_id", user.id)
     .eq("tmdb_show_id", showId)
     .maybeSingle();
+
+  const cast = show.credits.cast.slice(0, 10);
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-6">
@@ -71,6 +76,31 @@ const ShowPage = async ({ params }: ShowPageProps) => {
           <p className="mt-3">{show.overview}</p>
         </div>
       </div>
+
+      {cast.length > 0 && (
+        <section className="mt-6">
+          <h2 className="text-lg font-semibold">Cast</h2>
+          <ul className="mt-2 flex flex-wrap gap-4">
+            {cast.map((member) => (
+              <li key={member.id} className="w-20 text-center text-xs">
+                <div className="aspect-[2/3] w-20 overflow-hidden rounded bg-neutral-800">
+                  {member.profile_path && (
+                    <Image
+                      src={`${TMDB_PROFILE_BASE_URL}${member.profile_path}`}
+                      alt={member.name}
+                      width={92}
+                      height={138}
+                      className="h-full w-full object-cover"
+                    />
+                  )}
+                </div>
+                <p className="mt-1 font-medium">{member.name}</p>
+                <p className="text-neutral-600 dark:text-neutral-400">{member.character}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section className="mt-6">
         <h2 className="text-lg font-semibold">Your rating</h2>
