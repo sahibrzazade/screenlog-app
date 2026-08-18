@@ -48,3 +48,38 @@ export const logMovie = async (
   revalidatePath(`/movie/${parsed.data.tmdbMovieId}`);
   return { success: true };
 };
+
+export type DeleteMovieLogFormState = { error: string } | { success: true } | undefined;
+
+export const deleteMovieLog = async (
+  _prevState: DeleteMovieLogFormState,
+  formData: FormData,
+): Promise<DeleteMovieLogFormState> => {
+  const tmdbMovieId = Number(formData.get("tmdbMovieId"));
+
+  if (!Number.isInteger(tmdbMovieId) || tmdbMovieId <= 0) {
+    return { error: "Invalid movie." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "You must be logged in to delete a log." };
+  }
+
+  const { error } = await supabase
+    .from("movie_logs")
+    .delete()
+    .eq("user_id", user.id)
+    .eq("tmdb_movie_id", tmdbMovieId);
+
+  if (error) {
+    return { error: "Failed to delete your log. Please try again." };
+  }
+
+  revalidatePath(`/movie/${tmdbMovieId}`);
+  return { success: true };
+};
