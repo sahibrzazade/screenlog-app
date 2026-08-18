@@ -18,6 +18,14 @@ export type TmdbSearchResponse = {
   total_results: number;
 };
 
+export type TmdbCastMember = {
+  id: number;
+  name: string;
+  character: string;
+  profile_path: string | null;
+  order: number;
+};
+
 export type TmdbMovieDetails = {
   id: number;
   title: string;
@@ -26,6 +34,7 @@ export type TmdbMovieDetails = {
   release_date: string;
   runtime: number | null;
   genres: { id: number; name: string }[];
+  credits: { cast: TmdbCastMember[] };
 };
 
 export type TmdbSeasonSummary = {
