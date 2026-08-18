@@ -8,7 +8,7 @@ export const GET = async (
   const { id } = await params;
 
   try {
-    const data = await tmdbFetch<TmdbMovieDetails>(`/movie/${id}`);
+    const data = await tmdbFetch<TmdbMovieDetails>(`/movie/${id}`, { append_to_response: "credits" });
     return Response.json(data);
   } catch {
     return Response.json({ error: "Failed to fetch movie from TMDB" }, { status: 502 });
