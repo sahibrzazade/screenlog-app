@@ -54,4 +54,5 @@ export type TmdbShowDetails = {
   first_air_date: string;
   number_of_seasons: number;
   seasons: TmdbSeasonSummary[];
+  credits: { cast: TmdbCastMember[] };
 };
