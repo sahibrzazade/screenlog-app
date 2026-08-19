@@ -4,6 +4,7 @@ import { tmdbFetch } from "@/lib/tmdb/client";
 import { createClient } from "@/lib/supabase/server";
 import { LogShowForm } from "@/components/log-show-form";
 import { SignInPrompt } from "@/components/sign-in-prompt";
+import { SeasonList, type SeasonLogSummary } from "@/components/season-list";
 import type { TmdbShowDetails } from "@/lib/tmdb/types";
 
 const TMDB_POSTER_BASE_URL = "https://image.tmdb.org/t/p/w500";
@@ -45,6 +46,21 @@ const ShowPage = async ({ params }: ShowPageProps) => {
     : { data: null };
 
   const cast = show.credits.cast.slice(0, 10);
+
+  const { data: existingSeasonLogs } = user
+    ? await supabase
+        .from("season_logs")
+        .select("season_number, rating, review, watched_date")
+        .eq("user_id", user.id)
+        .eq("tmdb_show_id", showId)
+    : { data: null };
+
+  const seasonLogsByNumber: Record<number, SeasonLogSummary> = Object.fromEntries(
+    (existingSeasonLogs ?? []).map((log) => [
+      log.season_number,
+      { rating: Number(log.rating), review: log.review, watchedDate: log.watched_date },
+    ]),
+  );
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-6">
@@ -98,6 +114,18 @@ const ShowPage = async ({ params }: ShowPageProps) => {
               </li>
             ))}
           </ul>
+        </section>
+      )}
+
+      {show.seasons.length > 0 && (
+        <section className="mt-6">
+          <h2 className="text-lg font-semibold">Seasons</h2>
+          <SeasonList
+            tmdbShowId={showId}
+            seasons={show.seasons}
+            existingLogs={seasonLogsByNumber}
+            canLog={user !== null}
+          />
         </section>
       )}
 
