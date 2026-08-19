@@ -1,8 +1,9 @@
 import Image from "next/image";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { tmdbFetch } from "@/lib/tmdb/client";
 import { createClient } from "@/lib/supabase/server";
 import { LogShowForm } from "@/components/log-show-form";
+import { SignInPrompt } from "@/components/sign-in-prompt";
 import type { TmdbShowDetails } from "@/lib/tmdb/types";
 
 const TMDB_POSTER_BASE_URL = "https://image.tmdb.org/t/p/w500";
@@ -34,16 +35,14 @@ const ShowPage = async ({ params }: ShowPageProps) => {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    redirect("/login");
-  }
-
-  const { data: existingLog } = await supabase
-    .from("show_logs")
-    .select("rating, review")
-    .eq("user_id", user.id)
-    .eq("tmdb_show_id", showId)
-    .maybeSingle();
+  const { data: existingLog } = user
+    ? await supabase
+        .from("show_logs")
+        .select("rating, review")
+        .eq("user_id", user.id)
+        .eq("tmdb_show_id", showId)
+        .maybeSingle()
+    : { data: null };
 
   const cast = show.credits.cast.slice(0, 10);
 
@@ -104,14 +103,18 @@ const ShowPage = async ({ params }: ShowPageProps) => {
 
       <section className="mt-6">
         <h2 className="text-lg font-semibold">Your rating</h2>
-        <LogShowForm
-          tmdbShowId={showId}
-          initialLog={
-            existingLog
-              ? { rating: Number(existingLog.rating), review: existingLog.review }
-              : null
-          }
-        />
+        {user ? (
+          <LogShowForm
+            tmdbShowId={showId}
+            initialLog={
+              existingLog
+                ? { rating: Number(existingLog.rating), review: existingLog.review }
+                : null
+            }
+          />
+        ) : (
+          <SignInPrompt />
+        )}
       </section>
     </main>
   );
