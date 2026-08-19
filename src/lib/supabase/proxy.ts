@@ -1,7 +1,19 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_ROUTES = ["/", "/login", "/signup", "/signup/check-email", "/auth/callback"];
+const PUBLIC_ROUTE_EXACT = [
+  "/",
+  "/login",
+  "/signup",
+  "/signup/check-email",
+  "/auth/callback",
+  "/search",
+];
+const PUBLIC_ROUTE_PREFIXES = ["/movie/", "/tv/"];
+
+export const isPublicRoute = (pathname: string): boolean =>
+  PUBLIC_ROUTE_EXACT.includes(pathname) ||
+  PUBLIC_ROUTE_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 
 export const updateSession = async (request: NextRequest) => {
   let supabaseResponse = NextResponse.next({ request });
@@ -27,9 +39,7 @@ export const updateSession = async (request: NextRequest) => {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isPublicRoute = PUBLIC_ROUTES.includes(request.nextUrl.pathname);
-
-  if (!user && !isPublicRoute) {
+  if (!user && !isPublicRoute(request.nextUrl.pathname)) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
