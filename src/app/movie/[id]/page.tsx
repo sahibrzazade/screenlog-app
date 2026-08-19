@@ -1,8 +1,9 @@
 import Image from "next/image";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { tmdbFetch } from "@/lib/tmdb/client";
 import { createClient } from "@/lib/supabase/server";
 import { LogMovieForm } from "@/components/log-movie-form";
+import { SignInPrompt } from "@/components/sign-in-prompt";
 import type { TmdbMovieDetails } from "@/lib/tmdb/types";
 
 const TMDB_POSTER_BASE_URL = "https://image.tmdb.org/t/p/w500";
@@ -34,16 +35,14 @@ const MoviePage = async ({ params }: MoviePageProps) => {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    redirect("/login");
-  }
-
-  const { data: existingLog } = await supabase
-    .from("movie_logs")
-    .select("rating, review, watched_date")
-    .eq("user_id", user.id)
-    .eq("tmdb_movie_id", movieId)
-    .maybeSingle();
+  const { data: existingLog } = user
+    ? await supabase
+        .from("movie_logs")
+        .select("rating, review, watched_date")
+        .eq("user_id", user.id)
+        .eq("tmdb_movie_id", movieId)
+        .maybeSingle()
+    : { data: null };
 
   const cast = movie.credits.cast.slice(0, 10);
 
@@ -102,18 +101,22 @@ const MoviePage = async ({ params }: MoviePageProps) => {
 
       <section className="mt-6">
         <h2 className="text-lg font-semibold">Your log</h2>
-        <LogMovieForm
-          tmdbMovieId={movieId}
-          initialLog={
-            existingLog
-              ? {
-                  rating: Number(existingLog.rating),
-                  review: existingLog.review,
-                  watchedDate: existingLog.watched_date,
-                }
-              : null
-          }
-        />
+        {user ? (
+          <LogMovieForm
+            tmdbMovieId={movieId}
+            initialLog={
+              existingLog
+                ? {
+                    rating: Number(existingLog.rating),
+                    review: existingLog.review,
+                    watchedDate: existingLog.watched_date,
+                  }
+                : null
+            }
+          />
+        ) : (
+          <SignInPrompt />
+        )}
       </section>
     </main>
   );
