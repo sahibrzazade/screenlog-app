@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { showLogSchema } from "@/lib/validation/show-log";
+import { seasonLogSchema } from "@/lib/validation/season-log";
 
 export type LogShowFormState = { error: string } | { success: true } | undefined;
 
@@ -37,6 +38,53 @@ export const logShow = async (
       review: parsed.data.review ?? null,
     },
     { onConflict: "user_id,tmdb_show_id" },
+  );
+
+  if (error) {
+    return { error: "Failed to save your log. Please try again." };
+  }
+
+  revalidatePath(`/tv/${parsed.data.tmdbShowId}`);
+  return { success: true };
+};
+
+export type LogSeasonFormState = { error: string } | { success: true } | undefined;
+
+export const logSeason = async (
+  _prevState: LogSeasonFormState,
+  formData: FormData,
+): Promise<LogSeasonFormState> => {
+  const parsed = seasonLogSchema.safeParse({
+    tmdbShowId: formData.get("tmdbShowId"),
+    seasonNumber: formData.get("seasonNumber"),
+    rating: formData.get("rating"),
+    review: formData.get("review"),
+    watchedDate: formData.get("watchedDate"),
+  });
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "You must be logged in to log a season." };
+  }
+
+  const { error } = await supabase.from("season_logs").upsert(
+    {
+      user_id: user.id,
+      tmdb_show_id: parsed.data.tmdbShowId,
+      season_number: parsed.data.seasonNumber,
+      rating: parsed.data.rating,
+      review: parsed.data.review ?? null,
+      watched_date: parsed.data.watchedDate,
+    },
+    { onConflict: "user_id,tmdb_show_id,season_number" },
   );
 
   if (error) {
