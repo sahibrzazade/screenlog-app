@@ -5,6 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 import { LogShowForm } from "@/components/log-show-form";
 import { SignInPrompt } from "@/components/sign-in-prompt";
 import { SeasonList, type SeasonLogSummary } from "@/components/season-list";
+import { ReviewList } from "@/components/review-list";
+import { fetchReviews, fetchSeasonReviewsByNumber } from "@/lib/reviews";
 import type { TmdbShowDetails } from "@/lib/tmdb/types";
 
 const TMDB_POSTER_BASE_URL = "https://image.tmdb.org/t/p/w500";
@@ -61,6 +63,9 @@ const ShowPage = async ({ params }: ShowPageProps) => {
       { rating: Number(log.rating), review: log.review, watchedDate: log.watched_date },
     ]),
   );
+
+  const showReviews = await fetchReviews(supabase, "show_logs", { tmdb_show_id: showId });
+  const seasonReviewsByNumber = await fetchSeasonReviewsByNumber(supabase, showId);
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-6">
@@ -124,6 +129,8 @@ const ShowPage = async ({ params }: ShowPageProps) => {
             tmdbShowId={showId}
             seasons={show.seasons}
             existingLogs={seasonLogsByNumber}
+            reviewsBySeason={seasonReviewsByNumber}
+            viewerId={user?.id ?? null}
             canLog={user !== null}
           />
         </section>
@@ -143,6 +150,11 @@ const ShowPage = async ({ params }: ShowPageProps) => {
         ) : (
           <SignInPrompt />
         )}
+      </section>
+
+      <section className="mt-6">
+        <h2 className="text-lg font-semibold">Reviews</h2>
+        <ReviewList reviews={showReviews} viewerId={user?.id ?? null} />
       </section>
     </main>
   );

@@ -33,4 +33,24 @@ describe("RatingStars", () => {
     expect(screen.getByLabelText("3.5 out of 5 stars")).not.toBeChecked();
     expect(screen.getByLabelText("4.5 out of 5 stars")).not.toBeChecked();
   });
+
+  describe("readOnly", () => {
+    it("renders no radiogroup or inputs", () => {
+      render(<RatingStars value={3.5} onChange={vi.fn()} readOnly />);
+      expect(screen.queryByRole("radiogroup")).not.toBeInTheDocument();
+      expect(screen.queryByRole("radio")).not.toBeInTheDocument();
+    });
+
+    it("exposes the rating value via an accessible label", () => {
+      render(<RatingStars value={3.5} onChange={vi.fn()} readOnly />);
+      expect(screen.getByRole("img", { name: "3.5 out of 5 stars" })).toBeInTheDocument();
+    });
+
+    it("is not clickable", () => {
+      const onChange = vi.fn();
+      render(<RatingStars value={2} onChange={onChange} readOnly />);
+      fireEvent.click(screen.getByRole("img", { name: "2 out of 5 stars" }));
+      expect(onChange).not.toHaveBeenCalled();
+    });
+  });
 });

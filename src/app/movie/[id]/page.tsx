@@ -4,6 +4,8 @@ import { tmdbFetch } from "@/lib/tmdb/client";
 import { createClient } from "@/lib/supabase/server";
 import { LogMovieForm } from "@/components/log-movie-form";
 import { SignInPrompt } from "@/components/sign-in-prompt";
+import { ReviewList } from "@/components/review-list";
+import { fetchReviews } from "@/lib/reviews";
 import type { TmdbMovieDetails } from "@/lib/tmdb/types";
 
 const TMDB_POSTER_BASE_URL = "https://image.tmdb.org/t/p/w500";
@@ -43,6 +45,8 @@ const MoviePage = async ({ params }: MoviePageProps) => {
         .eq("tmdb_movie_id", movieId)
         .maybeSingle()
     : { data: null };
+
+  const reviews = await fetchReviews(supabase, "movie_logs", { tmdb_movie_id: movieId });
 
   const cast = movie.credits.cast.slice(0, 10);
 
@@ -117,6 +121,11 @@ const MoviePage = async ({ params }: MoviePageProps) => {
         ) : (
           <SignInPrompt />
         )}
+      </section>
+
+      <section className="mt-6">
+        <h2 className="text-lg font-semibold">Reviews</h2>
+        <ReviewList reviews={reviews} viewerId={user?.id ?? null} />
       </section>
     </main>
   );
