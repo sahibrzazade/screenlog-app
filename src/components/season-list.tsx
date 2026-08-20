@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { LogSeasonForm } from "@/components/log-season-form";
+import { ReviewList, type Review } from "@/components/review-list";
 import type { TmdbSeasonSummary } from "@/lib/tmdb/types";
 
 const TMDB_POSTER_BASE_URL = "https://image.tmdb.org/t/p/w154";
@@ -14,10 +15,19 @@ type SeasonListProps = {
   tmdbShowId: number;
   seasons: TmdbSeasonSummary[];
   existingLogs: Record<number, SeasonLogSummary>;
+  reviewsBySeason: Record<number, Review[]>;
+  viewerId: string | null;
   canLog: boolean;
 };
 
-export const SeasonList = ({ tmdbShowId, seasons, existingLogs, canLog }: SeasonListProps) => (
+export const SeasonList = ({
+  tmdbShowId,
+  seasons,
+  existingLogs,
+  reviewsBySeason,
+  viewerId,
+  canLog,
+}: SeasonListProps) => (
   <ul className="mt-2 flex flex-col gap-6">
     {seasons.map((season) => (
       <li
@@ -51,6 +61,12 @@ export const SeasonList = ({ tmdbShowId, seasons, existingLogs, canLog }: Season
               initialLog={existingLogs[season.season_number] ?? null}
             />
           )}
+          <div className="mt-3">
+            <ReviewList
+              reviews={reviewsBySeason[season.season_number] ?? []}
+              viewerId={viewerId}
+            />
+          </div>
         </div>
       </li>
     ))}
