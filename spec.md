@@ -7,9 +7,10 @@ Screenlog is a personal watch-logging app that keeps Letterboxd's movie logging/
 **User story:** As a user, I want to search for movies and TV shows, rate them (both an overall rating for a show and a separate rating per season), optionally leave a written review, record when I watched something, and keep unwatched titles in a watchlist.
 
 **Out of scope for MVP (deferred to v2):**
-- Social features (following other users, activity feed, likes/comments on reviews) — the architecture will leave room for this later, but it won't be built now.
+- Social features beyond public review attribution (following other users, activity feed, likes/comments on reviews) — the architecture will leave room for this later, but it won't be built now. The one exception, added after initial planning: every user's rating + review is publicly readable, attributed by username, under the relevant movie/show/season — see the RLS note below. This is read-only attribution, not a social graph.
 - Custom lists (Letterboxd's "Lists" feature, e.g. "My Top Sci-Fi Movies").
 - Episode-level logging — TV granularity is **show + season**, no episode level.
+- A browsable public profile page (e.g. `/user/[username]` listing everything one user has logged) — attribution is inline on the title's own page only.
 
 **Definition of done:** A user can sign up and log in, search TMDB for movies/shows, mark something as watched with a rating (show + season level for TV), write an optional review, record the watch date, add/remove items from a watchlist, and view their own history (diary) in chronological order.
 
@@ -32,7 +33,7 @@ Screenlog is a personal watch-logging app that keeps Letterboxd's movie logging/
 - `season_logs` — user_id, tmdb_show_id, season_number, rating (0.5–5), review (nullable text), watched_date
 - `watchlist` — user_id, tmdb_id, media_type (`movie` | `tv`), added_at
 
-RLS on every table: a user can only read/write their own rows (no social visibility, no public profile page in MVP).
+RLS: writes (`insert`/`update`/`delete`) on every log table are always scoped to `auth.uid() = user_id` — a user can never modify another user's row. Reads are mixed: `movie_logs`, `show_logs`, and `season_logs` are publicly readable (rating + review + username, so every user's review shows up under the relevant title, visible even to guests) — this is the one deliberate exception to "no social visibility." `profiles` is publicly readable for `username` only (needed to attribute reviews); no other profile field is exposed and there is no page that lists everything a given user has logged.
 
 ## Commands
 
@@ -122,10 +123,11 @@ export const RatingStars = ({ value, onChange, readOnly = false }: RatingStarsPr
 - [ ] User can rate each season of the same show separately
 - [ ] User can add/remove movies and shows from a watchlist
 - [ ] User can view all their logs in chronological order (by watch date) on their own diary/history page
-- [ ] All data access is scoped to the user via RLS (no user can see or modify another user's data)
+- [ ] Writes are always scoped to the logged-in user via RLS (no user can modify another user's data)
+- [ ] Any visitor, including a logged-out guest, can see every user's rating + review (attributed by username) under a movie's, show's, or season's page
 
 ## Open Questions
 
 - Should a show status (`watching` / `dropped` / `completed`) be part of MVP, or should it be inferred purely from season logs? → To be resolved in the Plan phase.
 - Caching strategy against TMDB API rate limits (e.g. Next.js `fetch` cache, or caching TMDB data locally in Supabase)? → To be resolved in the Plan phase.
-- Is there no public profile page at all, or is it "closed for now, opens with social features later"? → Assumption: fully private in MVP, not viewable by anyone else.
+- Is there no public profile page at all, or is it "closed for now, opens with social features later"? → Resolved: no browsable public profile page in MVP, but reviews are publicly readable and attributed by username inline on the title's page (decided after initial planning, during Task 8's follow-up — see `plan.md`).
