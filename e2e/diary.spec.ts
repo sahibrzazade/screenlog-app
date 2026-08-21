@@ -46,9 +46,9 @@ test("logs a movie and a season, then confirms both show up on /diary in the rig
     const season1 = page
       .locator("li")
       .filter({ has: page.getByRole("heading", { name: "Season 1" }) });
-    await season1.getByText("Watched date & review").click();
+    await season1.getByText("Date finished & review").click();
     await season1.getByLabel("Rate 4 out of 5 stars", { exact: true }).check({ force: true });
-    await season1.getByLabel("Watched date").fill("2020-02-01");
+    await season1.getByLabel("Date finished").fill("2020-02-01");
     await season1.getByLabel("Review (optional)").fill("Great start.");
     await season1.getByRole("button", { name: "Rate season" }).click();
     await expect(season1.getByRole("button", { name: "Update rating" })).toBeVisible();
