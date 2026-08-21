@@ -10,7 +10,7 @@ Screenlog is a personal watch-logging app that keeps Letterboxd's movie logging/
 - Social features beyond public review attribution (following other users, activity feed, likes/comments on reviews) — the architecture will leave room for this later, but it won't be built now. The one exception, added after initial planning: every user's rating + review is publicly readable, attributed by username, under the relevant movie/show/season — see the RLS note below. This is read-only attribution, not a social graph.
 - Custom lists (Letterboxd's "Lists" feature, e.g. "My Top Sci-Fi Movies").
 - Episode-level logging — TV granularity is **show + season**, no episode level.
-- A browsable public profile page (e.g. `/user/[username]` listing everything one user has logged) — attribution is inline on the title's own page only.
+- A browsable **public** profile page (e.g. `/user/[username]`, visible to other users) — attribution stays inline on the title's own page only. Revised during planning (see `plan.md`): a **private** `/profile` dashboard, visible only to the logged-in account owner (summarizing their own watchlist/diary/logs), is in scope for MVP — this doesn't let anyone view another user's page.
 
 **Definition of done:** A user can sign up and log in, search TMDB for movies/shows, mark something as watched with a rating (show + season level for TV), write an optional review, record the watch date, add/remove items from a watchlist, and view their own history (diary) in chronological order.
 
@@ -123,6 +123,8 @@ export const RatingStars = ({ value, onChange, readOnly = false }: RatingStarsPr
 - [ ] User can rate each season of the same show separately
 - [ ] User can add/remove movies and shows from a watchlist
 - [ ] User can view all their logs in chronological order (by watch date) on their own diary/history page
+- [ ] User can change their own username from a private account settings page
+- [ ] User can view a private `/profile` dashboard summarizing their own watchlist, diary, and logs (not visible to other users)
 - [ ] Writes are always scoped to the logged-in user via RLS (no user can modify another user's data)
 - [ ] Any visitor, including a logged-out guest, can see every user's rating + review (attributed by username) under a movie's, show's, or season's page
 
