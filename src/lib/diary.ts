@@ -10,6 +10,7 @@ export type DiaryEntry = {
   rating: number | null;
   review: string | null;
   watchedDate: string;
+  createdAt: string;
   href: string;
 };
 
@@ -22,9 +23,16 @@ export type ShowRatingEntry = {
   href: string;
 };
 
-/** Pure merge/sort: combines movie + season entries, newest `watchedDate` first. */
+/**
+ * Pure merge/sort: combines movie + season entries, newest `watchedDate`
+ * first, breaking ties with `createdAt` (also newest first).
+ */
 export const sortDiaryEntries = (entries: DiaryEntry[]): DiaryEntry[] =>
-  [...entries].sort((a, b) => b.watchedDate.localeCompare(a.watchedDate));
+  [...entries].sort(
+    (a, b) =>
+      b.watchedDate.localeCompare(a.watchedDate) ||
+      b.createdAt.localeCompare(a.createdAt),
+  );
 
 type MovieTitle = { title: string; posterPath: string | null };
 type ShowTitle = {
@@ -74,12 +82,12 @@ export const getDiaryData = async (
   const [{ data: movieLogs }, { data: seasonLogs }, { data: showLogs }] = await Promise.all([
     supabase
       .from("movie_logs")
-      .select("id, tmdb_movie_id, rating, review, watched_date")
+      .select("id, tmdb_movie_id, rating, review, watched_date, created_at")
       .eq("user_id", userId)
       .order("watched_date", { ascending: false }),
     supabase
       .from("season_logs")
-      .select("id, tmdb_show_id, season_number, rating, review, watched_date")
+      .select("id, tmdb_show_id, season_number, rating, review, watched_date, created_at")
       .eq("user_id", userId)
       .order("watched_date", { ascending: false }),
     supabase
@@ -114,6 +122,7 @@ export const getDiaryData = async (
         rating: log.rating === null ? null : Number(log.rating),
         review: log.review,
         watchedDate: log.watched_date,
+        createdAt: log.created_at,
         href: `/movie/${log.tmdb_movie_id}`,
       },
     ];
@@ -133,6 +142,7 @@ export const getDiaryData = async (
         rating: log.rating === null ? null : Number(log.rating),
         review: log.review,
         watchedDate: log.watched_date,
+        createdAt: log.created_at,
         href: `/tv/${log.tmdb_show_id}`,
       },
     ];

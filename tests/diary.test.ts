@@ -9,6 +9,7 @@ const entry = (overrides: Partial<DiaryEntry>): DiaryEntry => ({
   rating: 4,
   review: null,
   watchedDate: "2020-01-01",
+  createdAt: "2020-01-01T00:00:00Z",
   href: "/movie/1",
   ...overrides,
 });
@@ -31,6 +32,15 @@ describe("sortDiaryEntries", () => {
     ];
 
     expect(sortDiaryEntries(entries).map((e) => e.id)).toEqual(["season", "movie"]);
+  });
+
+  it("breaks watchedDate ties with createdAt descending", () => {
+    const entries = [
+      entry({ id: "earlier", watchedDate: "2020-01-01", createdAt: "2020-01-01T10:00:00Z" }),
+      entry({ id: "later", watchedDate: "2020-01-01", createdAt: "2020-01-01T12:00:00Z" }),
+    ];
+
+    expect(sortDiaryEntries(entries).map((e) => e.id)).toEqual(["later", "earlier"]);
   });
 
   it("does not mutate the input array", () => {
