@@ -33,7 +33,7 @@ test("logs a movie end-to-end and persists it in Supabase", async ({ page }) => 
     await page.goto(`/movie/${THE_MATRIX_TMDB_ID}`);
     await expect(page.getByRole("heading", { name: "The Matrix" })).toBeVisible();
 
-    await page.getByLabel("3.5 out of 5 stars").check({ force: true });
+    await page.getByLabel("Rate 3.5 out of 5 stars").check({ force: true });
     await page.getByLabel("Watched date").fill("2020-01-01");
     await page.getByLabel("Review (optional)").fill("Great movie.");
     await page.getByRole("button", { name: "Log movie" }).click();

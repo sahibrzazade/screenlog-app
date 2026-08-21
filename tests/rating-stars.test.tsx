@@ -16,22 +16,22 @@ describe("RatingStars", () => {
   it("exposes every 0.5 increment from 0.5 to 5", () => {
     render(<RatingStars value={null} onChange={vi.fn()} />);
     [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5].forEach((starValue) => {
-      expect(screen.getByLabelText(`${starValue} out of 5 stars`)).toBeInTheDocument();
+      expect(screen.getByLabelText(`Rate ${starValue} out of 5 stars`)).toBeInTheDocument();
     });
   });
 
   it("calls onChange with the clicked value", () => {
     const onChange = vi.fn();
     render(<RatingStars value={null} onChange={onChange} />);
-    fireEvent.click(screen.getByLabelText("3.5 out of 5 stars"));
+    fireEvent.click(screen.getByLabelText("Rate 3.5 out of 5 stars"));
     expect(onChange).toHaveBeenCalledWith(3.5);
   });
 
   it("marks only the matching radio as checked", () => {
     render(<RatingStars value={4} onChange={vi.fn()} />);
-    expect(screen.getByLabelText("4 out of 5 stars")).toBeChecked();
-    expect(screen.getByLabelText("3.5 out of 5 stars")).not.toBeChecked();
-    expect(screen.getByLabelText("4.5 out of 5 stars")).not.toBeChecked();
+    expect(screen.getByLabelText("Rate 4 out of 5 stars")).toBeChecked();
+    expect(screen.getByLabelText("Rate 3.5 out of 5 stars")).not.toBeChecked();
+    expect(screen.getByLabelText("Rate 4.5 out of 5 stars")).not.toBeChecked();
   });
 
   describe("readOnly", () => {
