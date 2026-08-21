@@ -6,6 +6,7 @@ import { LogShowForm } from "@/components/log-show-form";
 import { SignInPrompt } from "@/components/sign-in-prompt";
 import { SeasonList, type SeasonLogSummary } from "@/components/season-list";
 import { ReviewList } from "@/components/review-list";
+import { WatchlistButton } from "@/components/watchlist-button";
 import { fetchReviews, fetchSeasonReviewsByNumber } from "@/lib/reviews";
 import type { TmdbShowDetails } from "@/lib/tmdb/types";
 
@@ -57,15 +58,35 @@ const ShowPage = async ({ params }: ShowPageProps) => {
         .eq("tmdb_show_id", showId)
     : { data: null };
 
-  const seasonLogsByNumber: Record<number, SeasonLogSummary> = Object.fromEntries(
-    (existingSeasonLogs ?? []).map((log) => [
-      log.season_number,
-      { rating: Number(log.rating), review: log.review, watchedDate: log.watched_date },
-    ]),
+  const seasonLogsByNumber: Record<number, SeasonLogSummary> =
+    Object.fromEntries(
+      (existingSeasonLogs ?? []).map((log) => [
+        log.season_number,
+        {
+          rating: Number(log.rating),
+          review: log.review,
+          watchedDate: log.watched_date,
+        },
+      ]),
+    );
+
+  const showReviews = await fetchReviews(supabase, "show_logs", {
+    tmdb_show_id: showId,
+  });
+  const seasonReviewsByNumber = await fetchSeasonReviewsByNumber(
+    supabase,
+    showId,
   );
 
-  const showReviews = await fetchReviews(supabase, "show_logs", { tmdb_show_id: showId });
-  const seasonReviewsByNumber = await fetchSeasonReviewsByNumber(supabase, showId);
+  const { data: watchlistEntry } = user
+    ? await supabase
+        .from("watchlist")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("tmdb_id", showId)
+        .eq("media_type", "tv")
+        .maybeSingle()
+    : { data: null };
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-6">
@@ -115,7 +136,9 @@ const ShowPage = async ({ params }: ShowPageProps) => {
                   )}
                 </div>
                 <p className="mt-1 font-medium">{member.name}</p>
-                <p className="text-neutral-600 dark:text-neutral-400">{member.character}</p>
+                <p className="text-neutral-600 dark:text-neutral-400">
+                  {member.character}
+                </p>
               </li>
             ))}
           </ul>
@@ -137,13 +160,29 @@ const ShowPage = async ({ params }: ShowPageProps) => {
       )}
 
       <section className="mt-6">
+        <h2 className="text-lg font-semibold">Watchlist</h2>
+        {user ? (
+          <WatchlistButton
+            tmdbId={showId}
+            mediaType="tv"
+            initialInWatchlist={watchlistEntry !== null}
+          />
+        ) : (
+          <SignInPrompt message="Sign in to add this to your watchlist" />
+        )}
+      </section>
+
+      <section className="mt-6">
         <h2 className="text-lg font-semibold">Your rating</h2>
         {user ? (
           <LogShowForm
             tmdbShowId={showId}
             initialLog={
               existingLog
-                ? { rating: Number(existingLog.rating), review: existingLog.review }
+                ? {
+                    rating: Number(existingLog.rating),
+                    review: existingLog.review,
+                  }
                 : null
             }
           />

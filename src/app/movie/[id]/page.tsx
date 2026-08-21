@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { LogMovieForm } from "@/components/log-movie-form";
 import { SignInPrompt } from "@/components/sign-in-prompt";
 import { ReviewList } from "@/components/review-list";
+import { WatchlistButton } from "@/components/watchlist-button";
 import { fetchReviews } from "@/lib/reviews";
 import type { TmdbMovieDetails } from "@/lib/tmdb/types";
 
@@ -46,7 +47,19 @@ const MoviePage = async ({ params }: MoviePageProps) => {
         .maybeSingle()
     : { data: null };
 
-  const reviews = await fetchReviews(supabase, "movie_logs", { tmdb_movie_id: movieId });
+  const reviews = await fetchReviews(supabase, "movie_logs", {
+    tmdb_movie_id: movieId,
+  });
+
+  const { data: watchlistEntry } = user
+    ? await supabase
+        .from("watchlist")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("tmdb_id", movieId)
+        .eq("media_type", "movie")
+        .maybeSingle()
+    : { data: null };
 
   const cast = movie.credits.cast.slice(0, 10);
 
@@ -96,12 +109,27 @@ const MoviePage = async ({ params }: MoviePageProps) => {
                   )}
                 </div>
                 <p className="mt-1 font-medium">{member.name}</p>
-                <p className="text-neutral-600 dark:text-neutral-400">{member.character}</p>
+                <p className="text-neutral-600 dark:text-neutral-400">
+                  {member.character}
+                </p>
               </li>
             ))}
           </ul>
         </section>
       )}
+
+      <section className="mt-6">
+        <h2 className="text-lg font-semibold">Watchlist</h2>
+        {user ? (
+          <WatchlistButton
+            tmdbId={movieId}
+            mediaType="movie"
+            initialInWatchlist={watchlistEntry !== null}
+          />
+        ) : (
+          <SignInPrompt message="Sign in to add this to your watchlist" />
+        )}
+      </section>
 
       <section className="mt-6">
         <h2 className="text-lg font-semibold">Your log</h2>
