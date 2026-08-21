@@ -15,6 +15,7 @@ export type MediaCardItem = {
 type MediaCardProps = MediaCardItem & {
   showWatchlistButton?: boolean;
   initialInWatchlist?: boolean;
+  onWatchlistToggle?: (inWatchlist: boolean) => void;
 };
 
 export const MediaCard = ({
@@ -25,6 +26,7 @@ export const MediaCard = ({
   posterPath,
   showWatchlistButton = false,
   initialInWatchlist = false,
+  onWatchlistToggle,
 }: MediaCardProps) => (
   <div className="relative w-full">
     <Link
@@ -57,6 +59,7 @@ export const MediaCard = ({
           tmdbId={id}
           mediaType={mediaType}
           initialInWatchlist={initialInWatchlist}
+          onToggle={onWatchlistToggle}
         />
       </div>
     )}
