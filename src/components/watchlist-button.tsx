@@ -11,12 +11,14 @@ type WatchlistButtonProps = {
   tmdbId: number;
   mediaType: "movie" | "tv";
   initialInWatchlist: boolean;
+  onToggle?: (inWatchlist: boolean) => void;
 };
 
 export const WatchlistButton = ({
   tmdbId,
   mediaType,
   initialInWatchlist,
+  onToggle,
 }: WatchlistButtonProps) => {
   const [state, formAction, pending] = useActionState<
     ToggleWatchlistState,
@@ -31,8 +33,9 @@ export const WatchlistButton = ({
         state.inWatchlist ? "Added to watchlist" : "Removed from watchlist",
       );
       prevInWatchlistRef.current = state.inWatchlist;
+      onToggle?.(state.inWatchlist);
     }
-  }, [state]);
+  }, [state, onToggle]);
 
   return (
     <form action={formAction} className="flex flex-col gap-1">

@@ -1,6 +1,7 @@
 import { tmdbFetch } from "@/lib/tmdb/client";
 import { createClient } from "@/lib/supabase/server";
-import { MediaCard, type MediaCardItem } from "@/components/media-card";
+import { WatchlistGrid } from "@/components/watchlist-grid";
+import type { MediaCardItem } from "@/components/media-card";
 import type { TmdbMovieDetails, TmdbShowDetails } from "@/lib/tmdb/types";
 
 const toWatchlistItem = async (
@@ -57,22 +58,7 @@ const WatchlistPage = async () => {
   return (
     <main className="mx-auto max-w-5xl px-4 py-6">
       <h1 className="text-2xl font-semibold">Watchlist</h1>
-      {items.length === 0 ? (
-        <p className="mt-4 text-neutral-600 dark:text-neutral-400">
-          Nothing on your watchlist yet.
-        </p>
-      ) : (
-        <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-          {items.map((item) => (
-            <MediaCard
-              key={`${item.mediaType}-${item.id}`}
-              {...item}
-              showWatchlistButton
-              initialInWatchlist
-            />
-          ))}
-        </div>
-      )}
+      <WatchlistGrid initialItems={items} />
     </main>
   );
 };
