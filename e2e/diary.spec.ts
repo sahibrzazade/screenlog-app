@@ -78,3 +78,63 @@ test("logs a movie and a season, then confirms both show up in their correct /di
     await adminClient.auth.admin.deleteUser(userId);
   }
 });
+
+test("logs a season and an overall show rating, then confirms the Shows section sorts them by date", async ({
+  page,
+}) => {
+  const email = `e2e-${Date.now()}@example.com`;
+  const password = "correct-horse-battery-staple";
+
+  const { data, error } = await adminClient.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+  });
+  if (error) throw error;
+  const userId = data.user.id;
+
+  try {
+    await page.goto("/login");
+    await page.getByLabel("Email").fill(email);
+    await page.getByLabel("Password").fill(password);
+    await page.getByRole("button", { name: "Log in" }).click();
+
+    await expect(page.getByText(`Logged in as ${email}`)).toBeVisible();
+
+    await page.goto(`/tv/${BREAKING_BAD_TMDB_ID}`);
+    await expect(page.getByRole("heading", { name: "Breaking Bad" })).toBeVisible();
+
+    const season1 = page
+      .locator("li")
+      .filter({ has: page.getByRole("heading", { name: "Season 1" }) });
+    await season1.getByText("Date finished & review").click();
+    await season1.getByLabel("Rate 4 out of 5 stars", { exact: true }).check({ force: true });
+    await season1.getByLabel("Date finished").fill("2020-02-01");
+    await season1.getByRole("button", { name: "Rate season" }).click();
+    await expect(season1.getByRole("button", { name: "Update rating" })).toBeVisible();
+
+    const yourRatingSection = page
+      .locator("section")
+      .filter({ has: page.getByRole("heading", { name: "Your rating" }) });
+    await yourRatingSection
+      .getByLabel("Rate 5 out of 5 stars", { exact: true })
+      .check({ force: true });
+    await yourRatingSection.getByLabel("Date finished").fill("2020-03-01");
+    await yourRatingSection.getByRole("button", { name: "Rate this show" }).click();
+    await expect(yourRatingSection.getByRole("button", { name: "Update rating" })).toBeVisible();
+
+    await page.goto("/diary");
+    const showsSection = page
+      .locator("section")
+      .filter({ has: page.getByRole("heading", { name: "Shows" }) });
+    const showEntries = showsSection.getByRole("listitem");
+
+    await expect(showEntries).toHaveCount(2);
+    // Overall show rating (2020-03-01) is newer than the season (2020-02-01).
+    await expect(showEntries.nth(0)).toContainText("2020-03-01");
+    await expect(showEntries.nth(1)).toContainText("Breaking Bad — Season 1");
+    await expect(showEntries.nth(1)).toContainText("2020-02-01");
+  } finally {
+    await adminClient.auth.admin.deleteUser(userId);
+  }
+});
