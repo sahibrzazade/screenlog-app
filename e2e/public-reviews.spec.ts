@@ -40,7 +40,7 @@ test("a logged-in user's review is publicly visible to a guest, and labeled You 
     await expect(page.getByText(`Logged in as ${email}`)).toBeVisible();
 
     await page.goto(`/movie/${THE_MATRIX_TMDB_ID}`);
-    await page.getByLabel("4 out of 5 stars", { exact: true }).check({ force: true });
+    await page.getByLabel("Rate 4 out of 5 stars", { exact: true }).check({ force: true });
     await page.getByLabel("Watched date").fill("2020-01-01");
     await page.getByLabel("Review (optional)").fill("Public review text.");
     await page.getByRole("button", { name: "Log movie" }).click();
