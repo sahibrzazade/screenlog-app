@@ -11,7 +11,7 @@ const adminClient = createClient(supabaseUrl, serviceRoleKey, {
 const THE_MATRIX_TMDB_ID = 603;
 const BREAKING_BAD_TMDB_ID = 1396;
 
-test("logs a movie and a season, then confirms both show up on /diary in the right order", async ({
+test("logs a movie and a season, then confirms both show up in their correct /diary sections", async ({
   page,
 }) => {
   const email = `e2e-${Date.now()}@example.com`;
@@ -54,20 +54,26 @@ test("logs a movie and a season, then confirms both show up on /diary in the rig
     await expect(season1.getByRole("button", { name: "Update rating" })).toBeVisible();
 
     await page.goto("/diary");
-    const entries = page.getByRole("listitem");
-    await expect(entries).toHaveCount(2);
+    const moviesSection = page
+      .locator("section")
+      .filter({ has: page.getByRole("heading", { name: "Movies" }) });
+    const showsSection = page
+      .locator("section")
+      .filter({ has: page.getByRole("heading", { name: "Shows" }) });
 
-    const seasonEntry = entries.filter({ hasText: "Breaking Bad" });
-    const movieEntry = entries.filter({ hasText: "The Matrix" });
+    const movieEntry = moviesSection.getByRole("listitem");
+    const seasonEntry = showsSection.getByRole("listitem");
 
-    // Season entry (watched 2020-02-01) should come before the movie (2020-01-01).
-    await expect(entries.nth(0)).toContainText("Breaking Bad");
-    await expect(entries.nth(1)).toContainText("The Matrix");
+    await expect(movieEntry).toHaveCount(1);
+    await expect(seasonEntry).toHaveCount(1);
 
-    await expect(seasonEntry).toContainText("2020-02-01");
-    await expect(seasonEntry).toContainText("Great start.");
+    await expect(movieEntry).toContainText("The Matrix");
     await expect(movieEntry).toContainText("2020-01-01");
     await expect(movieEntry).toContainText("Great movie.");
+
+    await expect(seasonEntry).toContainText("Breaking Bad");
+    await expect(seasonEntry).toContainText("2020-02-01");
+    await expect(seasonEntry).toContainText("Great start.");
   } finally {
     await adminClient.auth.admin.deleteUser(userId);
   }

@@ -8,37 +8,50 @@ const DiaryPage = async () => {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { entries, showRatings } = user
+  const { movies, shows } = user
     ? await getDiaryData(supabase, user.id)
-    : { entries: [], showRatings: [] };
+    : { movies: [], shows: [] };
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-6">
       <h1 className="text-2xl font-semibold">Diary</h1>
-      {entries.length === 0 ? (
+
+      {movies.length === 0 && shows.length === 0 ? (
         <p className="mt-4 text-neutral-600 dark:text-neutral-400">
           Nothing logged yet.
         </p>
       ) : (
-        <ul className="mt-4 flex flex-col gap-1">
-          {entries.map((entry) => (
-            <DiaryEntry key={`${entry.mediaType}-${entry.id}`} entry={entry} />
-          ))}
-        </ul>
-      )}
+        <>
+          <section className="mt-4">
+            <h2 className="text-lg font-semibold">Movies</h2>
+            {movies.length === 0 ? (
+              <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
+                No movies logged yet.
+              </p>
+            ) : (
+              <ul className="mt-2 flex flex-col gap-1">
+                {movies.map((entry) => (
+                  <DiaryEntry key={entry.id} entry={entry} />
+                ))}
+              </ul>
+            )}
+          </section>
 
-      {showRatings.length > 0 && (
-        <section className="mt-8">
-          <h2 className="text-lg font-semibold">Show ratings</h2>
-          <p className="text-xs text-neutral-500">
-            Overall show ratings aren&apos;t tied to a single watch date.
-          </p>
-          <ul className="mt-2 flex flex-col gap-1">
-            {showRatings.map((rating) => (
-              <DiaryEntry key={rating.id} entry={rating} />
-            ))}
-          </ul>
-        </section>
+          <section className="mt-8">
+            <h2 className="text-lg font-semibold">Shows</h2>
+            {shows.length === 0 ? (
+              <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
+                No shows logged yet.
+              </p>
+            ) : (
+              <ul className="mt-2 flex flex-col gap-1">
+                {shows.map((entry) => (
+                  <DiaryEntry key={entry.id} entry={entry} />
+                ))}
+              </ul>
+            )}
+          </section>
+        </>
       )}
     </main>
   );
