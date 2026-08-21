@@ -38,9 +38,9 @@ test("rates two different seasons of the same show and confirms both persist ind
     const season1 = page
       .locator("li")
       .filter({ has: page.getByRole("heading", { name: "Season 1" }) });
-    await season1.getByText("Watched date & review").click();
+    await season1.getByText("Date finished & review").click();
     await season1.getByLabel("Rate 4 out of 5 stars", { exact: true }).check({ force: true });
-    await season1.getByLabel("Watched date").fill("2020-02-01");
+    await season1.getByLabel("Date finished").fill("2020-02-01");
     await season1.getByLabel("Review (optional)").fill("Great start.");
     await season1.getByRole("button", { name: "Rate season" }).click();
     // Wait for this specific season's button to flip to its post-save label
@@ -51,9 +51,9 @@ test("rates two different seasons of the same show and confirms both persist ind
     const season2 = page
       .locator("li")
       .filter({ has: page.getByRole("heading", { name: "Season 2" }) });
-    await season2.getByText("Watched date & review").click();
+    await season2.getByText("Date finished & review").click();
     await season2.getByLabel("Rate 5 out of 5 stars", { exact: true }).check({ force: true });
-    await season2.getByLabel("Watched date").fill("2020-03-01");
+    await season2.getByLabel("Date finished").fill("2020-03-01");
     await season2.getByLabel("Review (optional)").fill("Even better.");
     await season2.getByRole("button", { name: "Rate season" }).click();
     await expect(season2.getByRole("button", { name: "Update rating" })).toBeVisible();

@@ -66,12 +66,12 @@ export const LogSeasonForm = ({ tmdbShowId, seasonNumber, initialLog }: LogSeaso
 
         <details className="text-sm">
           <summary className="cursor-pointer text-neutral-600 select-none dark:text-neutral-400">
-            Watched date & review
+            Date finished & review
           </summary>
           <div className="mt-2 flex flex-col gap-2">
             <div>
               <label htmlFor={watchedDateId} className="mb-1 block text-xs font-medium">
-                Watched date
+                Date finished
               </label>
               <input
                 id={watchedDateId}

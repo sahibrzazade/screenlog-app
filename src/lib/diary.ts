@@ -4,7 +4,7 @@ import type { TmdbMovieDetails, TmdbShowDetails } from "@/lib/tmdb/types";
 
 export type DiaryEntry = {
   id: string;
-  mediaType: "movie" | "season";
+  mediaType: "movie" | "season" | "show";
   title: string;
   posterPath: string | null;
   rating: number | null;
@@ -14,18 +14,9 @@ export type DiaryEntry = {
   href: string;
 };
 
-export type ShowRatingEntry = {
-  id: string;
-  title: string;
-  posterPath: string | null;
-  rating: number | null;
-  review: string | null;
-  href: string;
-};
-
 /**
- * Pure merge/sort: combines movie + season entries, newest `watchedDate`
- * first, breaking ties with `createdAt` (also newest first).
+ * Pure merge/sort: combines entries from one or more log tables, newest
+ * `watchedDate` first, breaking ties with `createdAt` (also newest first).
  */
 export const sortDiaryEntries = (entries: DiaryEntry[]): DiaryEntry[] =>
   [...entries].sort(
@@ -78,7 +69,7 @@ const fetchShowTitles = async (ids: number[]): Promise<Map<number, ShowTitle>> =
 export const getDiaryData = async (
   supabase: SupabaseClient,
   userId: string,
-): Promise<{ entries: DiaryEntry[]; showRatings: ShowRatingEntry[] }> => {
+): Promise<{ movies: DiaryEntry[]; shows: DiaryEntry[] }> => {
   const [{ data: movieLogs }, { data: seasonLogs }, { data: showLogs }] = await Promise.all([
     supabase
       .from("movie_logs")
@@ -92,9 +83,9 @@ export const getDiaryData = async (
       .order("watched_date", { ascending: false }),
     supabase
       .from("show_logs")
-      .select("id, tmdb_show_id, rating, review")
+      .select("id, tmdb_show_id, rating, review, watched_date, created_at")
       .eq("user_id", userId)
-      .order("created_at", { ascending: false }),
+      .order("watched_date", { ascending: false }),
   ]);
 
   const movieIds = [...new Set((movieLogs ?? []).map((log) => log.tmdb_movie_id as number))];
@@ -148,23 +139,26 @@ export const getDiaryData = async (
     ];
   });
 
-  const showRatings: ShowRatingEntry[] = (showLogs ?? []).flatMap((log) => {
+  const showEntries: DiaryEntry[] = (showLogs ?? []).flatMap((log) => {
     const show = showTitles.get(log.tmdb_show_id);
     if (!show) return [];
     return [
       {
         id: log.id,
+        mediaType: "show" as const,
         title: show.title,
         posterPath: show.posterPath,
         rating: log.rating === null ? null : Number(log.rating),
         review: log.review,
+        watchedDate: log.watched_date,
+        createdAt: log.created_at,
         href: `/tv/${log.tmdb_show_id}`,
       },
     ];
   });
 
   return {
-    entries: sortDiaryEntries([...movieEntries, ...seasonEntries]),
-    showRatings,
+    movies: sortDiaryEntries(movieEntries),
+    shows: sortDiaryEntries([...seasonEntries, ...showEntries]),
   };
 };

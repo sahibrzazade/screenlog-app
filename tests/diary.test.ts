@@ -34,6 +34,15 @@ describe("sortDiaryEntries", () => {
     expect(sortDiaryEntries(entries).map((e) => e.id)).toEqual(["season", "movie"]);
   });
 
+  it("merges season and show entries into one chronological list", () => {
+    const entries = [
+      entry({ id: "season", mediaType: "season", watchedDate: "2020-05-01" }),
+      entry({ id: "show", mediaType: "show", watchedDate: "2020-06-01" }),
+    ];
+
+    expect(sortDiaryEntries(entries).map((e) => e.id)).toEqual(["show", "season"]);
+  });
+
   it("breaks watchedDate ties with createdAt descending", () => {
     const entries = [
       entry({ id: "earlier", watchedDate: "2020-01-01", createdAt: "2020-01-01T10:00:00Z" }),
