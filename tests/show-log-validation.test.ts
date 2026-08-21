@@ -5,6 +5,7 @@ const validInput = {
   tmdbShowId: "1399",
   rating: "4.5",
   review: "",
+  watchedDate: "2020-01-01",
 };
 
 describe("showLogSchema", () => {
@@ -16,8 +17,14 @@ describe("showLogSchema", () => {
         tmdbShowId: 1399,
         rating: 4.5,
         review: undefined,
+        watchedDate: "2020-01-01",
       });
     }
+  });
+
+  it("rejects a watched date in the future", () => {
+    const result = showLogSchema.safeParse({ ...validInput, watchedDate: "2999-01-01" });
+    expect(result.success).toBe(false);
   });
 
   it("rejects a rating that isn't a 0.5 increment", () => {

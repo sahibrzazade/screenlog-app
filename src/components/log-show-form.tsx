@@ -12,8 +12,10 @@ import {
 
 type LogShowFormProps = {
   tmdbShowId: number;
-  initialLog: { rating: number; review: string | null } | null;
+  initialLog: { rating: number; review: string | null; watchedDate: string } | null;
 };
+
+const todayIso = () => new Date().toISOString().slice(0, 10);
 
 export const LogShowForm = ({ tmdbShowId, initialLog }: LogShowFormProps) => {
   const [state, formAction, pending] = useActionState<LogShowFormState, FormData>(
@@ -58,6 +60,20 @@ export const LogShowForm = ({ tmdbShowId, initialLog }: LogShowFormProps) => {
         <div>
           <span className="mb-1 block text-sm font-medium">Rating</span>
           <RatingStars value={rating} onChange={setRating} />
+        </div>
+        <div>
+          <label htmlFor="watchedDate" className="mb-1 block text-sm font-medium">
+            Date finished
+          </label>
+          <input
+            id="watchedDate"
+            name="watchedDate"
+            type="date"
+            required
+            defaultValue={initialLog?.watchedDate ?? todayIso()}
+            max={todayIso()}
+            className="border border-neutral-400 rounded bg-white px-3 py-1.5 text-neutral-900"
+          />
         </div>
         <div>
           <label htmlFor="review" className="mb-1 block text-sm font-medium">

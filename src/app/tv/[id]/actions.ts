@@ -15,6 +15,7 @@ export const logShow = async (
     tmdbShowId: formData.get("tmdbShowId"),
     rating: formData.get("rating"),
     review: formData.get("review"),
+    watchedDate: formData.get("watchedDate"),
   });
 
   if (!parsed.success) {
@@ -36,6 +37,7 @@ export const logShow = async (
       tmdb_show_id: parsed.data.tmdbShowId,
       rating: parsed.data.rating,
       review: parsed.data.review ?? null,
+      watched_date: parsed.data.watchedDate,
     },
     { onConflict: "user_id,tmdb_show_id" },
   );
