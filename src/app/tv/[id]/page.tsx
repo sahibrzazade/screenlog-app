@@ -42,7 +42,7 @@ const ShowPage = async ({ params }: ShowPageProps) => {
   const { data: existingLog } = user
     ? await supabase
         .from("show_logs")
-        .select("rating, review")
+        .select("rating, review, watched_date")
         .eq("user_id", user.id)
         .eq("tmdb_show_id", showId)
         .maybeSingle()
@@ -182,6 +182,7 @@ const ShowPage = async ({ params }: ShowPageProps) => {
                 ? {
                     rating: Number(existingLog.rating),
                     review: existingLog.review,
+                    watchedDate: existingLog.watched_date,
                   }
                 : null
             }

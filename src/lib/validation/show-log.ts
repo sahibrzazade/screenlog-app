@@ -8,6 +8,10 @@ export const showLogSchema = z.object({
     .trim()
     .max(2000)
     .transform((value) => (value.length > 0 ? value : undefined)),
+  watchedDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Enter a valid date")
+    .refine((date) => new Date(date) <= new Date(), "Date finished can't be in the future"),
 });
 
 export type ShowLogInput = z.infer<typeof showLogSchema>;
