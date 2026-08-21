@@ -77,7 +77,7 @@ export const RatingStars = ({
                     required
                     className="sr-only"
                   />
-                  <span className="sr-only">{starValue} out of 5 stars</span>
+                  <span className="sr-only">Rate {starValue} out of 5 stars</span>
                 </label>
               ))}
           </span>

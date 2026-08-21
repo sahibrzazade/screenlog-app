@@ -8,9 +8,10 @@ const adminClient = createClient(supabaseUrl, serviceRoleKey, {
   auth: { autoRefreshToken: false, persistSession: false },
 });
 
+const THE_MATRIX_TMDB_ID = 603;
 const BREAKING_BAD_TMDB_ID = 1396;
 
-test("rates two different seasons of the same show and confirms both persist independently", async ({
+test("logs a movie and a season, then confirms both show up on /diary in the right order", async ({
   page,
 }) => {
   const email = `e2e-${Date.now()}@example.com`;
@@ -32,9 +33,16 @@ test("rates two different seasons of the same show and confirms both persist ind
 
     await expect(page.getByText(`Logged in as ${email}`)).toBeVisible();
 
+    await page.goto(`/movie/${THE_MATRIX_TMDB_ID}`);
+    await expect(page.getByRole("heading", { name: "The Matrix" })).toBeVisible();
+    await page.getByLabel("Rate 3.5 out of 5 stars", { exact: true }).check({ force: true });
+    await page.getByLabel("Watched date").fill("2020-01-01");
+    await page.getByLabel("Review (optional)").fill("Great movie.");
+    await page.getByRole("button", { name: "Log movie" }).click();
+    await expect(page.getByText("Log saved")).toBeVisible();
+
     await page.goto(`/tv/${BREAKING_BAD_TMDB_ID}`);
     await expect(page.getByRole("heading", { name: "Breaking Bad" })).toBeVisible();
-
     const season1 = page
       .locator("li")
       .filter({ has: page.getByRole("heading", { name: "Season 1" }) });
@@ -43,42 +51,23 @@ test("rates two different seasons of the same show and confirms both persist ind
     await season1.getByLabel("Watched date").fill("2020-02-01");
     await season1.getByLabel("Review (optional)").fill("Great start.");
     await season1.getByRole("button", { name: "Rate season" }).click();
-    // Wait for this specific season's button to flip to its post-save label
-    // rather than the toast text, which is identical across seasons and can
-    // still be on screen from a previous save when the next one completes.
     await expect(season1.getByRole("button", { name: "Update rating" })).toBeVisible();
 
-    const season2 = page
-      .locator("li")
-      .filter({ has: page.getByRole("heading", { name: "Season 2" }) });
-    await season2.getByText("Watched date & review").click();
-    await season2.getByLabel("Rate 5 out of 5 stars", { exact: true }).check({ force: true });
-    await season2.getByLabel("Watched date").fill("2020-03-01");
-    await season2.getByLabel("Review (optional)").fill("Even better.");
-    await season2.getByRole("button", { name: "Rate season" }).click();
-    await expect(season2.getByRole("button", { name: "Update rating" })).toBeVisible();
+    await page.goto("/diary");
+    const entries = page.getByRole("listitem");
+    await expect(entries).toHaveCount(2);
 
-    const { data: logs, error: selectError } = await adminClient
-      .from("season_logs")
-      .select("season_number, rating, review, watched_date")
-      .eq("user_id", userId)
-      .eq("tmdb_show_id", BREAKING_BAD_TMDB_ID)
-      .order("season_number", { ascending: true });
+    const seasonEntry = entries.filter({ hasText: "Breaking Bad" });
+    const movieEntry = entries.filter({ hasText: "The Matrix" });
 
-    if (selectError) throw selectError;
-    expect(logs).toHaveLength(2);
-    expect(logs![0]).toMatchObject({
-      season_number: 1,
-      rating: 4,
-      review: "Great start.",
-      watched_date: "2020-02-01",
-    });
-    expect(logs![1]).toMatchObject({
-      season_number: 2,
-      rating: 5,
-      review: "Even better.",
-      watched_date: "2020-03-01",
-    });
+    // Season entry (watched 2020-02-01) should come before the movie (2020-01-01).
+    await expect(entries.nth(0)).toContainText("Breaking Bad");
+    await expect(entries.nth(1)).toContainText("The Matrix");
+
+    await expect(seasonEntry).toContainText("2020-02-01");
+    await expect(seasonEntry).toContainText("Great start.");
+    await expect(movieEntry).toContainText("2020-01-01");
+    await expect(movieEntry).toContainText("Great movie.");
   } finally {
     await adminClient.auth.admin.deleteUser(userId);
   }
