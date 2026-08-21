@@ -4,6 +4,16 @@ import { RatingStars } from "@/components/rating-stars";
 
 const TMDB_POSTER_BASE_URL = "https://image.tmdb.org/t/p/w500";
 
+// Parse/format in UTC so the displayed calendar date matches the stored
+// date regardless of the viewer's timezone.
+const formatDate = (isoDate: string) =>
+  new Date(`${isoDate}T00:00:00Z`).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+
 export type DiaryEntryData = {
   id: string;
   title: string;
@@ -39,7 +49,9 @@ export const DiaryEntry = ({ entry }: DiaryEntryProps) => (
           {entry.title}
         </Link>
         {entry.watchedDate && (
-          <span className="shrink-0 text-xs text-neutral-500">{entry.watchedDate}</span>
+          <span className="shrink-0 text-xs text-neutral-500">
+            {formatDate(entry.watchedDate)}
+          </span>
         )}
       </div>
       {entry.rating !== null && <RatingStars value={entry.rating} readOnly />}
