@@ -68,11 +68,11 @@ test("logs a movie and a season, then confirms both show up in their correct /di
     await expect(seasonEntry).toHaveCount(1);
 
     await expect(movieEntry).toContainText("The Matrix");
-    await expect(movieEntry).toContainText("2020-01-01");
+    await expect(movieEntry).toContainText("1 Jan 2020");
     await expect(movieEntry).toContainText("Great movie.");
 
     await expect(seasonEntry).toContainText("Breaking Bad");
-    await expect(seasonEntry).toContainText("2020-02-01");
+    await expect(seasonEntry).toContainText("1 Feb 2020");
     await expect(seasonEntry).toContainText("Great start.");
   } finally {
     await adminClient.auth.admin.deleteUser(userId);
@@ -131,9 +131,9 @@ test("logs a season and an overall show rating, then confirms the Shows section 
 
     await expect(showEntries).toHaveCount(2);
     // Overall show rating (2020-03-01) is newer than the season (2020-02-01).
-    await expect(showEntries.nth(0)).toContainText("2020-03-01");
+    await expect(showEntries.nth(0)).toContainText("1 Mar 2020");
     await expect(showEntries.nth(1)).toContainText("Breaking Bad — Season 1");
-    await expect(showEntries.nth(1)).toContainText("2020-02-01");
+    await expect(showEntries.nth(1)).toContainText("1 Feb 2020");
   } finally {
     await adminClient.auth.admin.deleteUser(userId);
   }
