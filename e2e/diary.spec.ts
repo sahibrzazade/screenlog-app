@@ -21,6 +21,7 @@ test("logs a movie and a season, then confirms both show up in their correct /di
     email,
     password,
     email_confirm: true,
+    user_metadata: { username: `e2e_user_${Date.now()}` },
   });
   if (error) throw error;
   const userId = data.user.id;
@@ -89,6 +90,7 @@ test("logs a season and an overall show rating, then confirms the Shows section 
     email,
     password,
     email_confirm: true,
+    user_metadata: { username: `e2e_user_${Date.now()}` },
   });
   if (error) throw error;
   const userId = data.user.id;

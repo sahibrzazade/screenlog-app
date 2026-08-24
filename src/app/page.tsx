@@ -14,6 +14,9 @@ const Home = async () => {
       {user ? (
         <>
           <p>Logged in as {user.email}</p>
+          <p>
+            <Link href="/settings">Settings</Link>
+          </p>
           <form action={logout}>
             <button type="submit">Log out</button>
           </form>

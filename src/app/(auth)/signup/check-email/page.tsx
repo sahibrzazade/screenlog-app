@@ -4,9 +4,10 @@ const CheckEmailPage = () => (
   <main>
     <h1>Check your email</h1>
     <p>
-      We sent a confirmation link to the address you signed up with. Click it
-      to activate your account, then{" "}
-      <Link href="/login">log in</Link>.
+      If that email doesn&apos;t already have a screenlog account, we&apos;ve
+      sent a confirmation link to it. Click it to activate your account, then{" "}
+      <Link href="/login">log in</Link>. Already have an account with that
+      email? Just <Link href="/login">log in</Link> instead.
     </p>
   </main>
 );

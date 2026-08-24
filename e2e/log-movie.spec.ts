@@ -18,6 +18,7 @@ test("logs a movie end-to-end and persists it in Supabase", async ({ page }) => 
     email,
     password,
     email_confirm: true,
+    user_metadata: { username: `e2e_user_${Date.now()}` },
   });
   if (error) throw error;
   const userId = data.user.id;
