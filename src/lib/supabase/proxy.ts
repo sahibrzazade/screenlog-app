@@ -10,6 +10,7 @@ const PUBLIC_ROUTE_EXACT = [
   "/search",
 ];
 const PUBLIC_ROUTE_PREFIXES = ["/movie/", "/tv/"];
+const CHOOSE_USERNAME_ROUTE = "/choose-username";
 
 export const isPublicRoute = (pathname: string): boolean =>
   PUBLIC_ROUTE_EXACT.includes(pathname) ||
@@ -39,10 +40,26 @@ export const updateSession = async (request: NextRequest) => {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user && !isPublicRoute(request.nextUrl.pathname)) {
+  const { pathname } = request.nextUrl;
+
+  if (!user && !isPublicRoute(pathname)) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
+  }
+
+  if (user && pathname !== CHOOSE_USERNAME_ROUTE) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("username")
+      .eq("id", user.id)
+      .single();
+
+    if (!profile?.username) {
+      const url = request.nextUrl.clone();
+      url.pathname = CHOOSE_USERNAME_ROUTE;
+      return NextResponse.redirect(url);
+    }
   }
 
   return supabaseResponse;

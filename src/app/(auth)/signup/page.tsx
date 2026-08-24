@@ -12,6 +12,19 @@ const SignupPage = () => {
       <h1>Sign up</h1>
       <form action={formAction}>
         <div>
+          <label htmlFor="username">Username</label>
+          <input
+            id="username"
+            name="username"
+            type="text"
+            required
+            minLength={3}
+            maxLength={20}
+            pattern="[a-zA-Z0-9_]+"
+            className="border border-neutral-400 rounded bg-white px-3 py-1.5 text-neutral-900"
+          />
+        </div>
+        <div>
           <label htmlFor="email">Email</label>
           <input
             id="email"

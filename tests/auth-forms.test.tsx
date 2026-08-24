@@ -73,8 +73,9 @@ describe("SignupPage", () => {
     vi.mocked(signup).mockReset();
   });
 
-  it("renders email and password fields", () => {
+  it("renders username, email, and password fields", () => {
     render(<SignupPage />);
+    expect(screen.getByLabelText("Username")).toBeInTheDocument();
     expect(screen.getByLabelText("Email")).toBeInTheDocument();
     expect(screen.getByLabelText("Password")).toBeInTheDocument();
   });
@@ -83,6 +84,9 @@ describe("SignupPage", () => {
     vi.mocked(signup).mockResolvedValue(undefined);
     render(<SignupPage />);
 
+    fireEvent.change(screen.getByLabelText("Username"), {
+      target: { value: "example" },
+    });
     fireEvent.change(screen.getByLabelText("Email"), {
       target: { value: "new@example.com" },
     });
@@ -93,6 +97,7 @@ describe("SignupPage", () => {
 
     await waitFor(() => expect(signup).toHaveBeenCalledTimes(1));
     const formData = vi.mocked(signup).mock.calls[0][1];
+    expect(formData.get("username")).toBe("example");
     expect(formData.get("email")).toBe("new@example.com");
     expect(formData.get("password")).toBe("secret123");
   });
@@ -101,6 +106,9 @@ describe("SignupPage", () => {
     vi.mocked(signup).mockResolvedValue({ error: "User already registered" });
     render(<SignupPage />);
 
+    fireEvent.change(screen.getByLabelText("Username"), {
+      target: { value: "example" },
+    });
     fireEvent.change(screen.getByLabelText("Email"), {
       target: { value: "new@example.com" },
     });

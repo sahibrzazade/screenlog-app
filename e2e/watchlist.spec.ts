@@ -18,6 +18,7 @@ test("adds and removes a movie from the watchlist end-to-end", async ({ page }) 
     email,
     password,
     email_confirm: true,
+    user_metadata: { username: `e2e_user_${Date.now()}` },
   });
   if (error) throw error;
   const userId = data.user.id;
