@@ -28,12 +28,12 @@ export const MediaCard = ({
   initialInWatchlist = false,
   onWatchlistToggle,
 }: MediaCardProps) => (
-  <div className="relative w-full">
+  <div className="group relative w-full">
     <Link
       href={`/${mediaType}/${id}`}
-      className="block w-full rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+      className="block w-full rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
-      <div className="relative aspect-[2/3] w-full overflow-hidden rounded bg-neutral-800">
+      <div className="relative aspect-[2/3] w-full overflow-hidden rounded-md bg-surface shadow-lg shadow-black/40 transition-transform duration-200 group-hover:scale-[1.03]">
         {posterPath ? (
           <Image
             src={`${TMDB_POSTER_BASE_URL}${posterPath}`}
@@ -43,13 +43,13 @@ export const MediaCard = ({
             className="object-cover"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center text-center text-xs text-neutral-400">
+          <div className="flex h-full w-full items-center justify-center text-center text-xs text-subtle-foreground">
             No poster
           </div>
         )}
       </div>
-      <p className="mt-1 truncate text-sm font-medium">{title}</p>
-      <p className="text-xs text-neutral-600 dark:text-neutral-400">
+      <p className="mt-2 truncate text-sm font-medium">{title}</p>
+      <p className="font-mono text-xs text-muted-foreground">
         {year ?? "—"} · {mediaType === "movie" ? "Movie" : "TV Show"}
       </p>
     </Link>
