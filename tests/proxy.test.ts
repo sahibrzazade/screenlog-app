@@ -30,6 +30,10 @@ describe("isPublicRoute", () => {
     expect(isPublicRoute("/choose-username")).toBe(false);
   });
 
+  it("keeps the profile route protected", () => {
+    expect(isPublicRoute("/profile")).toBe(false);
+  });
+
   it("does not treat unrelated routes with a similar prefix as public", () => {
     expect(isPublicRoute("/movies-editor")).toBe(false);
   });
