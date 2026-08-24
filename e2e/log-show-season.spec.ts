@@ -20,6 +20,7 @@ test("rates two different seasons of the same show and confirms both persist ind
     email,
     password,
     email_confirm: true,
+    user_metadata: { username: `e2e_user_${Date.now()}` },
   });
   if (error) throw error;
   const userId = data.user.id;

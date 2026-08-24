@@ -60,13 +60,25 @@ export const login = async (
   const password = formData.get("password") as string;
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
 
   if (error) {
     return { error: error.message };
   }
 
-  redirect("/");
+  // A `redirect()` thrown inside a Server Action is resolved without a
+  // fresh top-level request, so the proxy's username gate never runs for
+  // its target. Check here instead of relying on the proxy to catch it.
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("username")
+    .eq("id", data.user.id)
+    .single();
+
+  redirect(profile?.username ? "/" : "/choose-username");
 };
 
 export const loginWithGoogle = async () => {
