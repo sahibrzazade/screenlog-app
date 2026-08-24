@@ -91,7 +91,7 @@ const ShowPage = async ({ params }: ShowPageProps) => {
   return (
     <main className="mx-auto max-w-3xl px-4 py-6">
       <div className="flex gap-6">
-        <div className="w-40 shrink-0 overflow-hidden rounded bg-neutral-800">
+        <div className="relative w-40 shrink-0 overflow-hidden rounded-md bg-surface">
           {show.poster_path ? (
             <Image
               src={`${TMDB_POSTER_BASE_URL}${show.poster_path}`}
@@ -101,8 +101,17 @@ const ShowPage = async ({ params }: ShowPageProps) => {
               className="h-auto w-full"
             />
           ) : (
-            <div className="flex aspect-[2/3] items-center justify-center text-center text-xs text-neutral-400">
+            <div className="flex aspect-[2/3] items-center justify-center text-center text-xs text-subtle-foreground">
               No poster
+            </div>
+          )}
+          {user && (
+            <div className="absolute top-2 right-2">
+              <WatchlistButton
+                tmdbId={showId}
+                mediaType="tv"
+                initialInWatchlist={watchlistEntry !== null}
+              />
             </div>
           )}
         </div>
@@ -158,19 +167,6 @@ const ShowPage = async ({ params }: ShowPageProps) => {
           />
         </section>
       )}
-
-      <section className="mt-6">
-        <h2 className="text-lg font-semibold">Watchlist</h2>
-        {user ? (
-          <WatchlistButton
-            tmdbId={showId}
-            mediaType="tv"
-            initialInWatchlist={watchlistEntry !== null}
-          />
-        ) : (
-          <SignInPrompt message="Sign in to add this to your watchlist" />
-        )}
-      </section>
 
       <section className="mt-6">
         <h2 className="text-lg font-semibold">Your rating</h2>
