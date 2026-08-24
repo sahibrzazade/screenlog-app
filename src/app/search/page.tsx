@@ -5,22 +5,8 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { SearchBar } from "@/components/search-bar";
 import { MediaCard, type MediaCardItem } from "@/components/media-card";
 import { createClient } from "@/lib/supabase/client";
-import type { TmdbSearchResponse, TmdbSearchResult } from "@/lib/tmdb/types";
-
-const toMediaCardItem = (
-  result: TmdbSearchResult,
-  mediaType: "movie" | "tv",
-): MediaCardItem => ({
-  id: result.id,
-  mediaType,
-  title: (mediaType === "movie" ? result.title : result.name) ?? "Untitled",
-  year:
-    (mediaType === "movie"
-      ? result.release_date
-      : result.first_air_date
-    )?.slice(0, 4) || null,
-  posterPath: result.poster_path,
-});
+import { toMediaCardItem } from "@/lib/tmdb/to-media-card-item";
+import type { TmdbSearchResponse } from "@/lib/tmdb/types";
 
 const SearchPageContent = () => {
   const router = useRouter();
@@ -134,17 +120,19 @@ const SearchPageContent = () => {
   const showGrid = !showPrompt && !isPending && results.length > 0;
 
   return (
-    <main>
-      <h1>Search</h1>
-      <SearchBar value={query} onChange={setQuery} />
+    <main className="mx-auto max-w-5xl px-4 py-6">
+      <h1 className="text-2xl font-semibold">Search</h1>
+      <div className="mt-4 max-w-md">
+        <SearchBar value={query} onChange={setQuery} />
+      </div>
       {showPrompt && (
-        <p className="mt-4 text-neutral-600 dark:text-neutral-400">
+        <p className="mt-4 text-muted-foreground">
           Search for a movie or TV show to get started.
         </p>
       )}
-      {isPending && <p className="mt-4">Searching…</p>}
+      {isPending && <p className="mt-4 text-muted-foreground">Searching…</p>}
       {showNoResults && (
-        <p className="mt-4 text-neutral-600 dark:text-neutral-400">
+        <p className="mt-4 text-muted-foreground">
           No results found for &ldquo;{trimmedQuery}&rdquo;. Try a different
           title.
         </p>
@@ -170,8 +158,8 @@ const SearchPageContent = () => {
 const SearchPage = () => (
   <Suspense
     fallback={
-      <main>
-        <h1>Search</h1>
+      <main className="mx-auto max-w-5xl px-4 py-6">
+        <h1 className="text-2xl font-semibold">Search</h1>
       </main>
     }
   >
