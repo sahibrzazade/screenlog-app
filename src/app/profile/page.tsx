@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Settings } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getProfileSummary } from "@/lib/profile";
 import { ProfileSection, type ProfileSectionItem } from "@/components/profile-section";
@@ -33,7 +35,16 @@ const ProfilePage = async () => {
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-6">
-      <h1 className="text-2xl font-semibold">Profile</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">Profile</h1>
+        <Link
+          href="/settings"
+          aria-label="Settings"
+          className="rounded-md p-2 text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <Settings className="size-5" />
+        </Link>
+      </div>
 
       <ProfileSection
         title="Watchlist"
