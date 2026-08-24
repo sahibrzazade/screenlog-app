@@ -52,7 +52,7 @@ export const WatchlistButton = ({
         disabled={pending}
         aria-pressed={state.inWatchlist}
         aria-label={state.inWatchlist ? "In watchlist" : "Add to watchlist"}
-        className="flex size-9 items-center justify-center rounded-full border border-white/10 bg-black/60 text-foreground backdrop-blur-sm transition-all hover:scale-105 hover:border-white/20 disabled:opacity-50 disabled:hover:scale-100"
+        className="flex size-9 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-black/60 text-foreground backdrop-blur-sm transition-all hover:scale-105 hover:border-white/20 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
       >
         {state.inWatchlist ? (
           <BookmarkCheck className="size-4.5 fill-accent text-accent" />
