@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { Eye } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -28,15 +28,27 @@ export const WatchedButton = ({
     ToggleMovieWatchedState | ToggleShowWatchedState,
     FormData
   >(action, { isWatched: initialIsWatched });
-  const prevIsWatchedRef = useRef(initialIsWatched);
 
+  // The displayed/submitted state tracks initialIsWatched directly, not
+  // state.isWatched, because the log can also become watched/unwatched from
+  // outside this button (e.g. rating a star elsewhere on the page creates
+  // the log row). state.isWatched only reflects what THIS button last did,
+  // so relying on it alone left the button stale until a full page refresh.
+  const [isWatched, setIsWatched] = useState(initialIsWatched);
+  const [prevInitialIsWatched, setPrevInitialIsWatched] = useState(initialIsWatched);
+  if (initialIsWatched !== prevInitialIsWatched) {
+    setPrevInitialIsWatched(initialIsWatched);
+    setIsWatched(initialIsWatched);
+  }
+
+  const prevStateIsWatchedRef = useRef(initialIsWatched);
   useEffect(() => {
     if (state.error) return;
-    if (state.isWatched !== prevIsWatchedRef.current) {
+    if (state.isWatched !== prevStateIsWatchedRef.current) {
       toast.success(
         state.isWatched ? "Marked as watched" : "Removed from watched",
       );
-      prevIsWatchedRef.current = state.isWatched;
+      prevStateIsWatchedRef.current = state.isWatched;
     }
   }, [state]);
 
@@ -47,20 +59,20 @@ export const WatchedButton = ({
         name={mediaType === "movie" ? "tmdbMovieId" : "tmdbShowId"}
         value={tmdbId}
       />
-      <input type="hidden" name="isWatched" value={String(state.isWatched)} />
+      <input type="hidden" name="isWatched" value={String(isWatched)} />
       <button
         type="submit"
         disabled={pending}
-        aria-pressed={state.isWatched}
-        aria-label={state.isWatched ? "Watched" : "Mark as watched"}
+        aria-pressed={isWatched}
+        aria-label={isWatched ? "Watched" : "Mark as watched"}
         className={
-          state.isWatched
+          isWatched
             ? "flex cursor-pointer items-center gap-1.5 rounded-full border border-accent/40 bg-accent/10 px-3 py-1.5 text-sm text-accent transition-colors hover:border-accent hover:bg-accent/20 disabled:cursor-not-allowed disabled:opacity-50"
             : "flex cursor-pointer items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:border-accent/60 hover:text-accent disabled:cursor-not-allowed disabled:opacity-50"
         }
       >
         <Eye className="size-4" />
-        {state.isWatched ? "Watched" : "Mark as watched"}
+        {isWatched ? "Watched" : "Mark as watched"}
       </button>
       {state.error && (
         <p role="alert" className="text-xs text-destructive">
