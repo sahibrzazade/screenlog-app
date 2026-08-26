@@ -4,7 +4,7 @@ import { RatingStars } from "@/components/rating-stars";
 export type Review = {
   userId: string;
   username: string | null;
-  rating: number;
+  rating: number | null;
   review: string | null;
   watchedDate: string;
 };
@@ -33,7 +33,9 @@ export const ReviewList = ({ reviews, viewerId }: ReviewListProps) => {
                 <span className="font-medium">
                   {review.userId === viewerId ? "You" : (review.username ?? "Anonymous")}
                 </span>
-                <RatingStars value={review.rating} readOnly />
+                {review.rating !== null && (
+                  <RatingStars value={review.rating} readOnly />
+                )}
               </div>
               {review.review && <p className="mt-1 text-sm">{review.review}</p>}
             </div>

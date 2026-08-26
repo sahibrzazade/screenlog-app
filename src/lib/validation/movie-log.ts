@@ -2,7 +2,6 @@ import { z } from "zod";
 
 export const movieLogSchema = z.object({
   tmdbMovieId: z.coerce.number().int().positive(),
-  rating: z.coerce.number().min(0.5).max(5).multipleOf(0.5),
   review: z
     .string()
     .trim()

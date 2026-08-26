@@ -63,7 +63,7 @@ const ShowPage = async ({ params }: ShowPageProps) => {
       (existingSeasonLogs ?? []).map((log) => [
         log.season_number,
         {
-          rating: Number(log.rating),
+          rating: log.rating === null ? null : Number(log.rating),
           review: log.review,
           watchedDate: log.watched_date,
         },
@@ -176,7 +176,10 @@ const ShowPage = async ({ params }: ShowPageProps) => {
             initialLog={
               existingLog
                 ? {
-                    rating: Number(existingLog.rating),
+                    rating:
+                      existingLog.rating === null
+                        ? null
+                        : Number(existingLog.rating),
                     review: existingLog.review,
                     watchedDate: existingLog.watched_date,
                   }

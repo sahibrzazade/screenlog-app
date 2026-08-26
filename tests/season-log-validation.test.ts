@@ -4,7 +4,6 @@ import { seasonLogSchema } from "@/lib/validation/season-log";
 const validInput = {
   tmdbShowId: "1399",
   seasonNumber: "1",
-  rating: "4.5",
   review: "",
   watchedDate: "2020-01-01",
 };
@@ -17,7 +16,6 @@ describe("seasonLogSchema", () => {
       expect(result.data).toEqual({
         tmdbShowId: 1399,
         seasonNumber: 1,
-        rating: 4.5,
         review: undefined,
         watchedDate: "2020-01-01",
       });
@@ -30,18 +28,6 @@ describe("seasonLogSchema", () => {
 
   it("rejects a negative season number", () => {
     expect(seasonLogSchema.safeParse({ ...validInput, seasonNumber: "-1" }).success).toBe(false);
-  });
-
-  it("rejects a rating that isn't a 0.5 increment", () => {
-    expect(seasonLogSchema.safeParse({ ...validInput, rating: "4.3" }).success).toBe(false);
-  });
-
-  it("rejects a rating below 0.5", () => {
-    expect(seasonLogSchema.safeParse({ ...validInput, rating: "0" }).success).toBe(false);
-  });
-
-  it("rejects a rating above 5", () => {
-    expect(seasonLogSchema.safeParse({ ...validInput, rating: "5.5" }).success).toBe(false);
   });
 
   it("rejects a watched date in the future", () => {
