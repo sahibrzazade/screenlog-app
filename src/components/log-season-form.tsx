@@ -135,7 +135,7 @@ export const LogSeasonForm = ({ tmdbShowId, seasonNumber, initialLog }: LogSeaso
 
   return (
     <div className="mt-3 flex flex-col gap-2">
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <RatingStars
           name={`rating-season-${seasonNumber}`}
           value={rating}

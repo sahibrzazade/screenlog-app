@@ -66,7 +66,7 @@ const MoviePage = async ({ params }: MoviePageProps) => {
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-6">
-      <div className="flex gap-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:gap-6">
         <div className="relative w-40 shrink-0 overflow-hidden rounded-md bg-surface">
           {movie.poster_path ? (
             <Image
