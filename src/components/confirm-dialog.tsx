@@ -68,7 +68,7 @@ export const ConfirmDialog = ({
             type="button"
             onClick={onConfirm}
             disabled={pending}
-            className="cursor-pointer rounded-md bg-destructive px-3 py-1.5 text-sm text-destructive-foreground transition-colors hover:opacity-90 disabled:opacity-50"
+            className="cursor-pointer rounded-md bg-destructive px-3 py-1.5 text-sm text-destructive-foreground transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {pending ? "Deleting..." : confirmLabel}
           </button>

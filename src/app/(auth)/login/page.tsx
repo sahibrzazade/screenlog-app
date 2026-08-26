@@ -18,7 +18,7 @@ const LoginPage = () => {
             name="email"
             type="email"
             required
-            className="border border-neutral-400 rounded bg-white px-3 py-1.5 text-neutral-900"
+            className="rounded-md border border-border bg-surface px-3 py-1.5 text-foreground focus:border-accent focus:outline-none"
           />
         </div>
         <div>
@@ -29,16 +29,16 @@ const LoginPage = () => {
             type="password"
             required
             minLength={6}
-            className="border border-neutral-400 rounded bg-white px-3 py-1.5 text-neutral-900"
+            className="rounded-md border border-border bg-surface px-3 py-1.5 text-foreground focus:border-accent focus:outline-none"
           />
         </div>
         {state?.error && <p role="alert">{state.error}</p>}
-        <button type="submit" disabled={pending}>
+        <button type="submit" disabled={pending} className="cursor-pointer disabled:cursor-not-allowed">
           {pending ? "Logging in..." : "Log in"}
         </button>
       </form>
       <form action={loginWithGoogle}>
-        <button type="submit">Continue with Google</button>
+        <button type="submit" className="cursor-pointer">Continue with Google</button>
       </form>
       <p>
         Don&apos;t have an account? <Link href="/signup">Sign up</Link>

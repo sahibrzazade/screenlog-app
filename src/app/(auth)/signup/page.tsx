@@ -21,7 +21,7 @@ const SignupPage = () => {
             minLength={3}
             maxLength={20}
             pattern="[a-zA-Z0-9_]+"
-            className="border border-neutral-400 rounded bg-white px-3 py-1.5 text-neutral-900"
+            className="rounded-md border border-border bg-surface px-3 py-1.5 text-foreground focus:border-accent focus:outline-none"
           />
         </div>
         <div>
@@ -31,7 +31,7 @@ const SignupPage = () => {
             name="email"
             type="email"
             required
-            className="border border-neutral-400 rounded bg-white px-3 py-1.5 text-neutral-900"
+            className="rounded-md border border-border bg-surface px-3 py-1.5 text-foreground focus:border-accent focus:outline-none"
           />
         </div>
         <div>
@@ -42,11 +42,11 @@ const SignupPage = () => {
             type="password"
             required
             minLength={6}
-            className="border border-neutral-400 rounded bg-white px-3 py-1.5 text-neutral-900"
+            className="rounded-md border border-border bg-surface px-3 py-1.5 text-foreground focus:border-accent focus:outline-none"
           />
         </div>
         {state?.error && <p role="alert">{state.error}</p>}
-        <button type="submit" disabled={pending}>
+        <button type="submit" disabled={pending} className="cursor-pointer disabled:cursor-not-allowed">
           {pending ? "Signing up..." : "Sign up"}
         </button>
       </form>
