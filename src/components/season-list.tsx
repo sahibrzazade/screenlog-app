@@ -40,7 +40,7 @@ export const SeasonList = ({
       {seasons.map((season) => (
         <li
           key={season.season_number}
-          className="flex items-start gap-4 border-t border-neutral-800 pt-4 first:border-t-0 first:pt-0"
+          className="flex flex-col gap-3 border-t border-neutral-800 pt-4 first:border-t-0 first:pt-0 sm:flex-row sm:items-start sm:gap-4"
         >
           <div className="aspect-[2/3] w-16 shrink-0 overflow-hidden rounded bg-neutral-800">
             {season.poster_path ? (
@@ -57,7 +57,7 @@ export const SeasonList = ({
               </div>
             )}
           </div>
-          <div className="flex-1">
+          <div className="min-w-0 flex-1">
             <h3 className="font-medium">{season.name}</h3>
             <p className="text-sm text-neutral-600 dark:text-neutral-400">
               {season.episode_count} episode{season.episode_count === 1 ? "" : "s"}

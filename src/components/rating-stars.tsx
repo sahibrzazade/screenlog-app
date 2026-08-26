@@ -26,7 +26,7 @@ export const RatingStars = ({
       <div
         role={readOnly ? "img" : "radiogroup"}
         aria-label={readOnly ? `${value} out of 5 stars` : "Rating"}
-        className="inline-flex gap-2"
+        className="inline-flex flex-wrap gap-2"
         onMouseLeave={readOnly ? undefined : () => setHoveredValue(null)}
       >
         {Array.from({ length: 5 }, (_, i) => {
