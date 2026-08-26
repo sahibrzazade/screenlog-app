@@ -3,6 +3,7 @@
 import { startTransition, useActionState, useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { RatingStars } from "@/components/rating-stars";
 import {
   clearShowLogField,
@@ -55,6 +56,7 @@ export const LogShowForm = ({ tmdbShowId, initialLog }: LogShowFormProps) => {
   // create the log row), but that must NOT remount this form, or an
   // in-progress, unsaved review draft would be wiped out from under the user.
   const [formResetKey, setFormResetKey] = useState(0);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   // Resync the rating whenever the saved rating changes underneath us (full
   // delete, or a rating star click / "remove rating" click above), following
@@ -85,6 +87,7 @@ export const LogShowForm = ({ tmdbShowId, initialLog }: LogShowFormProps) => {
     setPrevDeleteState(deleteState);
     if (deleteState && "success" in deleteState) {
       setFormResetKey((k) => k + 1);
+      setConfirmDeleteOpen(false);
     }
   }
 
@@ -221,28 +224,28 @@ export const LogShowForm = ({ tmdbShowId, initialLog }: LogShowFormProps) => {
       </form>
 
       {initialLog && (
-        <form
-          action={deleteFormAction}
-          onSubmit={(event) => {
-            if (!confirm("Delete this log? This can't be undone.")) {
-              event.preventDefault();
-            }
-          }}
-        >
-          <input type="hidden" name="tmdbShowId" value={tmdbShowId} />
-          {deleteState && "error" in deleteState && (
-            <p role="alert" className="mb-2 text-red-600 dark:text-red-400">
-              {deleteState.error}
-            </p>
-          )}
+        <>
           <button
-            type="submit"
-            disabled={deletePending}
-            className="self-start rounded border border-red-600 px-4 py-2 text-red-600 disabled:opacity-50"
+            type="button"
+            onClick={() => setConfirmDeleteOpen(true)}
+            className="cursor-pointer self-start rounded border border-red-600 px-4 py-2 text-red-600"
           >
-            {deletePending ? "Deleting..." : "Delete log"}
+            Delete log
           </button>
-        </form>
+          <ConfirmDialog
+            open={confirmDeleteOpen}
+            title="Delete this log?"
+            description="This can't be undone."
+            error={deleteState && "error" in deleteState ? deleteState.error : undefined}
+            pending={deletePending}
+            onCancel={() => setConfirmDeleteOpen(false)}
+            onConfirm={() => {
+              const formData = new FormData();
+              formData.set("tmdbShowId", String(tmdbShowId));
+              startTransition(() => deleteFormAction(formData));
+            }}
+          />
+        </>
       )}
     </div>
   );
