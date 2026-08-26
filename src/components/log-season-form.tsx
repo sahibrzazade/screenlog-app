@@ -133,7 +133,12 @@ export const LogSeasonForm = ({ tmdbShowId, seasonNumber, initialLog }: LogSeaso
   return (
     <div className="mt-3 flex flex-col gap-2">
       <div className="flex items-center gap-2">
-        <RatingStars value={rating} onChange={handleRatingChange} hideClearButton />
+        <RatingStars
+          name={`rating-season-${seasonNumber}`}
+          value={rating}
+          onChange={handleRatingChange}
+          hideClearButton
+        />
         {initialLog?.rating !== null && initialLog?.rating !== undefined && (
           <button
             type="button"
