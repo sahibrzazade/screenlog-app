@@ -1,19 +1,24 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { startTransition, useActionState, useEffect, useRef, useState } from "react";
+import { X } from "lucide-react";
 import { toast } from "sonner";
 import { RatingStars } from "@/components/rating-stars";
 import {
+  clearSeasonLogField,
   deleteSeasonLog,
   logSeason,
+  setSeasonRating,
+  type ClearSeasonLogFieldState,
   type DeleteSeasonLogFormState,
   type LogSeasonFormState,
+  type SetSeasonRatingState,
 } from "@/app/tv/[id]/actions";
 
 type LogSeasonFormProps = {
   tmdbShowId: number;
   seasonNumber: number;
-  initialLog: { rating: number; review: string | null; watchedDate: string } | null;
+  initialLog: { rating: number | null; review: string | null; watchedDate: string } | null;
 };
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
@@ -27,17 +32,39 @@ export const LogSeasonForm = ({ tmdbShowId, seasonNumber, initialLog }: LogSeaso
     DeleteSeasonLogFormState,
     FormData
   >(deleteSeasonLog, undefined);
+  const [ratingState, ratingAction] = useActionState<SetSeasonRatingState, FormData>(
+    setSeasonRating,
+    { rating: initialLog?.rating ?? null },
+  );
+  const [clearRatingState, clearRatingAction] = useActionState<
+    ClearSeasonLogFieldState,
+    FormData
+  >(clearSeasonLogField, undefined);
+  const [clearReviewState, clearReviewAction, clearReviewPending] = useActionState<
+    ClearSeasonLogFieldState,
+    FormData
+  >(clearSeasonLogField, undefined);
 
   const [rating, setRating] = useState<number | null>(initialLog?.rating ?? null);
   const wasExistingLogRef = useRef(initialLog !== null);
+  // ratingState is seeded with a real (non-undefined) value, so the effect
+  // below would otherwise fire a "Rating saved" toast on first mount even
+  // though nothing was clicked. Only toast once a rating was actually set.
+  const ratingDispatchedRef = useRef(false);
+  // Bumped only on a real delete, to reset the date/review form fields.
+  // Rating clicks also flip initialLog between null/non-null (they can
+  // create the log row), but that must NOT remount this form, or an
+  // in-progress, unsaved review draft would be wiped out from under the user.
+  const [formResetKey, setFormResetKey] = useState(0);
 
-  const hasLog = initialLog !== null;
-  const [prevHasLog, setPrevHasLog] = useState(hasLog);
-  if (hasLog !== prevHasLog) {
-    setPrevHasLog(hasLog);
-    if (!hasLog) {
-      setRating(null);
-    }
+  // Resync the rating whenever the saved rating changes underneath us (full
+  // delete, or a rating star click / "remove rating" click above), following
+  // the "adjusting state when a prop changes" pattern instead of an effect:
+  // https://react.dev/learn/you-might-not-need-an-effect
+  const [prevRatingProp, setPrevRatingProp] = useState(initialLog?.rating ?? null);
+  if ((initialLog?.rating ?? null) !== prevRatingProp) {
+    setPrevRatingProp(initialLog?.rating ?? null);
+    setRating(initialLog?.rating ?? null);
   }
 
   useEffect(() => {
@@ -54,15 +81,84 @@ export const LogSeasonForm = ({ tmdbShowId, seasonNumber, initialLog }: LogSeaso
     }
   }, [deleteState]);
 
+  const [prevDeleteState, setPrevDeleteState] = useState(deleteState);
+  if (deleteState !== prevDeleteState) {
+    setPrevDeleteState(deleteState);
+    if (deleteState && "success" in deleteState) {
+      setFormResetKey((k) => k + 1);
+    }
+  }
+
+  useEffect(() => {
+    if (ratingDispatchedRef.current && !ratingState.error) {
+      toast.success("Rating saved");
+      wasExistingLogRef.current = true;
+    }
+  }, [ratingState]);
+
+  useEffect(() => {
+    if (clearRatingState && "success" in clearRatingState) {
+      toast.success("Rating removed");
+    }
+  }, [clearRatingState]);
+
+  useEffect(() => {
+    if (clearReviewState && "success" in clearReviewState) {
+      toast.success("Review removed");
+    }
+  }, [clearReviewState]);
+
+  const handleRatingChange = (value: number | null) => {
+    if (value === null) return;
+    setRating(value);
+    ratingDispatchedRef.current = true;
+    const formData = new FormData();
+    formData.set("tmdbShowId", String(tmdbShowId));
+    formData.set("seasonNumber", String(seasonNumber));
+    formData.set("rating", String(value));
+    startTransition(() => ratingAction(formData));
+  };
+
+  const clearRating = () => {
+    const formData = new FormData();
+    formData.set("tmdbShowId", String(tmdbShowId));
+    formData.set("seasonNumber", String(seasonNumber));
+    formData.set("field", "rating");
+    startTransition(() => clearRatingAction(formData));
+  };
+
   const watchedDateId = `watchedDate-season-${seasonNumber}`;
   const reviewId = `review-season-${seasonNumber}`;
 
   return (
     <div className="mt-3 flex flex-col gap-2">
-      <form key={hasLog ? "edit" : "new"} action={formAction} className="flex flex-col gap-3">
+      <div className="flex items-center gap-2">
+        <RatingStars value={rating} onChange={handleRatingChange} hideClearButton />
+        {initialLog?.rating !== null && initialLog?.rating !== undefined && (
+          <button
+            type="button"
+            onClick={clearRating}
+            aria-label="Remove rating"
+            className="cursor-pointer rounded p-0.5 text-muted-foreground transition-colors hover:text-destructive disabled:opacity-50"
+          >
+            <X className="size-3.5" />
+          </button>
+        )}
+      </div>
+      {ratingState?.error && (
+        <p role="alert" className="text-sm text-red-600 dark:text-red-400">
+          {ratingState.error}
+        </p>
+      )}
+      {clearRatingState && "error" in clearRatingState && (
+        <p role="alert" className="text-sm text-red-600 dark:text-red-400">
+          {clearRatingState.error}
+        </p>
+      )}
+
+      <form key={formResetKey} action={formAction} className="flex flex-col gap-3">
         <input type="hidden" name="tmdbShowId" value={tmdbShowId} />
         <input type="hidden" name="seasonNumber" value={seasonNumber} />
-        <RatingStars value={rating} onChange={setRating} />
 
         <details className="text-sm">
           <summary className="cursor-pointer text-neutral-600 select-none dark:text-neutral-400">
@@ -84,10 +180,30 @@ export const LogSeasonForm = ({ tmdbShowId, seasonNumber, initialLog }: LogSeaso
               />
             </div>
             <div>
-              <label htmlFor={reviewId} className="mb-1 block text-xs font-medium">
-                Review (optional)
-              </label>
+              <div className="mb-1 flex items-center gap-2">
+                <label htmlFor={reviewId} className="text-xs font-medium">
+                  Review (optional)
+                </label>
+                {initialLog?.review !== null && initialLog?.review !== undefined && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const formData = new FormData();
+                      formData.set("tmdbShowId", String(tmdbShowId));
+                      formData.set("seasonNumber", String(seasonNumber));
+                      formData.set("field", "review");
+                      startTransition(() => clearReviewAction(formData));
+                    }}
+                    disabled={clearReviewPending}
+                    aria-label="Remove review"
+                    className="cursor-pointer rounded p-0.5 text-muted-foreground transition-colors hover:text-destructive disabled:opacity-50"
+                  >
+                    <X className="size-3.5" />
+                  </button>
+                )}
+              </div>
               <textarea
+                key={initialLog?.review ? "has-review" : "no-review"}
                 id={reviewId}
                 name="review"
                 rows={2}
@@ -104,12 +220,17 @@ export const LogSeasonForm = ({ tmdbShowId, seasonNumber, initialLog }: LogSeaso
             {state.error}
           </p>
         )}
+        {clearReviewState && "error" in clearReviewState && (
+          <p role="alert" className="text-sm text-red-600 dark:text-red-400">
+            {clearReviewState.error}
+          </p>
+        )}
         <button
           type="submit"
           disabled={pending}
           className="self-start rounded bg-blue-600 px-3 py-1.5 text-sm text-white disabled:opacity-50"
         >
-          {pending ? "Saving..." : initialLog ? "Update rating" : "Rate season"}
+          {pending ? "Saving..." : initialLog ? "Update log" : "Log season"}
         </button>
       </form>
 

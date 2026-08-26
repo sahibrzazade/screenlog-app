@@ -135,7 +135,10 @@ const MoviePage = async ({ params }: MoviePageProps) => {
             initialLog={
               existingLog
                 ? {
-                    rating: Number(existingLog.rating),
+                    rating:
+                      existingLog.rating === null
+                        ? null
+                        : Number(existingLog.rating),
                     review: existingLog.review,
                     watchedDate: existingLog.watched_date,
                   }

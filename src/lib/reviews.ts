@@ -26,13 +26,15 @@ export const fetchReviews = async (
 
   const usernameById = new Map((profiles ?? []).map((profile) => [profile.id, profile.username]));
 
-  return logs.map((log) => ({
-    userId: log.user_id,
-    username: usernameById.get(log.user_id) ?? null,
-    rating: Number(log.rating),
-    review: log.review,
-    watchedDate: log.watched_date,
-  }));
+  return logs
+    .filter((log) => log.rating !== null || log.review !== null)
+    .map((log) => ({
+      userId: log.user_id,
+      username: usernameById.get(log.user_id) ?? null,
+      rating: log.rating === null ? null : Number(log.rating),
+      review: log.review,
+      watchedDate: log.watched_date,
+    }));
 };
 
 export const fetchSeasonReviewsByNumber = async (
@@ -59,10 +61,12 @@ export const fetchSeasonReviewsByNumber = async (
 
   const reviewsBySeason: Record<number, Review[]> = {};
   for (const log of logs) {
+    if (log.rating === null && log.review === null) continue;
+
     const review: Review = {
       userId: log.user_id,
       username: usernameById.get(log.user_id) ?? null,
-      rating: Number(log.rating),
+      rating: log.rating === null ? null : Number(log.rating),
       review: log.review,
       watchedDate: log.watched_date,
     };

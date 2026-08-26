@@ -3,7 +3,6 @@ import { movieLogSchema } from "@/lib/validation/movie-log";
 
 const validInput = {
   tmdbMovieId: "603",
-  rating: "3.5",
   review: "",
   watchedDate: "2020-01-01",
 };
@@ -15,23 +14,10 @@ describe("movieLogSchema", () => {
     if (result.success) {
       expect(result.data).toEqual({
         tmdbMovieId: 603,
-        rating: 3.5,
         review: undefined,
         watchedDate: "2020-01-01",
       });
     }
-  });
-
-  it("rejects a rating that isn't a 0.5 increment", () => {
-    expect(movieLogSchema.safeParse({ ...validInput, rating: "3.3" }).success).toBe(false);
-  });
-
-  it("rejects a rating below 0.5", () => {
-    expect(movieLogSchema.safeParse({ ...validInput, rating: "0" }).success).toBe(false);
-  });
-
-  it("rejects a rating above 5", () => {
-    expect(movieLogSchema.safeParse({ ...validInput, rating: "5.5" }).success).toBe(false);
   });
 
   it("rejects a watched date in the future", () => {

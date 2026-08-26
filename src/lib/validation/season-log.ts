@@ -3,7 +3,6 @@ import { z } from "zod";
 export const seasonLogSchema = z.object({
   tmdbShowId: z.coerce.number().int().positive(),
   seasonNumber: z.coerce.number().int().min(0),
-  rating: z.coerce.number().min(0.5).max(5).multipleOf(0.5),
   review: z
     .string()
     .trim()

@@ -6,7 +6,7 @@ import type { TmdbSeasonSummary } from "@/lib/tmdb/types";
 const TMDB_POSTER_BASE_URL = "https://image.tmdb.org/t/p/w154";
 
 export type SeasonLogSummary = {
-  rating: number;
+  rating: number | null;
   review: string | null;
   watchedDate: string;
 };
