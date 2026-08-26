@@ -3,6 +3,8 @@
 @custom-variant dark (&);
 
 :root {
+  color-scheme: dark;
+
   --background: #0b0b0c;
   --surface: #151517;
   --surface-elevated: #1f1f23;

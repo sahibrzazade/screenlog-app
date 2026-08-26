@@ -169,7 +169,7 @@ export const LogShowForm = ({ tmdbShowId, initialLog }: LogShowFormProps) => {
             required
             defaultValue={initialLog?.watchedDate ?? todayIso()}
             max={todayIso()}
-            className="border border-neutral-400 rounded bg-white px-3 py-1.5 text-neutral-900"
+            className="rounded-md border border-border bg-surface px-3 py-1.5 text-foreground focus:border-accent focus:outline-none"
           />
         </div>
         <div>
@@ -201,7 +201,7 @@ export const LogShowForm = ({ tmdbShowId, initialLog }: LogShowFormProps) => {
             rows={4}
             defaultValue={initialLog?.review ?? ""}
             maxLength={2000}
-            className="w-full border border-neutral-400 rounded bg-white px-3 py-1.5 text-neutral-900"
+            className="w-full rounded-md border border-border bg-surface px-3 py-1.5 text-foreground focus:border-accent focus:outline-none"
           />
         </div>
         {state && "error" in state && (
@@ -217,7 +217,7 @@ export const LogShowForm = ({ tmdbShowId, initialLog }: LogShowFormProps) => {
         <button
           type="submit"
           disabled={pending}
-          className="self-start rounded bg-blue-600 px-4 py-2 text-white disabled:opacity-50"
+          className="cursor-pointer self-start rounded bg-blue-600 px-4 py-2 text-white disabled:cursor-not-allowed disabled:opacity-50"
         >
           {pending ? "Saving..." : initialLog ? "Update log" : "Log show"}
         </button>

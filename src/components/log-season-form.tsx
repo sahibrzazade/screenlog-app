@@ -184,7 +184,7 @@ export const LogSeasonForm = ({ tmdbShowId, seasonNumber, initialLog }: LogSeaso
                 required
                 defaultValue={initialLog?.watchedDate ?? todayIso()}
                 max={todayIso()}
-                className="border border-neutral-400 rounded bg-white px-2 py-1 text-neutral-900"
+                className="rounded-md border border-border bg-surface px-2 py-1 text-foreground focus:border-accent focus:outline-none"
               />
             </div>
             <div>
@@ -217,7 +217,7 @@ export const LogSeasonForm = ({ tmdbShowId, seasonNumber, initialLog }: LogSeaso
                 rows={2}
                 defaultValue={initialLog?.review ?? ""}
                 maxLength={2000}
-                className="w-full border border-neutral-400 rounded bg-white px-2 py-1 text-neutral-900"
+                className="w-full rounded-md border border-border bg-surface px-2 py-1 text-foreground focus:border-accent focus:outline-none"
               />
             </div>
           </div>
@@ -236,7 +236,7 @@ export const LogSeasonForm = ({ tmdbShowId, seasonNumber, initialLog }: LogSeaso
         <button
           type="submit"
           disabled={pending}
-          className="self-start rounded bg-blue-600 px-3 py-1.5 text-sm text-white disabled:opacity-50"
+          className="cursor-pointer self-start rounded bg-blue-600 px-3 py-1.5 text-sm text-white disabled:cursor-not-allowed disabled:opacity-50"
         >
           {pending ? "Saving..." : initialLog ? "Update log" : "Log season"}
         </button>
