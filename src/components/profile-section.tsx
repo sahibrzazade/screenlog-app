@@ -31,7 +31,7 @@ export const ProfileSection = ({
       {total > items.length && (
         <Link
           href={seeAllHref}
-          className="text-sm text-blue-600 hover:underline dark:text-blue-400"
+          className="text-sm text-accent hover:text-accent-hover"
         >
           See all
         </Link>
@@ -39,7 +39,7 @@ export const ProfileSection = ({
     </div>
 
     {items.length === 0 ? (
-      <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
+      <p className="mt-2 text-sm text-muted-foreground">
         {emptyMessage}
       </p>
     ) : (
@@ -48,9 +48,9 @@ export const ProfileSection = ({
           <Link
             key={item.id}
             href={item.href}
-            className="block rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            className="block rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            <div className="relative aspect-[2/3] w-full overflow-hidden rounded bg-neutral-800">
+            <div className="relative aspect-[2/3] w-full overflow-hidden rounded bg-surface">
               {item.posterPath ? (
                 <Image
                   src={`${TMDB_POSTER_BASE_URL}${item.posterPath}`}
@@ -60,7 +60,7 @@ export const ProfileSection = ({
                   className="object-cover"
                 />
               ) : (
-                <div className="flex h-full w-full items-center justify-center text-center text-xs text-neutral-400">
+                <div className="flex h-full w-full items-center justify-center text-center text-xs text-subtle-foreground">
                   No poster
                 </div>
               )}

@@ -29,9 +29,9 @@ type DiaryEntryProps = {
 };
 
 export const DiaryEntry = ({ entry }: DiaryEntryProps) => (
-  <li className="flex gap-3 border-t border-neutral-800 py-3 first:border-t-0 first:pt-0">
+  <li className="flex gap-3 border-t border-border py-3 first:border-t-0 first:pt-0">
     <Link href={entry.href} className="shrink-0">
-      <div className="relative h-24 w-16 overflow-hidden rounded bg-neutral-800">
+      <div className="relative h-24 w-16 overflow-hidden rounded bg-surface">
         {entry.posterPath && (
           <Image
             src={`${TMDB_POSTER_BASE_URL}${entry.posterPath}`}
@@ -49,14 +49,14 @@ export const DiaryEntry = ({ entry }: DiaryEntryProps) => (
           {entry.title}
         </Link>
         {entry.watchedDate && (
-          <span className="shrink-0 text-xs text-neutral-500">
+          <span className="shrink-0 text-xs text-subtle-foreground">
             {formatDate(entry.watchedDate)}
           </span>
         )}
       </div>
       {entry.rating !== null && <RatingStars value={entry.rating} readOnly />}
       {entry.review && (
-        <p className="text-sm text-neutral-600 dark:text-neutral-400">{entry.review}</p>
+        <p className="text-sm text-muted-foreground">{entry.review}</p>
       )}
     </div>
   </li>

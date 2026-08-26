@@ -154,12 +154,12 @@ export const LogSeasonForm = ({ tmdbShowId, seasonNumber, initialLog }: LogSeaso
         )}
       </div>
       {ratingState?.error && (
-        <p role="alert" className="text-sm text-red-600 dark:text-red-400">
+        <p role="alert" className="text-sm text-destructive">
           {ratingState.error}
         </p>
       )}
       {clearRatingState && "error" in clearRatingState && (
-        <p role="alert" className="text-sm text-red-600 dark:text-red-400">
+        <p role="alert" className="text-sm text-destructive">
           {clearRatingState.error}
         </p>
       )}
@@ -169,7 +169,7 @@ export const LogSeasonForm = ({ tmdbShowId, seasonNumber, initialLog }: LogSeaso
         <input type="hidden" name="seasonNumber" value={seasonNumber} />
 
         <details className="text-sm">
-          <summary className="cursor-pointer text-neutral-600 select-none dark:text-neutral-400">
+          <summary className="cursor-pointer text-muted-foreground select-none">
             Date finished & review
           </summary>
           <div className="mt-2 flex flex-col gap-2">
@@ -224,19 +224,19 @@ export const LogSeasonForm = ({ tmdbShowId, seasonNumber, initialLog }: LogSeaso
         </details>
 
         {state && "error" in state && (
-          <p role="alert" className="text-sm text-red-600 dark:text-red-400">
+          <p role="alert" className="text-sm text-destructive">
             {state.error}
           </p>
         )}
         {clearReviewState && "error" in clearReviewState && (
-          <p role="alert" className="text-sm text-red-600 dark:text-red-400">
+          <p role="alert" className="text-sm text-destructive">
             {clearReviewState.error}
           </p>
         )}
         <button
           type="submit"
           disabled={pending}
-          className="cursor-pointer self-start rounded bg-blue-600 px-3 py-1.5 text-sm text-white disabled:cursor-not-allowed disabled:opacity-50"
+          className="cursor-pointer self-start rounded-md bg-accent px-3 py-1.5 text-sm text-accent-foreground transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
         >
           {pending ? "Saving..." : initialLog ? "Update log" : "Log season"}
         </button>
@@ -247,7 +247,7 @@ export const LogSeasonForm = ({ tmdbShowId, seasonNumber, initialLog }: LogSeaso
           <button
             type="button"
             onClick={() => setConfirmDeleteOpen(true)}
-            className="cursor-pointer self-start rounded border border-red-600 px-3 py-1.5 text-sm text-red-600"
+            className="cursor-pointer self-start rounded-md border border-destructive px-3 py-1.5 text-sm text-destructive"
           >
             Delete log
           </button>
