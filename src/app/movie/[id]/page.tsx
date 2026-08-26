@@ -6,6 +6,7 @@ import { LogMovieForm } from "@/components/log-movie-form";
 import { SignInPrompt } from "@/components/sign-in-prompt";
 import { ReviewList } from "@/components/review-list";
 import { WatchlistButton } from "@/components/watchlist-button";
+import { WatchedButton } from "@/components/watched-button";
 import { fetchReviews } from "@/lib/reviews";
 import type { TmdbMovieDetails } from "@/lib/tmdb/types";
 
@@ -128,7 +129,16 @@ const MoviePage = async ({ params }: MoviePageProps) => {
       )}
 
       <section className="mt-6">
-        <h2 className="text-lg font-semibold">Your log</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Your log</h2>
+          {user && (
+            <WatchedButton
+              tmdbId={movieId}
+              mediaType="movie"
+              initialIsWatched={existingLog !== null}
+            />
+          )}
+        </div>
         {user ? (
           <LogMovieForm
             tmdbMovieId={movieId}
