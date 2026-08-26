@@ -97,6 +97,79 @@ export const setShowRating = async (
   return { rating: parsedRating.data };
 };
 
+export type ToggleShowWatchedState = { isWatched: boolean; error?: string };
+
+export const toggleShowWatched = async (
+  prevState: ToggleShowWatchedState,
+  formData: FormData,
+): Promise<ToggleShowWatchedState> => {
+  const tmdbShowId = Number(formData.get("tmdbShowId"));
+  const currentlyWatched = formData.get("isWatched") === "true";
+
+  if (!Number.isInteger(tmdbShowId) || tmdbShowId <= 0) {
+    return { isWatched: currentlyWatched, error: "Invalid show." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { isWatched: currentlyWatched, error: "You must be logged in to do this." };
+  }
+
+  if (!currentlyWatched) {
+    const { error } = await supabase.from("show_logs").insert({
+      user_id: user.id,
+      tmdb_show_id: tmdbShowId,
+      rating: null,
+      review: null,
+      watched_date: new Date().toISOString().slice(0, 10),
+    });
+
+    // A unique violation just means this show is already logged — treat it as
+    // success rather than overwriting an existing rating/review with an upsert.
+    if (error && error.code !== "23505") {
+      return { isWatched: false, error: "Failed to mark this show as watched. Please try again." };
+    }
+
+    revalidatePath(`/tv/${tmdbShowId}`);
+    return { isWatched: true };
+  }
+
+  const { data: existingLog } = await supabase
+    .from("show_logs")
+    .select("rating, review")
+    .eq("user_id", user.id)
+    .eq("tmdb_show_id", tmdbShowId)
+    .maybeSingle();
+
+  if (!existingLog) {
+    return { isWatched: false };
+  }
+
+  if (existingLog.rating !== null || existingLog.review !== null) {
+    return {
+      isWatched: true,
+      error: "This log has a rating or review — delete it from Your log below instead.",
+    };
+  }
+
+  const { error: deleteError } = await supabase
+    .from("show_logs")
+    .delete()
+    .eq("user_id", user.id)
+    .eq("tmdb_show_id", tmdbShowId);
+
+  if (deleteError) {
+    return { isWatched: true, error: "Failed to update. Please try again." };
+  }
+
+  revalidatePath(`/tv/${tmdbShowId}`);
+  return { isWatched: false };
+};
+
 export type ClearShowLogFieldState = { error: string } | { success: true } | undefined;
 
 export const clearShowLogField = async (

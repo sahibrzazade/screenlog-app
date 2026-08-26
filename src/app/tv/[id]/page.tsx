@@ -7,6 +7,7 @@ import { SignInPrompt } from "@/components/sign-in-prompt";
 import { SeasonList, type SeasonLogSummary } from "@/components/season-list";
 import { ReviewList } from "@/components/review-list";
 import { WatchlistButton } from "@/components/watchlist-button";
+import { WatchedButton } from "@/components/watched-button";
 import { fetchReviews, fetchSeasonReviewsByNumber } from "@/lib/reviews";
 import type { TmdbShowDetails } from "@/lib/tmdb/types";
 
@@ -169,7 +170,16 @@ const ShowPage = async ({ params }: ShowPageProps) => {
       )}
 
       <section className="mt-6">
-        <h2 className="text-lg font-semibold">Your rating</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Your rating</h2>
+          {user && (
+            <WatchedButton
+              tmdbId={showId}
+              mediaType="tv"
+              initialIsWatched={existingLog !== null}
+            />
+          )}
+        </div>
         {user ? (
           <LogShowForm
             tmdbShowId={showId}
