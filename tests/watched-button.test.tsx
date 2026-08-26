@@ -76,22 +76,28 @@ describe("WatchedButton", () => {
     expect(toggleMovieWatched).not.toHaveBeenCalled();
   });
 
-  it("shows 'Watched' after marking as watched succeeds", async () => {
+  it("shows 'Watched' once the parent re-renders with the updated initialIsWatched", async () => {
+    // The parent (a Server Component page) re-renders this with a fresh
+    // initialIsWatched after toggleMovieWatched's revalidatePath resolves —
+    // simulated here via rerender rather than the action's own return value.
     vi.mocked(toggleMovieWatched).mockResolvedValue({ isWatched: true });
-    render(
+    const { rerender } = render(
       <WatchedButton tmdbId={550} mediaType="movie" initialIsWatched={false} />,
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Mark as watched" }));
+    await waitFor(() => expect(toggleMovieWatched).toHaveBeenCalledTimes(1));
 
-    expect(
-      await screen.findByRole("button", { name: "Watched" }),
-    ).toBeInTheDocument();
+    rerender(<WatchedButton tmdbId={550} mediaType="movie" initialIsWatched />);
+
+    expect(screen.getByRole("button", { name: "Watched" })).toBeInTheDocument();
   });
 
-  it("reverts to 'Mark as watched' when unmarking an empty log succeeds", async () => {
+  it("reverts to 'Mark as watched' once the parent re-renders after unmarking an empty log", async () => {
     vi.mocked(toggleMovieWatched).mockResolvedValue({ isWatched: false });
-    render(<WatchedButton tmdbId={550} mediaType="movie" initialIsWatched />);
+    const { rerender } = render(
+      <WatchedButton tmdbId={550} mediaType="movie" initialIsWatched />,
+    );
 
     fireEvent.click(screen.getByRole("button", { name: "Watched" }));
 
@@ -99,9 +105,28 @@ describe("WatchedButton", () => {
       const formData = vi.mocked(toggleMovieWatched).mock.calls[0][1];
       expect(formData.get("isWatched")).toBe("true");
     });
+
+    rerender(
+      <WatchedButton tmdbId={550} mediaType="movie" initialIsWatched={false} />,
+    );
+
     expect(
-      await screen.findByRole("button", { name: "Mark as watched" }),
+      screen.getByRole("button", { name: "Mark as watched" }),
     ).toBeInTheDocument();
+  });
+
+  it("picks up an externally created log without any click (e.g. rating a star elsewhere)", () => {
+    const { rerender } = render(
+      <WatchedButton tmdbId={550} mediaType="movie" initialIsWatched={false} />,
+    );
+    expect(
+      screen.getByRole("button", { name: "Mark as watched" }),
+    ).toBeInTheDocument();
+
+    rerender(<WatchedButton tmdbId={550} mediaType="movie" initialIsWatched />);
+
+    expect(screen.getByRole("button", { name: "Watched" })).toBeInTheDocument();
+    expect(toggleMovieWatched).not.toHaveBeenCalled();
   });
 
   it("stays watched and shows an error when trying to unmark a rated/reviewed log", async () => {
