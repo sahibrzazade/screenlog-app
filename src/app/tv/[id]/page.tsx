@@ -118,7 +118,7 @@ const ShowPage = async ({ params }: ShowPageProps) => {
         </div>
         <div>
           <h1 className="text-2xl font-semibold">{show.name}</h1>
-          <p className="text-sm text-neutral-600 dark:text-neutral-400">
+          <p className="text-sm text-muted-foreground">
             {show.first_air_date?.slice(0, 4)}
             {show.number_of_seasons
               ? ` · ${show.number_of_seasons} season${show.number_of_seasons === 1 ? "" : "s"}`
@@ -134,7 +134,7 @@ const ShowPage = async ({ params }: ShowPageProps) => {
           <ul className="mt-2 flex flex-wrap gap-4">
             {cast.map((member) => (
               <li key={member.id} className="w-20 text-center text-xs">
-                <div className="aspect-[2/3] w-20 overflow-hidden rounded bg-neutral-800">
+                <div className="aspect-[2/3] w-20 overflow-hidden rounded bg-surface">
                   {member.profile_path && (
                     <Image
                       src={`${TMDB_PROFILE_BASE_URL}${member.profile_path}`}
@@ -146,7 +146,7 @@ const ShowPage = async ({ params }: ShowPageProps) => {
                   )}
                 </div>
                 <p className="mt-1 font-medium">{member.name}</p>
-                <p className="text-neutral-600 dark:text-neutral-400">
+                <p className="text-muted-foreground">
                   {member.character}
                 </p>
               </li>

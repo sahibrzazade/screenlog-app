@@ -52,7 +52,7 @@ export const UsernameForm = ({
         />
       </div>
       {state.error && (
-        <p role="alert" className="text-red-600 dark:text-red-400">
+        <p role="alert" className="text-destructive">
           {state.error}
         </p>
       )}

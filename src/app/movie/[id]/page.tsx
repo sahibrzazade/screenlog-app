@@ -93,7 +93,7 @@ const MoviePage = async ({ params }: MoviePageProps) => {
         </div>
         <div>
           <h1 className="text-2xl font-semibold">{movie.title}</h1>
-          <p className="text-sm text-neutral-600 dark:text-neutral-400">
+          <p className="text-sm text-muted-foreground">
             {movie.release_date?.slice(0, 4)}
             {movie.runtime ? ` · ${movie.runtime} min` : ""}
           </p>
@@ -107,7 +107,7 @@ const MoviePage = async ({ params }: MoviePageProps) => {
           <ul className="mt-2 flex flex-wrap gap-4">
             {cast.map((member) => (
               <li key={member.id} className="w-20 text-center text-xs">
-                <div className="aspect-[2/3] w-20 overflow-hidden rounded bg-neutral-800">
+                <div className="aspect-[2/3] w-20 overflow-hidden rounded bg-surface">
                   {member.profile_path && (
                     <Image
                       src={`${TMDB_PROFILE_BASE_URL}${member.profile_path}`}
@@ -119,7 +119,7 @@ const MoviePage = async ({ params }: MoviePageProps) => {
                   )}
                 </div>
                 <p className="mt-1 font-medium">{member.name}</p>
-                <p className="text-neutral-600 dark:text-neutral-400">
+                <p className="text-muted-foreground">
                   {member.character}
                 </p>
               </li>

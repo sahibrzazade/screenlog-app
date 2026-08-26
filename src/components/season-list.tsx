@@ -40,9 +40,9 @@ export const SeasonList = ({
       {seasons.map((season) => (
         <li
           key={season.season_number}
-          className="flex flex-col gap-3 border-t border-neutral-800 pt-4 first:border-t-0 first:pt-0 sm:flex-row sm:items-start sm:gap-4"
+          className="flex flex-col gap-3 border-t border-border pt-4 first:border-t-0 first:pt-0 sm:flex-row sm:items-start sm:gap-4"
         >
-          <div className="aspect-[2/3] w-16 shrink-0 overflow-hidden rounded bg-neutral-800">
+          <div className="aspect-[2/3] w-16 shrink-0 overflow-hidden rounded bg-surface">
             {season.poster_path ? (
               <Image
                 src={`${TMDB_POSTER_BASE_URL}${season.poster_path}`}
@@ -52,14 +52,14 @@ export const SeasonList = ({
                 className="h-full w-full object-cover"
               />
             ) : (
-              <div className="flex h-full items-center justify-center text-center text-[10px] text-neutral-400">
+              <div className="flex h-full items-center justify-center text-center text-[10px] text-subtle-foreground">
                 No poster
               </div>
             )}
           </div>
           <div className="min-w-0 flex-1">
             <h3 className="font-medium">{season.name}</h3>
-            <p className="text-sm text-neutral-600 dark:text-neutral-400">
+            <p className="text-sm text-muted-foreground">
               {season.episode_count} episode{season.episode_count === 1 ? "" : "s"}
             </p>
             {canLog && (

@@ -145,12 +145,12 @@ export const LogMovieForm = ({ tmdbMovieId, initialLog }: LogMovieFormProps) => 
           )}
         </div>
         {ratingState?.error && (
-          <p role="alert" className="mt-1 text-sm text-red-600 dark:text-red-400">
+          <p role="alert" className="mt-1 text-sm text-destructive">
             {ratingState.error}
           </p>
         )}
         {clearRatingState && "error" in clearRatingState && (
-          <p role="alert" className="mt-1 text-sm text-red-600 dark:text-red-400">
+          <p role="alert" className="mt-1 text-sm text-destructive">
             {clearRatingState.error}
           </p>
         )}
@@ -205,19 +205,19 @@ export const LogMovieForm = ({ tmdbMovieId, initialLog }: LogMovieFormProps) => 
           />
         </div>
         {state && "error" in state && (
-          <p role="alert" className="text-red-600 dark:text-red-400">
+          <p role="alert" className="text-destructive">
             {state.error}
           </p>
         )}
         {clearReviewState && "error" in clearReviewState && (
-          <p role="alert" className="text-red-600 dark:text-red-400">
+          <p role="alert" className="text-destructive">
             {clearReviewState.error}
           </p>
         )}
         <button
           type="submit"
           disabled={pending}
-          className="cursor-pointer self-start rounded bg-blue-600 px-4 py-2 text-white disabled:cursor-not-allowed disabled:opacity-50"
+          className="cursor-pointer self-start rounded-md bg-accent px-4 py-2 text-accent-foreground transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
         >
           {pending ? "Saving..." : initialLog ? "Update log" : "Log movie"}
         </button>
@@ -228,7 +228,7 @@ export const LogMovieForm = ({ tmdbMovieId, initialLog }: LogMovieFormProps) => 
           <button
             type="button"
             onClick={() => setConfirmDeleteOpen(true)}
-            className="cursor-pointer self-start rounded border border-red-600 px-4 py-2 text-red-600"
+            className="cursor-pointer self-start rounded-md border border-destructive px-4 py-2 text-destructive"
           >
             Delete log
           </button>

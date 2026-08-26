@@ -25,7 +25,7 @@ const ChooseUsernamePage = async () => {
   return (
     <main className="mx-auto max-w-md px-4 py-6">
       <h1 className="text-2xl font-semibold">Choose a username</h1>
-      <p className="mt-2 text-neutral-600 dark:text-neutral-400">
+      <p className="mt-2 text-muted-foreground">
         Pick a username to finish setting up your account.
       </p>
       <div className="mt-4">
