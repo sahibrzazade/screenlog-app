@@ -38,7 +38,7 @@ const Home = async () => {
   const watchlistKeys = new Set(
     watchlistItems.map((item) => `${item.mediaType}-${item.id}`),
   );
-  const continueWatchlistItems = watchlistItems.slice(0, 4);
+  const continueWatchlistItems = watchlistItems.slice(0, 6);
 
   const heroBackdrop =
     popularMovies.results.find((result) => result.backdrop_path)
