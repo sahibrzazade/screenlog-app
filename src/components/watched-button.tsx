@@ -53,7 +53,7 @@ export const WatchedButton = ({
   }, [state]);
 
   return (
-    <form action={formAction} className="flex flex-col gap-1">
+    <form action={formAction} className="flex flex-col gap-1 self-start">
       <input
         type="hidden"
         name={mediaType === "movie" ? "tmdbMovieId" : "tmdbShowId"}
