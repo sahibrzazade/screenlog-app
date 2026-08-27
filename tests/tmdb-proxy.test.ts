@@ -83,3 +83,61 @@ describe("GET /api/tmdb/tv/[id]", () => {
     expect(await response.json()).toEqual(mockResponse);
   });
 });
+
+describe("GET /api/tmdb/movie/popular", () => {
+  it("proxies popular TMDB movies", async () => {
+    const mockResponse = {
+      page: 1,
+      results: [{ id: 603, title: "The Matrix", poster_path: null, overview: "" }],
+      total_pages: 1,
+      total_results: 1,
+    };
+    vi.spyOn(global, "fetch").mockResolvedValue(
+      new Response(JSON.stringify(mockResponse), { status: 200 }),
+    );
+
+    const { GET } = await import("@/app/api/tmdb/movie/popular/route");
+    const response = await GET();
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual(mockResponse);
+  });
+
+  it("returns 502 when TMDB request fails", async () => {
+    vi.spyOn(global, "fetch").mockResolvedValue(new Response("", { status: 500 }));
+
+    const { GET } = await import("@/app/api/tmdb/movie/popular/route");
+    const response = await GET();
+
+    expect(response.status).toBe(502);
+  });
+});
+
+describe("GET /api/tmdb/tv/popular", () => {
+  it("proxies popular TMDB shows", async () => {
+    const mockResponse = {
+      page: 1,
+      results: [{ id: 1399, name: "Game of Thrones", poster_path: null, overview: "" }],
+      total_pages: 1,
+      total_results: 1,
+    };
+    vi.spyOn(global, "fetch").mockResolvedValue(
+      new Response(JSON.stringify(mockResponse), { status: 200 }),
+    );
+
+    const { GET } = await import("@/app/api/tmdb/tv/popular/route");
+    const response = await GET();
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual(mockResponse);
+  });
+
+  it("returns 502 when TMDB request fails", async () => {
+    vi.spyOn(global, "fetch").mockResolvedValue(new Response("", { status: 500 }));
+
+    const { GET } = await import("@/app/api/tmdb/tv/popular/route");
+    const response = await GET();
+
+    expect(response.status).toBe(502);
+  });
+});

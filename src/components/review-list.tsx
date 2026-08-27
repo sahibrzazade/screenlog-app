@@ -4,7 +4,7 @@ import { RatingStars } from "@/components/rating-stars";
 export type Review = {
   userId: string;
   username: string | null;
-  rating: number;
+  rating: number | null;
   review: string | null;
   watchedDate: string;
 };
@@ -16,7 +16,7 @@ type ReviewListProps = {
 
 export const ReviewList = ({ reviews, viewerId }: ReviewListProps) => {
   if (reviews.length === 0) {
-    return <p className="text-sm text-neutral-600 dark:text-neutral-400">No reviews yet.</p>;
+    return <p className="text-sm text-muted-foreground">No reviews yet.</p>;
   }
 
   return (
@@ -24,16 +24,18 @@ export const ReviewList = ({ reviews, viewerId }: ReviewListProps) => {
       {reviews.map((review) => (
         <li
           key={review.userId}
-          className="border-t border-neutral-800 pt-4 first:border-t-0 first:pt-0"
+          className="border-t border-border pt-4 first:border-t-0 first:pt-0"
         >
           <div className="flex items-start gap-2">
-            <CircleUserRound aria-hidden size={24} className="shrink-0 text-neutral-400" />
+            <CircleUserRound aria-hidden size={24} className="shrink-0 text-subtle-foreground" />
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
                 <span className="font-medium">
                   {review.userId === viewerId ? "You" : (review.username ?? "Anonymous")}
                 </span>
-                <RatingStars value={review.rating} readOnly />
+                {review.rating !== null && (
+                  <RatingStars value={review.rating} readOnly />
+                )}
               </div>
               {review.review && <p className="mt-1 text-sm">{review.review}</p>}
             </div>

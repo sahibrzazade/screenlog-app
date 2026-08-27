@@ -34,6 +34,28 @@ describe("RatingStars", () => {
     expect(screen.getByLabelText("Rate 4.5 out of 5 stars")).not.toBeChecked();
   });
 
+  it("shows no clear control when there is no rating", () => {
+    render(<RatingStars value={null} onChange={vi.fn()} />);
+    expect(screen.queryByRole("button", { name: "Clear rating" })).not.toBeInTheDocument();
+  });
+
+  it("clears the rating via the clear control", () => {
+    const onChange = vi.fn();
+    render(<RatingStars value={4} onChange={onChange} />);
+    fireEvent.click(screen.getByRole("button", { name: "Clear rating" }));
+    expect(onChange).toHaveBeenCalledWith(null);
+  });
+
+  it("hides the clear control when hideClearButton is set", () => {
+    render(<RatingStars value={4} onChange={vi.fn()} hideClearButton />);
+    expect(screen.queryByRole("button", { name: "Clear rating" })).not.toBeInTheDocument();
+  });
+
+  it("does not mark any star input as required", () => {
+    render(<RatingStars value={null} onChange={vi.fn()} />);
+    expect(screen.getByLabelText("Rate 3 out of 5 stars")).not.toBeRequired();
+  });
+
   describe("readOnly", () => {
     it("renders no radiogroup or inputs", () => {
       render(<RatingStars value={3.5} onChange={vi.fn()} readOnly />);

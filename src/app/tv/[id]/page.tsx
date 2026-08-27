@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { Star, Users } from "lucide-react";
 import { notFound } from "next/navigation";
 import { tmdbFetch } from "@/lib/tmdb/client";
 import { createClient } from "@/lib/supabase/server";
@@ -7,11 +8,14 @@ import { SignInPrompt } from "@/components/sign-in-prompt";
 import { SeasonList, type SeasonLogSummary } from "@/components/season-list";
 import { ReviewList } from "@/components/review-list";
 import { WatchlistButton } from "@/components/watchlist-button";
+import { MediaCard } from "@/components/media-card";
 import { fetchReviews, fetchSeasonReviewsByNumber } from "@/lib/reviews";
+import { toMediaCardItem } from "@/lib/tmdb/to-media-card-item";
 import type { TmdbShowDetails } from "@/lib/tmdb/types";
 
 const TMDB_POSTER_BASE_URL = "https://image.tmdb.org/t/p/w500";
 const TMDB_PROFILE_BASE_URL = "https://image.tmdb.org/t/p/w185";
+const TMDB_BACKDROP_BASE_URL = "https://image.tmdb.org/t/p/w1280";
 
 type ShowPageProps = {
   params: Promise<{ id: string }>;
@@ -28,7 +32,7 @@ const ShowPage = async ({ params }: ShowPageProps) => {
   let show: TmdbShowDetails;
   try {
     show = await tmdbFetch<TmdbShowDetails>(`/tv/${showId}`, {
-      append_to_response: "credits",
+      append_to_response: "credits,recommendations",
     });
   } catch {
     notFound();
@@ -63,7 +67,7 @@ const ShowPage = async ({ params }: ShowPageProps) => {
       (existingSeasonLogs ?? []).map((log) => [
         log.season_number,
         {
-          rating: Number(log.rating),
+          rating: log.rating === null ? null : Number(log.rating),
           review: log.review,
           watchedDate: log.watched_date,
         },
@@ -88,114 +92,181 @@ const ShowPage = async ({ params }: ShowPageProps) => {
         .maybeSingle()
     : { data: null };
 
+  const creators = show.created_by.map((creator) => creator.name).join(", ");
+  const similar = show.recommendations.results.slice(0, 12);
+
   return (
     <main className="mx-auto max-w-3xl px-4 py-6">
-      <div className="flex gap-6">
-        <div className="w-40 shrink-0 overflow-hidden rounded bg-neutral-800">
-          {show.poster_path ? (
-            <Image
-              src={`${TMDB_POSTER_BASE_URL}${show.poster_path}`}
-              alt={show.name}
-              width={185}
-              height={278}
-              className="h-auto w-full"
+      {show.backdrop_path && (
+        <div className="relative mb-6 h-40 w-full overflow-hidden rounded-md bg-surface sm:h-56 md:h-64">
+          <Image
+            src={`${TMDB_BACKDROP_BASE_URL}${show.backdrop_path}`}
+            alt=""
+            fill
+            sizes="(min-width: 768px) 768px, 100vw"
+            className="object-cover"
+            priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent" />
+        </div>
+      )}
+      <div className="flex flex-col gap-4 sm:flex-row sm:gap-6">
+        <div className="flex w-48 shrink-0 flex-col gap-4 self-center sm:sticky sm:top-20 sm:self-start">
+          <div className="relative overflow-hidden rounded-md bg-surface">
+            {show.poster_path ? (
+              <Image
+                src={`${TMDB_POSTER_BASE_URL}${show.poster_path}`}
+                alt={show.name}
+                width={185}
+                height={278}
+                className="h-auto w-full"
+              />
+            ) : (
+              <div className="flex aspect-[2/3] items-center justify-center text-center text-xs text-subtle-foreground">
+                No poster
+              </div>
+            )}
+            {user && (
+              <div className="absolute top-2 right-2">
+                <WatchlistButton
+                  tmdbId={showId}
+                  mediaType="tv"
+                  initialInWatchlist={watchlistEntry !== null}
+                />
+              </div>
+            )}
+          </div>
+          {user ? (
+            <LogShowForm
+              tmdbShowId={showId}
+              title={show.name}
+              posterUrl={
+                show.poster_path ? `${TMDB_POSTER_BASE_URL}${show.poster_path}` : null
+              }
+              initialLog={
+                existingLog
+                  ? {
+                      rating:
+                        existingLog.rating === null ? null : Number(existingLog.rating),
+                      review: existingLog.review,
+                      watchedDate: existingLog.watched_date,
+                    }
+                  : null
+              }
             />
           ) : (
-            <div className="flex aspect-[2/3] items-center justify-center text-center text-xs text-neutral-400">
-              No poster
+            <SignInPrompt />
+          )}
+          {show.genres.length > 0 && (
+            <div className="rounded-md border border-border bg-surface p-3">
+              <span className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                Genres
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {show.genres.map((genre) => (
+                  <span
+                    key={genre.id}
+                    className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground"
+                  >
+                    {genre.name}
+                  </span>
+                ))}
+              </div>
             </div>
           )}
         </div>
-        <div>
+        <div className="min-w-0 flex-1">
           <h1 className="text-2xl font-semibold">{show.name}</h1>
-          <p className="text-sm text-neutral-600 dark:text-neutral-400">
-            {show.first_air_date?.slice(0, 4)}
-            {show.number_of_seasons
-              ? ` · ${show.number_of_seasons} season${show.number_of_seasons === 1 ? "" : "s"}`
-              : ""}
+          {show.tagline && (
+            <p className="mt-1 text-sm text-muted-foreground italic">
+              {show.tagline}
+            </p>
+          )}
+          <p className="mt-2 flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
+            <span>
+              {show.first_air_date?.slice(0, 4)}
+              {show.number_of_seasons
+                ? ` · ${show.number_of_seasons} season${show.number_of_seasons === 1 ? "" : "s"}`
+                : ""}
+            </span>
+            {show.vote_count > 0 && (
+              <span className="flex items-center gap-1">
+                <Star className="size-3.5 fill-accent text-accent" />
+                {show.vote_average.toFixed(1)}
+                <span className="flex items-center gap-0.5 text-subtle-foreground">
+                  <Users className="size-3.5" />
+                  {show.vote_count.toLocaleString()}
+                </span>
+              </span>
+            )}
           </p>
+          {creators && (
+            <p className="mt-2 text-sm text-muted-foreground">
+              Created by <span className="text-foreground">{creators}</span>
+            </p>
+          )}
           <p className="mt-3">{show.overview}</p>
+
+          {cast.length > 0 && (
+            <section className="mt-6">
+              <h2 className="text-lg font-semibold">Cast</h2>
+              <ul className="mt-2 flex flex-wrap gap-4">
+                {cast.map((member) => (
+                  <li key={member.id} className="w-20 text-center text-xs">
+                    <div className="aspect-[2/3] w-20 overflow-hidden rounded bg-surface">
+                      {member.profile_path && (
+                        <Image
+                          src={`${TMDB_PROFILE_BASE_URL}${member.profile_path}`}
+                          alt={member.name}
+                          width={92}
+                          height={138}
+                          className="h-full w-full object-cover"
+                        />
+                      )}
+                    </div>
+                    <p className="mt-1 font-medium">{member.name}</p>
+                    <p className="text-muted-foreground">
+                      {member.character}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {show.seasons.length > 0 && (
+            <section className="mt-6">
+              <h2 className="text-lg font-semibold">Seasons</h2>
+              <SeasonList
+                tmdbShowId={showId}
+                seasons={show.seasons}
+                existingLogs={seasonLogsByNumber}
+                reviewsBySeason={seasonReviewsByNumber}
+                viewerId={user?.id ?? null}
+                canLog={user !== null}
+              />
+            </section>
+          )}
+
+          <section className="mt-6">
+            <h2 className="text-lg font-semibold">Reviews</h2>
+            <ReviewList reviews={showReviews} viewerId={user?.id ?? null} />
+          </section>
+
+          {similar.length > 0 && (
+            <section className="mt-6">
+              <h2 className="text-lg font-semibold">More Like This</h2>
+              <div className="mt-2 flex gap-3 overflow-x-auto pb-1">
+                {similar.map((item) => (
+                  <div key={item.id} className="w-28 shrink-0 sm:w-32">
+                    <MediaCard {...toMediaCardItem(item, "tv")} />
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
         </div>
       </div>
-
-      {cast.length > 0 && (
-        <section className="mt-6">
-          <h2 className="text-lg font-semibold">Cast</h2>
-          <ul className="mt-2 flex flex-wrap gap-4">
-            {cast.map((member) => (
-              <li key={member.id} className="w-20 text-center text-xs">
-                <div className="aspect-[2/3] w-20 overflow-hidden rounded bg-neutral-800">
-                  {member.profile_path && (
-                    <Image
-                      src={`${TMDB_PROFILE_BASE_URL}${member.profile_path}`}
-                      alt={member.name}
-                      width={92}
-                      height={138}
-                      className="h-full w-full object-cover"
-                    />
-                  )}
-                </div>
-                <p className="mt-1 font-medium">{member.name}</p>
-                <p className="text-neutral-600 dark:text-neutral-400">
-                  {member.character}
-                </p>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {show.seasons.length > 0 && (
-        <section className="mt-6">
-          <h2 className="text-lg font-semibold">Seasons</h2>
-          <SeasonList
-            tmdbShowId={showId}
-            seasons={show.seasons}
-            existingLogs={seasonLogsByNumber}
-            reviewsBySeason={seasonReviewsByNumber}
-            viewerId={user?.id ?? null}
-            canLog={user !== null}
-          />
-        </section>
-      )}
-
-      <section className="mt-6">
-        <h2 className="text-lg font-semibold">Watchlist</h2>
-        {user ? (
-          <WatchlistButton
-            tmdbId={showId}
-            mediaType="tv"
-            initialInWatchlist={watchlistEntry !== null}
-          />
-        ) : (
-          <SignInPrompt message="Sign in to add this to your watchlist" />
-        )}
-      </section>
-
-      <section className="mt-6">
-        <h2 className="text-lg font-semibold">Your rating</h2>
-        {user ? (
-          <LogShowForm
-            tmdbShowId={showId}
-            initialLog={
-              existingLog
-                ? {
-                    rating: Number(existingLog.rating),
-                    review: existingLog.review,
-                    watchedDate: existingLog.watched_date,
-                  }
-                : null
-            }
-          />
-        ) : (
-          <SignInPrompt />
-        )}
-      </section>
-
-      <section className="mt-6">
-        <h2 className="text-lg font-semibold">Reviews</h2>
-        <ReviewList reviews={showReviews} viewerId={user?.id ?? null} />
-      </section>
     </main>
   );
 };
