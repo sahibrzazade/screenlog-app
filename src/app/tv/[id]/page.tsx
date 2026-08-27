@@ -7,7 +7,6 @@ import { SignInPrompt } from "@/components/sign-in-prompt";
 import { SeasonList, type SeasonLogSummary } from "@/components/season-list";
 import { ReviewList } from "@/components/review-list";
 import { WatchlistButton } from "@/components/watchlist-button";
-import { WatchedButton } from "@/components/watched-button";
 import { fetchReviews, fetchSeasonReviewsByNumber } from "@/lib/reviews";
 import type { TmdbShowDetails } from "@/lib/tmdb/types";
 
@@ -92,28 +91,51 @@ const ShowPage = async ({ params }: ShowPageProps) => {
   return (
     <main className="mx-auto max-w-3xl px-4 py-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:gap-6">
-        <div className="relative w-40 shrink-0 overflow-hidden rounded-md bg-surface">
-          {show.poster_path ? (
-            <Image
-              src={`${TMDB_POSTER_BASE_URL}${show.poster_path}`}
-              alt={show.name}
-              width={185}
-              height={278}
-              className="h-auto w-full"
+        <div className="flex w-48 shrink-0 flex-col gap-4">
+          <div className="relative overflow-hidden rounded-md bg-surface">
+            {show.poster_path ? (
+              <Image
+                src={`${TMDB_POSTER_BASE_URL}${show.poster_path}`}
+                alt={show.name}
+                width={185}
+                height={278}
+                className="h-auto w-full"
+              />
+            ) : (
+              <div className="flex aspect-[2/3] items-center justify-center text-center text-xs text-subtle-foreground">
+                No poster
+              </div>
+            )}
+            {user && (
+              <div className="absolute top-2 right-2">
+                <WatchlistButton
+                  tmdbId={showId}
+                  mediaType="tv"
+                  initialInWatchlist={watchlistEntry !== null}
+                />
+              </div>
+            )}
+          </div>
+          {user ? (
+            <LogShowForm
+              tmdbShowId={showId}
+              title={show.name}
+              posterUrl={
+                show.poster_path ? `${TMDB_POSTER_BASE_URL}${show.poster_path}` : null
+              }
+              initialLog={
+                existingLog
+                  ? {
+                      rating:
+                        existingLog.rating === null ? null : Number(existingLog.rating),
+                      review: existingLog.review,
+                      watchedDate: existingLog.watched_date,
+                    }
+                  : null
+              }
             />
           ) : (
-            <div className="flex aspect-[2/3] items-center justify-center text-center text-xs text-subtle-foreground">
-              No poster
-            </div>
-          )}
-          {user && (
-            <div className="absolute top-2 right-2">
-              <WatchlistButton
-                tmdbId={showId}
-                mediaType="tv"
-                initialInWatchlist={watchlistEntry !== null}
-              />
-            </div>
+            <SignInPrompt />
           )}
         </div>
         <div>
@@ -168,38 +190,6 @@ const ShowPage = async ({ params }: ShowPageProps) => {
           />
         </section>
       )}
-
-      <section className="mt-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Your rating</h2>
-          {user && (
-            <WatchedButton
-              tmdbId={showId}
-              mediaType="tv"
-              initialIsWatched={existingLog !== null}
-            />
-          )}
-        </div>
-        {user ? (
-          <LogShowForm
-            tmdbShowId={showId}
-            initialLog={
-              existingLog
-                ? {
-                    rating:
-                      existingLog.rating === null
-                        ? null
-                        : Number(existingLog.rating),
-                    review: existingLog.review,
-                    watchedDate: existingLog.watched_date,
-                  }
-                : null
-            }
-          />
-        ) : (
-          <SignInPrompt />
-        )}
-      </section>
 
       <section className="mt-6">
         <h2 className="text-lg font-semibold">Reviews</h2>
