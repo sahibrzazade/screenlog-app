@@ -48,18 +48,18 @@ export const UsernameForm = ({
           maxLength={20}
           pattern="[a-zA-Z0-9_]+"
           defaultValue={defaultUsername}
-          className="border border-neutral-400 rounded bg-white px-3 py-1.5 text-neutral-900"
+          className="rounded-md border border-border bg-surface px-3 py-1.5 text-foreground focus:border-accent focus:outline-none"
         />
       </div>
       {state.error && (
-        <p role="alert" className="text-red-600 dark:text-red-400">
+        <p role="alert" className="text-destructive">
           {state.error}
         </p>
       )}
       <button
         type="submit"
         disabled={pending}
-        className="self-start rounded border border-neutral-400 px-4 py-2 disabled:opacity-50"
+        className="cursor-pointer self-start rounded-md border border-border px-4 py-2 text-foreground disabled:cursor-not-allowed disabled:opacity-50"
       >
         {pending ? "Saving..." : variant === "settings" ? "Save" : "Continue"}
       </button>

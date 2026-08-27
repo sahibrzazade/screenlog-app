@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef } from "react";
+import { Bookmark, BookmarkCheck } from "lucide-react";
 import { toast } from "sonner";
 import {
   toggleWatchlist,
@@ -50,12 +51,17 @@ export const WatchlistButton = ({
         type="submit"
         disabled={pending}
         aria-pressed={state.inWatchlist}
-        className="self-start rounded border border-neutral-400 px-4 py-2 disabled:opacity-50"
+        aria-label={state.inWatchlist ? "In watchlist" : "Add to watchlist"}
+        className="flex size-9 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-black/60 text-foreground backdrop-blur-sm transition-all hover:scale-105 hover:border-white/20 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
       >
-        {state.inWatchlist ? "In watchlist" : "Add to watchlist"}
+        {state.inWatchlist ? (
+          <BookmarkCheck className="size-4.5 fill-accent text-accent" />
+        ) : (
+          <Bookmark className="size-4.5" />
+        )}
       </button>
       {state.error && (
-        <p role="alert" className="text-red-600 dark:text-red-400">
+        <p role="alert" className="text-destructive">
           {state.error}
         </p>
       )}
