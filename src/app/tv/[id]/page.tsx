@@ -138,6 +138,23 @@ const ShowPage = async ({ params }: ShowPageProps) => {
           ) : (
             <SignInPrompt />
           )}
+          {show.genres.length > 0 && (
+            <div className="rounded-md border border-border bg-surface p-3">
+              <span className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                Genres
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {show.genres.map((genre) => (
+                  <span
+                    key={genre.id}
+                    className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground"
+                  >
+                    {genre.name}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
         <div className="min-w-0 flex-1">
           <h1 className="text-2xl font-semibold">{show.name}</h1>
