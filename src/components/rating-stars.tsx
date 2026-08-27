@@ -9,6 +9,8 @@ type RatingStarsProps = {
   onChange?: (value: number | null) => void;
   readOnly?: boolean;
   hideClearButton?: boolean;
+  /** Smaller interactive stars (24px) for tight spaces, e.g. a sidebar card. */
+  compact?: boolean;
 };
 
 export const RatingStars = ({
@@ -17,16 +19,19 @@ export const RatingStars = ({
   onChange,
   readOnly = false,
   hideClearButton = false,
+  compact = false,
 }: RatingStarsProps) => {
   const [hoveredValue, setHoveredValue] = useState<number | null>(null);
   const displayValue = hoveredValue ?? value;
+  const starSizeClass = readOnly || compact ? "h-6 w-6" : "h-12 w-12";
+  const gapClass = compact && !readOnly ? "gap-1" : "gap-2";
 
   return (
-    <div className="inline-flex items-center gap-2">
+    <div className={`inline-flex items-center ${gapClass}`}>
       <div
         role={readOnly ? "img" : "radiogroup"}
         aria-label={readOnly ? `${value} out of 5 stars` : "Rating"}
-        className="inline-flex flex-wrap gap-2"
+        className={`inline-flex flex-wrap ${gapClass}`}
         onMouseLeave={readOnly ? undefined : () => setHoveredValue(null)}
       >
         {Array.from({ length: 5 }, (_, i) => {
@@ -44,22 +49,20 @@ export const RatingStars = ({
               key={starIndex}
               className={
                 readOnly
-                  ? "relative inline-block h-6 w-6"
-                  : "relative inline-block h-12 w-12 rounded has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring"
+                  ? `relative inline-block ${starSizeClass}`
+                  : `relative inline-block ${starSizeClass} rounded has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring`
               }
             >
               <Star
                 aria-hidden
-                className={`pointer-events-none absolute inset-0 text-muted-foreground ${readOnly ? "h-6 w-6" : "h-12 w-12"}`}
+                className={`pointer-events-none absolute inset-0 text-muted-foreground ${starSizeClass}`}
               />
               {fillLevel > 0 && (
                 <span
                   className="pointer-events-none absolute inset-0 overflow-hidden"
                   style={{ width: fillLevel === 1 ? "100%" : "50%" }}
                 >
-                  <Star
-                    className={`fill-accent text-accent ${readOnly ? "h-6 w-6" : "h-12 w-12"}`}
-                  />
+                  <Star className={`fill-accent text-accent ${starSizeClass}`} />
                 </span>
               )}
               {!readOnly &&
