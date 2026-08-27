@@ -36,6 +36,8 @@ export type TmdbMovieDetails = {
   runtime: number | null;
   genres: { id: number; name: string }[];
   credits: { cast: TmdbCastMember[] };
+  vote_average: number;
+  vote_count: number;
 };
 
 export type TmdbSeasonSummary = {
@@ -56,4 +58,6 @@ export type TmdbShowDetails = {
   number_of_seasons: number;
   seasons: TmdbSeasonSummary[];
   credits: { cast: TmdbCastMember[] };
+  vote_average: number;
+  vote_count: number;
 };
