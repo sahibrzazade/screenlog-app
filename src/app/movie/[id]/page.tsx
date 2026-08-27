@@ -7,11 +7,14 @@ import { LogMovieForm } from "@/components/log-movie-form";
 import { SignInPrompt } from "@/components/sign-in-prompt";
 import { ReviewList } from "@/components/review-list";
 import { WatchlistButton } from "@/components/watchlist-button";
+import { MediaCard } from "@/components/media-card";
 import { fetchReviews } from "@/lib/reviews";
+import { toMediaCardItem } from "@/lib/tmdb/to-media-card-item";
 import type { TmdbMovieDetails } from "@/lib/tmdb/types";
 
 const TMDB_POSTER_BASE_URL = "https://image.tmdb.org/t/p/w500";
 const TMDB_PROFILE_BASE_URL = "https://image.tmdb.org/t/p/w185";
+const TMDB_BACKDROP_BASE_URL = "https://image.tmdb.org/t/p/w1280";
 
 type MoviePageProps = {
   params: Promise<{ id: string }>;
@@ -28,7 +31,7 @@ const MoviePage = async ({ params }: MoviePageProps) => {
   let movie: TmdbMovieDetails;
   try {
     movie = await tmdbFetch<TmdbMovieDetails>(`/movie/${movieId}`, {
-      append_to_response: "credits",
+      append_to_response: "credits,recommendations",
     });
   } catch {
     notFound();
@@ -63,9 +66,27 @@ const MoviePage = async ({ params }: MoviePageProps) => {
     : { data: null };
 
   const cast = movie.credits.cast.slice(0, 10);
+  const directors = movie.credits.crew
+    .filter((member) => member.job === "Director")
+    .map((member) => member.name)
+    .join(", ");
+  const similar = movie.recommendations.results.slice(0, 12);
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-6">
+      {movie.backdrop_path && (
+        <div className="relative mb-6 h-40 w-full overflow-hidden rounded-md bg-surface sm:h-56 md:h-64">
+          <Image
+            src={`${TMDB_BACKDROP_BASE_URL}${movie.backdrop_path}`}
+            alt=""
+            fill
+            sizes="(min-width: 768px) 768px, 100vw"
+            className="object-cover"
+            priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent" />
+        </div>
+      )}
       <div className="flex flex-col gap-4 sm:flex-row sm:gap-6">
         <div className="flex w-48 shrink-0 flex-col gap-4 self-center sm:sticky sm:top-20 sm:self-start">
           <div className="relative overflow-hidden rounded-md bg-surface">
@@ -133,7 +154,12 @@ const MoviePage = async ({ params }: MoviePageProps) => {
         </div>
         <div className="min-w-0 flex-1">
           <h1 className="text-2xl font-semibold">{movie.title}</h1>
-          <p className="flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
+          {movie.tagline && (
+            <p className="mt-1 text-sm text-muted-foreground italic">
+              {movie.tagline}
+            </p>
+          )}
+          <p className="mt-2 flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
             <span>
               {movie.release_date?.slice(0, 4)}
               {movie.runtime ? ` · ${movie.runtime} min` : ""}
@@ -149,6 +175,11 @@ const MoviePage = async ({ params }: MoviePageProps) => {
               </span>
             )}
           </p>
+          {directors && (
+            <p className="mt-2 text-sm text-muted-foreground">
+              Directed by <span className="text-foreground">{directors}</span>
+            </p>
+          )}
           <p className="mt-3">{movie.overview}</p>
 
           {cast.length > 0 && (
@@ -182,6 +213,19 @@ const MoviePage = async ({ params }: MoviePageProps) => {
             <h2 className="text-lg font-semibold">Reviews</h2>
             <ReviewList reviews={reviews} viewerId={user?.id ?? null} />
           </section>
+
+          {similar.length > 0 && (
+            <section className="mt-6">
+              <h2 className="text-lg font-semibold">More Like This</h2>
+              <div className="mt-2 flex gap-3 overflow-x-auto pb-1">
+                {similar.map((item) => (
+                  <div key={item.id} className="w-28 shrink-0 sm:w-32">
+                    <MediaCard {...toMediaCardItem(item, "movie")} />
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
         </div>
       </div>
     </main>

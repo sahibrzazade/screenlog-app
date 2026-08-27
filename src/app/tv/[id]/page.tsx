@@ -8,11 +8,14 @@ import { SignInPrompt } from "@/components/sign-in-prompt";
 import { SeasonList, type SeasonLogSummary } from "@/components/season-list";
 import { ReviewList } from "@/components/review-list";
 import { WatchlistButton } from "@/components/watchlist-button";
+import { MediaCard } from "@/components/media-card";
 import { fetchReviews, fetchSeasonReviewsByNumber } from "@/lib/reviews";
+import { toMediaCardItem } from "@/lib/tmdb/to-media-card-item";
 import type { TmdbShowDetails } from "@/lib/tmdb/types";
 
 const TMDB_POSTER_BASE_URL = "https://image.tmdb.org/t/p/w500";
 const TMDB_PROFILE_BASE_URL = "https://image.tmdb.org/t/p/w185";
+const TMDB_BACKDROP_BASE_URL = "https://image.tmdb.org/t/p/w1280";
 
 type ShowPageProps = {
   params: Promise<{ id: string }>;
@@ -29,7 +32,7 @@ const ShowPage = async ({ params }: ShowPageProps) => {
   let show: TmdbShowDetails;
   try {
     show = await tmdbFetch<TmdbShowDetails>(`/tv/${showId}`, {
-      append_to_response: "credits",
+      append_to_response: "credits,recommendations",
     });
   } catch {
     notFound();
@@ -89,8 +92,24 @@ const ShowPage = async ({ params }: ShowPageProps) => {
         .maybeSingle()
     : { data: null };
 
+  const creators = show.created_by.map((creator) => creator.name).join(", ");
+  const similar = show.recommendations.results.slice(0, 12);
+
   return (
     <main className="mx-auto max-w-3xl px-4 py-6">
+      {show.backdrop_path && (
+        <div className="relative mb-6 h-40 w-full overflow-hidden rounded-md bg-surface sm:h-56 md:h-64">
+          <Image
+            src={`${TMDB_BACKDROP_BASE_URL}${show.backdrop_path}`}
+            alt=""
+            fill
+            sizes="(min-width: 768px) 768px, 100vw"
+            className="object-cover"
+            priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent" />
+        </div>
+      )}
       <div className="flex flex-col gap-4 sm:flex-row sm:gap-6">
         <div className="flex w-48 shrink-0 flex-col gap-4 self-center sm:sticky sm:top-20 sm:self-start">
           <div className="relative overflow-hidden rounded-md bg-surface">
@@ -158,7 +177,12 @@ const ShowPage = async ({ params }: ShowPageProps) => {
         </div>
         <div className="min-w-0 flex-1">
           <h1 className="text-2xl font-semibold">{show.name}</h1>
-          <p className="flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
+          {show.tagline && (
+            <p className="mt-1 text-sm text-muted-foreground italic">
+              {show.tagline}
+            </p>
+          )}
+          <p className="mt-2 flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
             <span>
               {show.first_air_date?.slice(0, 4)}
               {show.number_of_seasons
@@ -176,6 +200,11 @@ const ShowPage = async ({ params }: ShowPageProps) => {
               </span>
             )}
           </p>
+          {creators && (
+            <p className="mt-2 text-sm text-muted-foreground">
+              Created by <span className="text-foreground">{creators}</span>
+            </p>
+          )}
           <p className="mt-3">{show.overview}</p>
 
           {cast.length > 0 && (
@@ -223,6 +252,19 @@ const ShowPage = async ({ params }: ShowPageProps) => {
             <h2 className="text-lg font-semibold">Reviews</h2>
             <ReviewList reviews={showReviews} viewerId={user?.id ?? null} />
           </section>
+
+          {similar.length > 0 && (
+            <section className="mt-6">
+              <h2 className="text-lg font-semibold">More Like This</h2>
+              <div className="mt-2 flex gap-3 overflow-x-auto pb-1">
+                {similar.map((item) => (
+                  <div key={item.id} className="w-28 shrink-0 sm:w-32">
+                    <MediaCard {...toMediaCardItem(item, "tv")} />
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
         </div>
       </div>
     </main>

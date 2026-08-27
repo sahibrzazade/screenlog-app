@@ -27,15 +27,24 @@ export type TmdbCastMember = {
   order: number;
 };
 
+export type TmdbCrewMember = {
+  id: number;
+  name: string;
+  job: string;
+};
+
 export type TmdbMovieDetails = {
   id: number;
   title: string;
+  tagline: string;
   overview: string;
   poster_path: string | null;
+  backdrop_path: string | null;
   release_date: string;
   runtime: number | null;
   genres: { id: number; name: string }[];
-  credits: { cast: TmdbCastMember[] };
+  credits: { cast: TmdbCastMember[]; crew: TmdbCrewMember[] };
+  recommendations: { results: TmdbSearchResult[] };
   vote_average: number;
   vote_count: number;
 };
@@ -52,13 +61,17 @@ export type TmdbSeasonSummary = {
 export type TmdbShowDetails = {
   id: number;
   name: string;
+  tagline: string;
   overview: string;
   poster_path: string | null;
+  backdrop_path: string | null;
   first_air_date: string;
   number_of_seasons: number;
   seasons: TmdbSeasonSummary[];
   genres: { id: number; name: string }[];
+  created_by: { id: number; name: string }[];
   credits: { cast: TmdbCastMember[] };
+  recommendations: { results: TmdbSearchResult[] };
   vote_average: number;
   vote_count: number;
 };
