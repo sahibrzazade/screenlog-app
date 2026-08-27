@@ -67,7 +67,7 @@ const MoviePage = async ({ params }: MoviePageProps) => {
   return (
     <main className="mx-auto max-w-3xl px-4 py-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:gap-6">
-        <div className="flex w-48 shrink-0 flex-col gap-4">
+        <div className="flex w-48 shrink-0 flex-col gap-4 self-center sm:sticky sm:top-20 sm:self-start">
           <div className="relative overflow-hidden rounded-md bg-surface">
             {movie.poster_path ? (
               <Image
@@ -114,7 +114,7 @@ const MoviePage = async ({ params }: MoviePageProps) => {
             <SignInPrompt />
           )}
         </div>
-        <div>
+        <div className="min-w-0 flex-1">
           <h1 className="text-2xl font-semibold">{movie.title}</h1>
           <p className="flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
             <span>
@@ -133,40 +133,40 @@ const MoviePage = async ({ params }: MoviePageProps) => {
             )}
           </p>
           <p className="mt-3">{movie.overview}</p>
+
+          {cast.length > 0 && (
+            <section className="mt-6">
+              <h2 className="text-lg font-semibold">Cast</h2>
+              <ul className="mt-2 flex flex-wrap gap-4">
+                {cast.map((member) => (
+                  <li key={member.id} className="w-20 text-center text-xs">
+                    <div className="aspect-[2/3] w-20 overflow-hidden rounded bg-surface">
+                      {member.profile_path && (
+                        <Image
+                          src={`${TMDB_PROFILE_BASE_URL}${member.profile_path}`}
+                          alt={member.name}
+                          width={92}
+                          height={138}
+                          className="h-full w-full object-cover"
+                        />
+                      )}
+                    </div>
+                    <p className="mt-1 font-medium">{member.name}</p>
+                    <p className="text-muted-foreground">
+                      {member.character}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          <section className="mt-6">
+            <h2 className="text-lg font-semibold">Reviews</h2>
+            <ReviewList reviews={reviews} viewerId={user?.id ?? null} />
+          </section>
         </div>
       </div>
-
-      {cast.length > 0 && (
-        <section className="mt-6">
-          <h2 className="text-lg font-semibold">Cast</h2>
-          <ul className="mt-2 flex flex-wrap gap-4">
-            {cast.map((member) => (
-              <li key={member.id} className="w-20 text-center text-xs">
-                <div className="aspect-[2/3] w-20 overflow-hidden rounded bg-surface">
-                  {member.profile_path && (
-                    <Image
-                      src={`${TMDB_PROFILE_BASE_URL}${member.profile_path}`}
-                      alt={member.name}
-                      width={92}
-                      height={138}
-                      className="h-full w-full object-cover"
-                    />
-                  )}
-                </div>
-                <p className="mt-1 font-medium">{member.name}</p>
-                <p className="text-muted-foreground">
-                  {member.character}
-                </p>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      <section className="mt-6">
-        <h2 className="text-lg font-semibold">Reviews</h2>
-        <ReviewList reviews={reviews} viewerId={user?.id ?? null} />
-      </section>
     </main>
   );
 };
