@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { Star, Users } from "lucide-react";
 import { notFound } from "next/navigation";
 import { tmdbFetch } from "@/lib/tmdb/client";
 import { createClient } from "@/lib/supabase/server";
@@ -115,9 +116,21 @@ const MoviePage = async ({ params }: MoviePageProps) => {
         </div>
         <div>
           <h1 className="text-2xl font-semibold">{movie.title}</h1>
-          <p className="text-sm text-muted-foreground">
-            {movie.release_date?.slice(0, 4)}
-            {movie.runtime ? ` · ${movie.runtime} min` : ""}
+          <p className="flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
+            <span>
+              {movie.release_date?.slice(0, 4)}
+              {movie.runtime ? ` · ${movie.runtime} min` : ""}
+            </span>
+            {movie.vote_count > 0 && (
+              <span className="flex items-center gap-1">
+                <Star className="size-3.5 fill-accent text-accent" />
+                {movie.vote_average.toFixed(1)}
+                <span className="flex items-center gap-0.5 text-subtle-foreground">
+                  <Users className="size-3.5" />
+                  {movie.vote_count.toLocaleString()}
+                </span>
+              </span>
+            )}
           </p>
           <p className="mt-3">{movie.overview}</p>
         </div>

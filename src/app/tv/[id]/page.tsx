@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { Star, Users } from "lucide-react";
 import { notFound } from "next/navigation";
 import { tmdbFetch } from "@/lib/tmdb/client";
 import { createClient } from "@/lib/supabase/server";
@@ -140,11 +141,23 @@ const ShowPage = async ({ params }: ShowPageProps) => {
         </div>
         <div>
           <h1 className="text-2xl font-semibold">{show.name}</h1>
-          <p className="text-sm text-muted-foreground">
-            {show.first_air_date?.slice(0, 4)}
-            {show.number_of_seasons
-              ? ` · ${show.number_of_seasons} season${show.number_of_seasons === 1 ? "" : "s"}`
-              : ""}
+          <p className="flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
+            <span>
+              {show.first_air_date?.slice(0, 4)}
+              {show.number_of_seasons
+                ? ` · ${show.number_of_seasons} season${show.number_of_seasons === 1 ? "" : "s"}`
+                : ""}
+            </span>
+            {show.vote_count > 0 && (
+              <span className="flex items-center gap-1">
+                <Star className="size-3.5 fill-accent text-accent" />
+                {show.vote_average.toFixed(1)}
+                <span className="flex items-center gap-0.5 text-subtle-foreground">
+                  <Users className="size-3.5" />
+                  {show.vote_count.toLocaleString()}
+                </span>
+              </span>
+            )}
           </p>
           <p className="mt-3">{show.overview}</p>
         </div>
