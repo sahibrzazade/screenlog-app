@@ -1,15 +1,53 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import {
+  clearLogField,
+  deleteLog,
+  parseSeasonNumber,
+  parseTmdbId,
+  saveLog,
+  saveRating,
+  toggleWatched,
+  type LogTarget,
+  type MutationState,
+  type RatingState,
+  type WatchedState,
+} from "@/lib/logs/mutations";
 import { showLogSchema } from "@/lib/validation/show-log";
 import { seasonLogSchema } from "@/lib/validation/season-log";
 import { ratingSchema } from "@/lib/validation/rating";
 
-export type LogShowFormState = { error: string } | { success: true } | undefined;
+export type LogShowFormState = MutationState;
+export type SetShowRatingState = RatingState;
+export type ToggleShowWatchedState = WatchedState;
+export type ClearShowLogFieldState = MutationState;
+export type DeleteShowLogFormState = MutationState;
+
+export type LogSeasonFormState = MutationState;
+export type SetSeasonRatingState = RatingState;
+export type ClearSeasonLogFieldState = MutationState;
+export type DeleteSeasonLogFormState = MutationState;
+
+const showTarget = (tmdbShowId: number): LogTarget => ({
+  table: "show_logs",
+  match: { tmdb_show_id: tmdbShowId },
+  onConflict: "tmdb_show_id",
+  revalidate: `/tv/${tmdbShowId}`,
+  entity: "show",
+});
+
+const seasonTarget = (tmdbShowId: number, seasonNumber: number): LogTarget => ({
+  table: "season_logs",
+  match: { tmdb_show_id: tmdbShowId, season_number: seasonNumber },
+  onConflict: "tmdb_show_id,season_number",
+  revalidate: `/tv/${tmdbShowId}`,
+  entity: "season",
+});
+
+/* --------------------------------- shows ---------------------------------- */
 
 // Saves the review + watched date only. Rating is set separately (see
-// setShowRating below) so that clicking a star saves immediately without
+// setShowRating) so that clicking a star saves immediately without
 // requiring this form to be submitted.
 export const logShow = async (
   _prevState: LogShowFormState,
@@ -25,229 +63,70 @@ export const logShow = async (
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { error: "You must be logged in to log a show." };
-  }
-
-  const { error } = await supabase.from("show_logs").upsert(
-    {
-      user_id: user.id,
-      tmdb_show_id: parsed.data.tmdbShowId,
-      review: parsed.data.review ?? null,
-      watched_date: parsed.data.watchedDate,
-    },
-    { onConflict: "user_id,tmdb_show_id" },
+  return saveLog(
+    showTarget(parsed.data.tmdbShowId),
+    parsed.data.review ?? null,
+    parsed.data.watchedDate,
   );
-
-  if (error) {
-    return { error: "Failed to save your log. Please try again." };
-  }
-
-  revalidatePath(`/tv/${parsed.data.tmdbShowId}`);
-  return { success: true };
 };
 
-export type SetShowRatingState = { rating: number | null; error?: string };
-
-// Upserts only the rating column, so any existing review/watched date is
-// left untouched. Also implicitly marks the show as watched, since a row
-// existing in show_logs is what "watched" means.
 export const setShowRating = async (
   prevState: SetShowRatingState,
   formData: FormData,
 ): Promise<SetShowRatingState> => {
-  const tmdbShowId = Number(formData.get("tmdbShowId"));
-  const parsedRating = ratingSchema.safeParse(formData.get("rating"));
-
-  if (!Number.isInteger(tmdbShowId) || tmdbShowId <= 0) {
+  const tmdbShowId = parseTmdbId(formData.get("tmdbShowId"));
+  if (tmdbShowId === null) {
     return { rating: prevState.rating, error: "Invalid show." };
   }
+
+  const parsedRating = ratingSchema.safeParse(formData.get("rating"));
   if (!parsedRating.success) {
     return { rating: prevState.rating, error: "Invalid rating." };
   }
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { rating: prevState.rating, error: "You must be logged in to do this." };
-  }
-
-  const { error } = await supabase.from("show_logs").upsert(
-    {
-      user_id: user.id,
-      tmdb_show_id: tmdbShowId,
-      rating: parsedRating.data,
-    },
-    { onConflict: "user_id,tmdb_show_id" },
-  );
-
-  if (error) {
-    return { rating: prevState.rating, error: "Failed to save your rating. Please try again." };
-  }
-
-  revalidatePath(`/tv/${tmdbShowId}`);
-  return { rating: parsedRating.data };
+  return saveRating(showTarget(tmdbShowId), parsedRating.data, prevState.rating);
 };
 
-export type ToggleShowWatchedState = { isWatched: boolean; error?: string };
-
 export const toggleShowWatched = async (
-  prevState: ToggleShowWatchedState,
+  _prevState: ToggleShowWatchedState,
   formData: FormData,
 ): Promise<ToggleShowWatchedState> => {
-  const tmdbShowId = Number(formData.get("tmdbShowId"));
   const currentlyWatched = formData.get("isWatched") === "true";
-
-  if (!Number.isInteger(tmdbShowId) || tmdbShowId <= 0) {
+  const tmdbShowId = parseTmdbId(formData.get("tmdbShowId"));
+  if (tmdbShowId === null) {
     return { isWatched: currentlyWatched, error: "Invalid show." };
   }
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { isWatched: currentlyWatched, error: "You must be logged in to do this." };
-  }
-
-  if (!currentlyWatched) {
-    const { error } = await supabase.from("show_logs").insert({
-      user_id: user.id,
-      tmdb_show_id: tmdbShowId,
-      rating: null,
-      review: null,
-      watched_date: new Date().toISOString().slice(0, 10),
-    });
-
-    // A unique violation just means this show is already logged — treat it as
-    // success rather than overwriting an existing rating/review with an upsert.
-    if (error && error.code !== "23505") {
-      return { isWatched: false, error: "Failed to mark this show as watched. Please try again." };
-    }
-
-    revalidatePath(`/tv/${tmdbShowId}`);
-    return { isWatched: true };
-  }
-
-  const { data: existingLog } = await supabase
-    .from("show_logs")
-    .select("rating, review")
-    .eq("user_id", user.id)
-    .eq("tmdb_show_id", tmdbShowId)
-    .maybeSingle();
-
-  if (!existingLog) {
-    return { isWatched: false };
-  }
-
-  if (existingLog.rating !== null || existingLog.review !== null) {
-    return {
-      isWatched: true,
-      error: "This log has a rating or review — delete it from Your log below instead.",
-    };
-  }
-
-  const { error: deleteError } = await supabase
-    .from("show_logs")
-    .delete()
-    .eq("user_id", user.id)
-    .eq("tmdb_show_id", tmdbShowId);
-
-  if (deleteError) {
-    return { isWatched: true, error: "Failed to update. Please try again." };
-  }
-
-  revalidatePath(`/tv/${tmdbShowId}`);
-  return { isWatched: false };
+  return toggleWatched(showTarget(tmdbShowId), currentlyWatched);
 };
-
-export type ClearShowLogFieldState = { error: string } | { success: true } | undefined;
 
 export const clearShowLogField = async (
   _prevState: ClearShowLogFieldState,
   formData: FormData,
 ): Promise<ClearShowLogFieldState> => {
-  const tmdbShowId = Number(formData.get("tmdbShowId"));
+  const tmdbShowId = parseTmdbId(formData.get("tmdbShowId"));
+  if (tmdbShowId === null) return { error: "Invalid show." };
+
   const field = formData.get("field");
+  if (field !== "rating" && field !== "review") return { error: "Invalid field." };
 
-  if (!Number.isInteger(tmdbShowId) || tmdbShowId <= 0) {
-    return { error: "Invalid show." };
-  }
-  if (field !== "rating" && field !== "review") {
-    return { error: "Invalid field." };
-  }
-
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { error: "You must be logged in to do this." };
-  }
-
-  const { error } = await supabase
-    .from("show_logs")
-    .update({ [field]: null })
-    .eq("user_id", user.id)
-    .eq("tmdb_show_id", tmdbShowId);
-
-  if (error) {
-    return { error: "Failed to update. Please try again." };
-  }
-
-  revalidatePath(`/tv/${tmdbShowId}`);
-  return { success: true };
+  return clearLogField(showTarget(tmdbShowId), field);
 };
-
-export type DeleteShowLogFormState = { error: string } | { success: true } | undefined;
 
 export const deleteShowLog = async (
   _prevState: DeleteShowLogFormState,
   formData: FormData,
 ): Promise<DeleteShowLogFormState> => {
-  const tmdbShowId = Number(formData.get("tmdbShowId"));
+  const tmdbShowId = parseTmdbId(formData.get("tmdbShowId"));
+  if (tmdbShowId === null) return { error: "Invalid show." };
 
-  if (!Number.isInteger(tmdbShowId) || tmdbShowId <= 0) {
-    return { error: "Invalid show." };
-  }
-
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { error: "You must be logged in to delete a log." };
-  }
-
-  const { error } = await supabase
-    .from("show_logs")
-    .delete()
-    .eq("user_id", user.id)
-    .eq("tmdb_show_id", tmdbShowId);
-
-  if (error) {
-    return { error: "Failed to delete your log. Please try again." };
-  }
-
-  revalidatePath(`/tv/${tmdbShowId}`);
-  return { success: true };
+  return deleteLog(showTarget(tmdbShowId));
 };
 
-export type LogSeasonFormState = { error: string } | { success: true } | undefined;
+/* -------------------------------- seasons -------------------------------- */
 
 // Saves the review + watched date only. Rating is set separately (see
-// setSeasonRating below) so that clicking a star saves immediately without
+// setSeasonRating) so that clicking a star saves immediately without
 // requiring this form to be submitted.
 export const logSeason = async (
   _prevState: LogSeasonFormState,
@@ -264,164 +143,64 @@ export const logSeason = async (
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { error: "You must be logged in to log a season." };
-  }
-
-  const { error } = await supabase.from("season_logs").upsert(
-    {
-      user_id: user.id,
-      tmdb_show_id: parsed.data.tmdbShowId,
-      season_number: parsed.data.seasonNumber,
-      review: parsed.data.review ?? null,
-      watched_date: parsed.data.watchedDate,
-    },
-    { onConflict: "user_id,tmdb_show_id,season_number" },
+  return saveLog(
+    seasonTarget(parsed.data.tmdbShowId, parsed.data.seasonNumber),
+    parsed.data.review ?? null,
+    parsed.data.watchedDate,
   );
-
-  if (error) {
-    return { error: "Failed to save your log. Please try again." };
-  }
-
-  revalidatePath(`/tv/${parsed.data.tmdbShowId}`);
-  return { success: true };
 };
 
-export type SetSeasonRatingState = { rating: number | null; error?: string };
-
-// Upserts only the rating column, so any existing review/watched date is
-// left untouched. Also implicitly marks the season as watched, since a row
-// existing in season_logs is what "watched" means.
 export const setSeasonRating = async (
   prevState: SetSeasonRatingState,
   formData: FormData,
 ): Promise<SetSeasonRatingState> => {
-  const tmdbShowId = Number(formData.get("tmdbShowId"));
-  const seasonNumber = Number(formData.get("seasonNumber"));
-  const parsedRating = ratingSchema.safeParse(formData.get("rating"));
-
-  if (!Number.isInteger(tmdbShowId) || tmdbShowId <= 0) {
+  const tmdbShowId = parseTmdbId(formData.get("tmdbShowId"));
+  if (tmdbShowId === null) {
     return { rating: prevState.rating, error: "Invalid show." };
   }
-  if (!Number.isInteger(seasonNumber) || seasonNumber < 0) {
+
+  const seasonNumber = parseSeasonNumber(formData.get("seasonNumber"));
+  if (seasonNumber === null) {
     return { rating: prevState.rating, error: "Invalid season." };
   }
+
+  const parsedRating = ratingSchema.safeParse(formData.get("rating"));
   if (!parsedRating.success) {
     return { rating: prevState.rating, error: "Invalid rating." };
   }
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { rating: prevState.rating, error: "You must be logged in to do this." };
-  }
-
-  const { error } = await supabase.from("season_logs").upsert(
-    {
-      user_id: user.id,
-      tmdb_show_id: tmdbShowId,
-      season_number: seasonNumber,
-      rating: parsedRating.data,
-    },
-    { onConflict: "user_id,tmdb_show_id,season_number" },
+  return saveRating(
+    seasonTarget(tmdbShowId, seasonNumber),
+    parsedRating.data,
+    prevState.rating,
   );
-
-  if (error) {
-    return { rating: prevState.rating, error: "Failed to save your rating. Please try again." };
-  }
-
-  revalidatePath(`/tv/${tmdbShowId}`);
-  return { rating: parsedRating.data };
 };
-
-export type ClearSeasonLogFieldState = { error: string } | { success: true } | undefined;
 
 export const clearSeasonLogField = async (
   _prevState: ClearSeasonLogFieldState,
   formData: FormData,
 ): Promise<ClearSeasonLogFieldState> => {
-  const tmdbShowId = Number(formData.get("tmdbShowId"));
-  const seasonNumber = Number(formData.get("seasonNumber"));
+  const tmdbShowId = parseTmdbId(formData.get("tmdbShowId"));
+  if (tmdbShowId === null) return { error: "Invalid show." };
+
+  const seasonNumber = parseSeasonNumber(formData.get("seasonNumber"));
+  if (seasonNumber === null) return { error: "Invalid season." };
+
   const field = formData.get("field");
+  if (field !== "rating" && field !== "review") return { error: "Invalid field." };
 
-  if (!Number.isInteger(tmdbShowId) || tmdbShowId <= 0) {
-    return { error: "Invalid show." };
-  }
-  if (!Number.isInteger(seasonNumber) || seasonNumber < 0) {
-    return { error: "Invalid season." };
-  }
-  if (field !== "rating" && field !== "review") {
-    return { error: "Invalid field." };
-  }
-
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { error: "You must be logged in to do this." };
-  }
-
-  const { error } = await supabase
-    .from("season_logs")
-    .update({ [field]: null })
-    .eq("user_id", user.id)
-    .eq("tmdb_show_id", tmdbShowId)
-    .eq("season_number", seasonNumber);
-
-  if (error) {
-    return { error: "Failed to update. Please try again." };
-  }
-
-  revalidatePath(`/tv/${tmdbShowId}`);
-  return { success: true };
+  return clearLogField(seasonTarget(tmdbShowId, seasonNumber), field);
 };
-
-export type DeleteSeasonLogFormState = { error: string } | { success: true } | undefined;
 
 export const deleteSeasonLog = async (
   _prevState: DeleteSeasonLogFormState,
   formData: FormData,
 ): Promise<DeleteSeasonLogFormState> => {
-  const tmdbShowId = Number(formData.get("tmdbShowId"));
-  const seasonNumber = Number(formData.get("seasonNumber"));
+  const tmdbShowId = parseTmdbId(formData.get("tmdbShowId"));
+  if (tmdbShowId === null) return { error: "Invalid show." };
 
-  if (!Number.isInteger(tmdbShowId) || tmdbShowId <= 0) {
-    return { error: "Invalid show." };
-  }
-  if (!Number.isInteger(seasonNumber) || seasonNumber < 0) {
-    return { error: "Invalid season." };
-  }
+  const seasonNumber = parseSeasonNumber(formData.get("seasonNumber"));
+  if (seasonNumber === null) return { error: "Invalid season." };
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { error: "You must be logged in to delete a log." };
-  }
-
-  const { error } = await supabase
-    .from("season_logs")
-    .delete()
-    .eq("user_id", user.id)
-    .eq("tmdb_show_id", tmdbShowId)
-    .eq("season_number", seasonNumber);
-
-  if (error) {
-    return { error: "Failed to delete your log. Please try again." };
-  }
-
-  revalidatePath(`/tv/${tmdbShowId}`);
-  return { success: true };
+  return deleteLog(seasonTarget(tmdbShowId, seasonNumber));
 };
