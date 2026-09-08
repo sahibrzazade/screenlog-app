@@ -11,6 +11,7 @@ import { CastList } from "@/components/detail/cast-list";
 import { MoreLikeThis } from "@/components/detail/more-like-this";
 import { TmdbRating } from "@/components/detail/tmdb-rating";
 import { fetchReviews } from "@/lib/reviews";
+import { fetchOwnLog, isOnWatchlist } from "@/lib/logs/queries";
 import { backdropUrl, posterUrl } from "@/lib/tmdb/images";
 import type { TmdbMovieDetails } from "@/lib/tmdb/types";
 
@@ -40,28 +41,19 @@ const MoviePage = async ({ params }: MoviePageProps) => {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: existingLog } = user
-    ? await supabase
-        .from("movie_logs")
-        .select("rating, review, watched_date")
-        .eq("user_id", user.id)
-        .eq("tmdb_movie_id", movieId)
-        .maybeSingle()
-    : { data: null };
+  const existingLog = await fetchOwnLog(
+    supabase,
+    user,
+    "movie_logs",
+    "tmdb_movie_id",
+    movieId,
+  );
 
   const reviews = await fetchReviews(supabase, "movie_logs", {
     tmdb_movie_id: movieId,
   });
 
-  const { data: watchlistEntry } = user
-    ? await supabase
-        .from("watchlist")
-        .select("id")
-        .eq("user_id", user.id)
-        .eq("tmdb_id", movieId)
-        .eq("media_type", "movie")
-        .maybeSingle()
-    : { data: null };
+  const inWatchlist = await isOnWatchlist(supabase, user, movieId, "movie");
 
   const cast = movie.credits.cast.slice(0, 10);
   const directors = movie.credits.crew
@@ -81,11 +73,7 @@ const MoviePage = async ({ params }: MoviePageProps) => {
             alt={movie.title}
             watchlist={
               user
-                ? {
-                    tmdbId: movieId,
-                    mediaType: "movie",
-                    inWatchlist: watchlistEntry !== null,
-                  }
+                ? { tmdbId: movieId, mediaType: "movie", inWatchlist }
                 : undefined
             }
           />
@@ -94,16 +82,7 @@ const MoviePage = async ({ params }: MoviePageProps) => {
               tmdbMovieId={movieId}
               title={movie.title}
               posterUrl={poster}
-              initialLog={
-                existingLog
-                  ? {
-                      rating:
-                        existingLog.rating === null ? null : Number(existingLog.rating),
-                      review: existingLog.review,
-                      watchedDate: existingLog.watched_date,
-                    }
-                  : null
-              }
+              initialLog={existingLog}
             />
           ) : (
             <SignInPrompt />

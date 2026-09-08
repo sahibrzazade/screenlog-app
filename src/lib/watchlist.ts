@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { tmdbFetch } from "@/lib/tmdb/client";
+import { toMediaCardItem } from "@/lib/tmdb/to-media-card-item";
 import type { MediaCardItem } from "@/components/media-card";
 import type { TmdbMovieDetails, TmdbShowDetails } from "@/lib/tmdb/types";
 
@@ -8,25 +9,11 @@ const toWatchlistItem = async (
   mediaType: "movie" | "tv",
 ): Promise<MediaCardItem | null> => {
   try {
-    if (mediaType === "movie") {
-      const movie = await tmdbFetch<TmdbMovieDetails>(`/movie/${tmdbId}`);
-      return {
-        id: tmdbId,
-        mediaType,
-        title: movie.title,
-        year: movie.release_date?.slice(0, 4) || null,
-        posterPath: movie.poster_path,
-      };
-    }
-
-    const show = await tmdbFetch<TmdbShowDetails>(`/tv/${tmdbId}`);
-    return {
-      id: tmdbId,
-      mediaType,
-      title: show.name,
-      year: show.first_air_date?.slice(0, 4) || null,
-      posterPath: show.poster_path,
-    };
+    const details =
+      mediaType === "movie"
+        ? await tmdbFetch<TmdbMovieDetails>(`/movie/${tmdbId}`)
+        : await tmdbFetch<TmdbShowDetails>(`/tv/${tmdbId}`);
+    return toMediaCardItem(details, mediaType);
   } catch {
     return null;
   }

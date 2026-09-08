@@ -12,6 +12,7 @@ import { CastList } from "@/components/detail/cast-list";
 import { MoreLikeThis } from "@/components/detail/more-like-this";
 import { TmdbRating } from "@/components/detail/tmdb-rating";
 import { fetchReviews, fetchSeasonReviewsByNumber } from "@/lib/reviews";
+import { fetchOwnLog, isOnWatchlist } from "@/lib/logs/queries";
 import { backdropUrl, posterUrl } from "@/lib/tmdb/images";
 import type { TmdbShowDetails } from "@/lib/tmdb/types";
 
@@ -41,14 +42,13 @@ const ShowPage = async ({ params }: ShowPageProps) => {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: existingLog } = user
-    ? await supabase
-        .from("show_logs")
-        .select("rating, review, watched_date")
-        .eq("user_id", user.id)
-        .eq("tmdb_show_id", showId)
-        .maybeSingle()
-    : { data: null };
+  const existingLog = await fetchOwnLog(
+    supabase,
+    user,
+    "show_logs",
+    "tmdb_show_id",
+    showId,
+  );
 
   const cast = show.credits.cast.slice(0, 10);
 
@@ -80,15 +80,7 @@ const ShowPage = async ({ params }: ShowPageProps) => {
     showId,
   );
 
-  const { data: watchlistEntry } = user
-    ? await supabase
-        .from("watchlist")
-        .select("id")
-        .eq("user_id", user.id)
-        .eq("tmdb_id", showId)
-        .eq("media_type", "tv")
-        .maybeSingle()
-    : { data: null };
+  const inWatchlist = await isOnWatchlist(supabase, user, showId, "tv");
 
   const creators = show.created_by.map((creator) => creator.name).join(", ");
   const similar = show.recommendations.results.slice(0, 12);
@@ -103,13 +95,7 @@ const ShowPage = async ({ params }: ShowPageProps) => {
             url={poster}
             alt={show.name}
             watchlist={
-              user
-                ? {
-                    tmdbId: showId,
-                    mediaType: "tv",
-                    inWatchlist: watchlistEntry !== null,
-                  }
-                : undefined
+              user ? { tmdbId: showId, mediaType: "tv", inWatchlist } : undefined
             }
           />
           {user ? (
@@ -117,16 +103,7 @@ const ShowPage = async ({ params }: ShowPageProps) => {
               tmdbShowId={showId}
               title={show.name}
               posterUrl={poster}
-              initialLog={
-                existingLog
-                  ? {
-                      rating:
-                        existingLog.rating === null ? null : Number(existingLog.rating),
-                      review: existingLog.review,
-                      watchedDate: existingLog.watched_date,
-                    }
-                  : null
-              }
+              initialLog={existingLog}
             />
           ) : (
             <SignInPrompt />
