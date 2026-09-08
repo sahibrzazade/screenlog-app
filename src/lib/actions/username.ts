@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { getUserContext } from "@/lib/supabase/auth";
 import { usernameSchema } from "@/lib/validation/username";
 
 export type UpdateUsernameState = { error?: string; success?: boolean };
@@ -20,10 +20,7 @@ export const updateUsername = async (
     return { error: parsed.error.issues[0].message };
   }
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getUserContext();
 
   if (!user) {
     return { error: "You must be logged in to set a username." };
