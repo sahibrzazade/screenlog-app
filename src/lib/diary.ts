@@ -32,39 +32,42 @@ type ShowTitle = {
   seasonNames: Map<number, string>;
 };
 
-const fetchMovieTitles = async (ids: number[]): Promise<Map<number, MovieTitle>> => {
-  const titles = new Map<number, MovieTitle>();
+/**
+ * Resolves each id concurrently, dropping any that fail (a stale tmdb id, a
+ * network blip) rather than failing the whole diary.
+ */
+const resolveByIds = async <T>(
+  ids: number[],
+  resolve: (id: number) => Promise<T>,
+): Promise<Map<number, T>> => {
+  const resolved = new Map<number, T>();
   await Promise.all(
     ids.map(async (id) => {
       try {
-        const movie = await tmdbFetch<TmdbMovieDetails>(`/movie/${id}`);
-        titles.set(id, { title: movie.title, posterPath: movie.poster_path });
+        resolved.set(id, await resolve(id));
       } catch {
-        // skip titles we can't resolve
+        // skip ids we can't resolve
       }
     }),
   );
-  return titles;
+  return resolved;
 };
 
-const fetchShowTitles = async (ids: number[]): Promise<Map<number, ShowTitle>> => {
-  const titles = new Map<number, ShowTitle>();
-  await Promise.all(
-    ids.map(async (id) => {
-      try {
-        const show = await tmdbFetch<TmdbShowDetails>(`/tv/${id}`);
-        titles.set(id, {
-          title: show.name,
-          posterPath: show.poster_path,
-          seasonNames: new Map(show.seasons.map((s) => [s.season_number, s.name])),
-        });
-      } catch {
-        // skip titles we can't resolve
-      }
-    }),
-  );
-  return titles;
-};
+const fetchMovieTitles = (ids: number[]): Promise<Map<number, MovieTitle>> =>
+  resolveByIds(ids, async (id) => {
+    const movie = await tmdbFetch<TmdbMovieDetails>(`/movie/${id}`);
+    return { title: movie.title, posterPath: movie.poster_path };
+  });
+
+const fetchShowTitles = (ids: number[]): Promise<Map<number, ShowTitle>> =>
+  resolveByIds(ids, async (id) => {
+    const show = await tmdbFetch<TmdbShowDetails>(`/tv/${id}`);
+    return {
+      title: show.name,
+      posterPath: show.poster_path,
+      seasonNames: new Map(show.seasons.map((s) => [s.season_number, s.name])),
+    };
+  });
 
 export const getDiaryData = async (
   supabase: SupabaseClient,

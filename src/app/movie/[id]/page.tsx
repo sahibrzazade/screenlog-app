@@ -1,20 +1,19 @@
-import Image from "next/image";
-import { Star, Users } from "lucide-react";
 import { notFound } from "next/navigation";
 import { tmdbFetch } from "@/lib/tmdb/client";
 import { createClient } from "@/lib/supabase/server";
 import { LogMovieForm } from "@/components/log-movie-form";
 import { SignInPrompt } from "@/components/sign-in-prompt";
 import { ReviewList } from "@/components/review-list";
-import { WatchlistButton } from "@/components/watchlist-button";
-import { MediaCard } from "@/components/media-card";
+import { DetailBackdrop } from "@/components/detail/detail-backdrop";
+import { DetailPoster } from "@/components/detail/detail-poster";
+import { GenreBadges } from "@/components/detail/genre-badges";
+import { CastList } from "@/components/detail/cast-list";
+import { MoreLikeThis } from "@/components/detail/more-like-this";
+import { TmdbRating } from "@/components/detail/tmdb-rating";
 import { fetchReviews } from "@/lib/reviews";
-import { toMediaCardItem } from "@/lib/tmdb/to-media-card-item";
+import { fetchOwnLog, isOnWatchlist } from "@/lib/logs/queries";
+import { backdropUrl, posterUrl } from "@/lib/tmdb/images";
 import type { TmdbMovieDetails } from "@/lib/tmdb/types";
-
-const TMDB_POSTER_BASE_URL = "https://image.tmdb.org/t/p/w500";
-const TMDB_PROFILE_BASE_URL = "https://image.tmdb.org/t/p/w185";
-const TMDB_BACKDROP_BASE_URL = "https://image.tmdb.org/t/p/w1280";
 
 type MoviePageProps = {
   params: Promise<{ id: string }>;
@@ -42,28 +41,19 @@ const MoviePage = async ({ params }: MoviePageProps) => {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: existingLog } = user
-    ? await supabase
-        .from("movie_logs")
-        .select("rating, review, watched_date")
-        .eq("user_id", user.id)
-        .eq("tmdb_movie_id", movieId)
-        .maybeSingle()
-    : { data: null };
+  const existingLog = await fetchOwnLog(
+    supabase,
+    user,
+    "movie_logs",
+    "tmdb_movie_id",
+    movieId,
+  );
 
   const reviews = await fetchReviews(supabase, "movie_logs", {
     tmdb_movie_id: movieId,
   });
 
-  const { data: watchlistEntry } = user
-    ? await supabase
-        .from("watchlist")
-        .select("id")
-        .eq("user_id", user.id)
-        .eq("tmdb_id", movieId)
-        .eq("media_type", "movie")
-        .maybeSingle()
-    : { data: null };
+  const inWatchlist = await isOnWatchlist(supabase, user, movieId, "movie");
 
   const cast = movie.credits.cast.slice(0, 10);
   const directors = movie.credits.crew
@@ -71,86 +61,33 @@ const MoviePage = async ({ params }: MoviePageProps) => {
     .map((member) => member.name)
     .join(", ");
   const similar = movie.recommendations.results.slice(0, 12);
+  const poster = posterUrl(movie.poster_path);
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-6">
-      {movie.backdrop_path && (
-        <div className="relative mb-6 h-40 w-full overflow-hidden rounded-md bg-surface sm:h-56 md:h-64">
-          <Image
-            src={`${TMDB_BACKDROP_BASE_URL}${movie.backdrop_path}`}
-            alt=""
-            fill
-            sizes="(min-width: 768px) 768px, 100vw"
-            className="object-cover"
-            priority
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent" />
-        </div>
-      )}
+      <DetailBackdrop url={backdropUrl(movie.backdrop_path)} />
       <div className="flex flex-col gap-4 sm:flex-row sm:gap-6">
         <div className="flex w-48 shrink-0 flex-col gap-4 self-center sm:sticky sm:top-20 sm:self-start">
-          <div className="relative overflow-hidden rounded-md bg-surface">
-            {movie.poster_path ? (
-              <Image
-                src={`${TMDB_POSTER_BASE_URL}${movie.poster_path}`}
-                alt={movie.title}
-                width={185}
-                height={278}
-                className="h-auto w-full"
-              />
-            ) : (
-              <div className="flex aspect-[2/3] items-center justify-center text-center text-xs text-subtle-foreground">
-                No poster
-              </div>
-            )}
-            {user && (
-              <div className="absolute top-2 right-2">
-                <WatchlistButton
-                  tmdbId={movieId}
-                  mediaType="movie"
-                  initialInWatchlist={watchlistEntry !== null}
-                />
-              </div>
-            )}
-          </div>
+          <DetailPoster
+            url={poster}
+            alt={movie.title}
+            watchlist={
+              user
+                ? { tmdbId: movieId, mediaType: "movie", inWatchlist }
+                : undefined
+            }
+          />
           {user ? (
             <LogMovieForm
               tmdbMovieId={movieId}
               title={movie.title}
-              posterUrl={
-                movie.poster_path ? `${TMDB_POSTER_BASE_URL}${movie.poster_path}` : null
-              }
-              initialLog={
-                existingLog
-                  ? {
-                      rating:
-                        existingLog.rating === null ? null : Number(existingLog.rating),
-                      review: existingLog.review,
-                      watchedDate: existingLog.watched_date,
-                    }
-                  : null
-              }
+              posterUrl={poster}
+              initialLog={existingLog}
             />
           ) : (
             <SignInPrompt />
           )}
-          {movie.genres.length > 0 && (
-            <div className="rounded-md border border-border bg-surface p-3">
-              <span className="mb-1.5 block text-xs font-medium text-muted-foreground">
-                Genres
-              </span>
-              <div className="flex flex-wrap gap-1.5">
-                {movie.genres.map((genre) => (
-                  <span
-                    key={genre.id}
-                    className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground"
-                  >
-                    {genre.name}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
+          <GenreBadges genres={movie.genres} />
         </div>
         <div className="min-w-0 flex-1">
           <h1 className="text-2xl font-semibold">{movie.title}</h1>
@@ -164,16 +101,10 @@ const MoviePage = async ({ params }: MoviePageProps) => {
               {movie.release_date?.slice(0, 4)}
               {movie.runtime ? ` · ${movie.runtime} min` : ""}
             </span>
-            {movie.vote_count > 0 && (
-              <span className="flex items-center gap-1">
-                <Star className="size-3.5 fill-accent text-accent" />
-                {movie.vote_average.toFixed(1)}
-                <span className="flex items-center gap-0.5 text-subtle-foreground">
-                  <Users className="size-3.5" />
-                  {movie.vote_count.toLocaleString()}
-                </span>
-              </span>
-            )}
+            <TmdbRating
+              voteAverage={movie.vote_average}
+              voteCount={movie.vote_count}
+            />
           </p>
           {directors && (
             <p className="mt-2 text-sm text-muted-foreground">
@@ -182,50 +113,14 @@ const MoviePage = async ({ params }: MoviePageProps) => {
           )}
           <p className="mt-3">{movie.overview}</p>
 
-          {cast.length > 0 && (
-            <section className="mt-6">
-              <h2 className="text-lg font-semibold">Cast</h2>
-              <ul className="mt-2 flex flex-wrap gap-4">
-                {cast.map((member) => (
-                  <li key={member.id} className="w-20 text-center text-xs">
-                    <div className="aspect-[2/3] w-20 overflow-hidden rounded bg-surface">
-                      {member.profile_path && (
-                        <Image
-                          src={`${TMDB_PROFILE_BASE_URL}${member.profile_path}`}
-                          alt={member.name}
-                          width={92}
-                          height={138}
-                          className="h-full w-full object-cover"
-                        />
-                      )}
-                    </div>
-                    <p className="mt-1 font-medium">{member.name}</p>
-                    <p className="text-muted-foreground">
-                      {member.character}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
+          <CastList cast={cast} />
 
           <section className="mt-6">
             <h2 className="text-lg font-semibold">Reviews</h2>
             <ReviewList reviews={reviews} viewerId={user?.id ?? null} />
           </section>
 
-          {similar.length > 0 && (
-            <section className="mt-6">
-              <h2 className="text-lg font-semibold">More Like This</h2>
-              <div className="mt-2 flex gap-3 overflow-x-auto pb-1">
-                {similar.map((item) => (
-                  <div key={item.id} className="w-28 shrink-0 sm:w-32">
-                    <MediaCard {...toMediaCardItem(item, "movie")} />
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
+          <MoreLikeThis items={similar} mediaType="movie" />
         </div>
       </div>
     </main>

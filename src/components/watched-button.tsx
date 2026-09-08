@@ -7,10 +7,7 @@ import {
   toggleMovieWatched,
   type ToggleMovieWatchedState,
 } from "@/app/movie/[id]/actions";
-import {
-  toggleShowWatched,
-  type ToggleShowWatchedState,
-} from "@/app/tv/[id]/actions";
+import { toggleShowWatched } from "@/app/tv/[id]/actions";
 
 type WatchedButtonProps = {
   tmdbId: number;
@@ -25,7 +22,7 @@ export const WatchedButton = ({
 }: WatchedButtonProps) => {
   const action = mediaType === "movie" ? toggleMovieWatched : toggleShowWatched;
   const [state, formAction, pending] = useActionState<
-    ToggleMovieWatchedState | ToggleShowWatchedState,
+    ToggleMovieWatchedState,
     FormData
   >(action, { isWatched: initialIsWatched });
 

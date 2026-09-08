@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { getUserContext } from "@/lib/supabase/auth";
 import { watchlistToggleSchema } from "@/lib/validation/watchlist";
 
 export type ToggleWatchlistState = { inWatchlist: boolean; error?: string };
@@ -20,10 +20,7 @@ export const toggleWatchlist = async (
     return { ...prevState, error: "Invalid input" };
   }
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getUserContext();
 
   if (!user) {
     return {

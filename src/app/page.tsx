@@ -7,9 +7,8 @@ import { getWatchlistItems } from "@/lib/watchlist";
 import { getDiaryData } from "@/lib/diary";
 import { MediaCard } from "@/components/media-card";
 import { toMediaCardItem } from "@/lib/tmdb/to-media-card-item";
+import { backdropUrl } from "@/lib/tmdb/images";
 import type { TmdbSearchResponse } from "@/lib/tmdb/types";
-
-const TMDB_BACKDROP_BASE_URL = "https://image.tmdb.org/t/p/w1280";
 
 const Home = async () => {
   const supabase = await createClient();
@@ -40,9 +39,9 @@ const Home = async () => {
   );
   const continueWatchlistItems = watchlistItems.slice(0, 6);
 
-  const heroBackdrop =
-    popularMovies.results.find((result) => result.backdrop_path)
-      ?.backdrop_path ?? null;
+  const heroBackdrop = backdropUrl(
+    popularMovies.results.find((result) => result.backdrop_path)?.backdrop_path,
+  );
 
   const movieItems = popularMovies.results
     .slice(0, 12)
@@ -57,7 +56,7 @@ const Home = async () => {
         {heroBackdrop && (
           <>
             <Image
-              src={`${TMDB_BACKDROP_BASE_URL}${heroBackdrop}`}
+              src={heroBackdrop}
               alt=""
               fill
               priority

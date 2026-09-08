@@ -5,6 +5,7 @@ import { X } from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { RatingStars } from "@/components/rating-stars";
+import { todayIso } from "@/lib/date";
 import {
   clearSeasonLogField,
   deleteSeasonLog,
@@ -21,8 +22,6 @@ type LogSeasonFormProps = {
   seasonNumber: number;
   initialLog: { rating: number | null; review: string | null; watchedDate: string } | null;
 };
-
-const todayIso = () => new Date().toISOString().slice(0, 10);
 
 export const LogSeasonForm = ({ tmdbShowId, seasonNumber, initialLog }: LogSeasonFormProps) => {
   const [state, formAction, pending] = useActionState<LogSeasonFormState, FormData>(
