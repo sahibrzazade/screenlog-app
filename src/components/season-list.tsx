@@ -2,9 +2,8 @@ import Image from "next/image";
 import { ChevronDown } from "lucide-react";
 import { LogSeasonForm } from "@/components/log-season-form";
 import { ReviewList, type Review } from "@/components/review-list";
+import { posterUrl } from "@/lib/tmdb/images";
 import type { TmdbSeasonSummary } from "@/lib/tmdb/types";
-
-const TMDB_POSTER_BASE_URL = "https://image.tmdb.org/t/p/w154";
 
 export type SeasonLogSummary = {
   rating: number | null;
@@ -37,47 +36,51 @@ export const SeasonList = ({
       <ChevronDown className="size-4 transition-transform group-open:rotate-180" />
     </summary>
     <ul className="flex flex-col gap-6 border-t border-border px-4 pt-4 pb-4">
-      {seasons.map((season) => (
-        <li
-          key={season.season_number}
-          className="flex flex-col gap-3 border-t border-border pt-4 first:border-t-0 first:pt-0 sm:flex-row sm:items-start sm:gap-4"
-        >
-          <div className="aspect-[2/3] w-16 shrink-0 overflow-hidden rounded bg-surface">
-            {season.poster_path ? (
-              <Image
-                src={`${TMDB_POSTER_BASE_URL}${season.poster_path}`}
-                alt={season.name}
-                width={92}
-                height={138}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <div className="flex h-full items-center justify-center text-center text-[10px] text-subtle-foreground">
-                No poster
-              </div>
-            )}
-          </div>
-          <div className="min-w-0 flex-1">
-            <h3 className="font-medium">{season.name}</h3>
-            <p className="text-sm text-muted-foreground">
-              {season.episode_count} episode{season.episode_count === 1 ? "" : "s"}
-            </p>
-            {canLog && (
-              <LogSeasonForm
-                tmdbShowId={tmdbShowId}
-                seasonNumber={season.season_number}
-                initialLog={existingLogs[season.season_number] ?? null}
-              />
-            )}
-            <div className="mt-3">
-              <ReviewList
-                reviews={reviewsBySeason[season.season_number] ?? []}
-                viewerId={viewerId}
-              />
+      {seasons.map((season) => {
+        const poster = posterUrl(season.poster_path, "w154");
+
+        return (
+          <li
+            key={season.season_number}
+            className="flex flex-col gap-3 border-t border-border pt-4 first:border-t-0 first:pt-0 sm:flex-row sm:items-start sm:gap-4"
+          >
+            <div className="aspect-[2/3] w-16 shrink-0 overflow-hidden rounded bg-surface">
+              {poster ? (
+                <Image
+                  src={poster}
+                  alt={season.name}
+                  width={92}
+                  height={138}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center text-center text-[10px] text-subtle-foreground">
+                  No poster
+                </div>
+              )}
             </div>
-          </div>
-        </li>
-      ))}
+            <div className="min-w-0 flex-1">
+              <h3 className="font-medium">{season.name}</h3>
+              <p className="text-sm text-muted-foreground">
+                {season.episode_count} episode{season.episode_count === 1 ? "" : "s"}
+              </p>
+              {canLog && (
+                <LogSeasonForm
+                  tmdbShowId={tmdbShowId}
+                  seasonNumber={season.season_number}
+                  initialLog={existingLogs[season.season_number] ?? null}
+                />
+              )}
+              <div className="mt-3">
+                <ReviewList
+                  reviews={reviewsBySeason[season.season_number] ?? []}
+                  viewerId={viewerId}
+                />
+              </div>
+            </div>
+          </li>
+        );
+      })}
     </ul>
   </details>
 );

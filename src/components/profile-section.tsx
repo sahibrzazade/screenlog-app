@@ -1,7 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-
-const TMDB_POSTER_BASE_URL = "https://image.tmdb.org/t/p/w500";
+import { posterUrl } from "@/lib/tmdb/images";
 
 export type ProfileSectionItem = {
   id: string | number;
@@ -44,30 +43,34 @@ export const ProfileSection = ({
       </p>
     ) : (
       <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {items.map((item) => (
-          <Link
-            key={item.id}
-            href={item.href}
-            className="block rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <div className="relative aspect-[2/3] w-full overflow-hidden rounded bg-surface">
-              {item.posterPath ? (
-                <Image
-                  src={`${TMDB_POSTER_BASE_URL}${item.posterPath}`}
-                  alt={item.title}
-                  fill
-                  sizes="(min-width: 640px) 25vw, 50vw"
-                  className="object-cover"
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center text-center text-xs text-subtle-foreground">
-                  No poster
-                </div>
-              )}
-            </div>
-            <p className="mt-1 truncate text-sm font-medium">{item.title}</p>
-          </Link>
-        ))}
+        {items.map((item) => {
+          const poster = posterUrl(item.posterPath);
+
+          return (
+            <Link
+              key={item.id}
+              href={item.href}
+              className="block rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <div className="relative aspect-[2/3] w-full overflow-hidden rounded bg-surface">
+                {poster ? (
+                  <Image
+                    src={poster}
+                    alt={item.title}
+                    fill
+                    sizes="(min-width: 640px) 25vw, 50vw"
+                    className="object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-center text-xs text-subtle-foreground">
+                    No poster
+                  </div>
+                )}
+              </div>
+              <p className="mt-1 truncate text-sm font-medium">{item.title}</p>
+            </Link>
+          );
+        })}
       </div>
     )}
   </section>
