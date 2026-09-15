@@ -10,7 +10,7 @@ Screenlog is a personal watch-logging app that keeps Letterboxd's movie logging/
 - Social features beyond public review attribution (following other users, activity feed, likes/comments on reviews) — the architecture will leave room for this later, but it won't be built now. The one exception, added after initial planning: every user's rating + review is publicly readable, attributed by username, under the relevant movie/show/season — see the RLS note below. This is read-only attribution, not a social graph.
 - Custom lists (Letterboxd's "Lists" feature, e.g. "My Top Sci-Fi Movies").
 - Episode-level logging — TV granularity is **show + season**, no episode level.
-- A browsable **public** profile page (e.g. `/user/[username]`, visible to other users) — attribution stays inline on the title's own page only. Revised during planning (see `plan.md`): a **private** `/profile` dashboard, visible only to the logged-in account owner (summarizing their own watchlist/diary/logs), is in scope for MVP — this doesn't let anyone view another user's page.
+- ~~A browsable **public** profile page~~ — **now in scope, see [Post-MVP Features](#post-mvp-features) Feature 9.** Original MVP position: attribution stayed inline on the title's page only, and `/profile` was a **private** owner-only dashboard. Feature 9 reverses this: `/user/[username]` becomes a public profile visible to anyone, listing that user's logged movies/shows, favourites showcase, and counts.
 
 **Definition of done:** A user can sign up and log in, search TMDB for movies/shows, mark something as watched with a rating (show + season level for TV), write an optional review, record the watch date, add/remove items from a watchlist, and view their own history (diary) in chronological order.
 
@@ -27,13 +27,13 @@ Screenlog is a personal watch-logging app that keeps Letterboxd's movie logging/
 
 ### High-level data model (detailed schema to be finalized in the Plan phase)
 
-- `profiles` — 1:1 with Supabase `auth.users`, holds public profile info (username, avatar)
+- `profiles` — 1:1 with Supabase `auth.users`, holds public profile info (username, avatar). **Feature 8 adds** `top_movie_ids int[]` (≤4, ordered), `top_show_ids int[]` (≤4, ordered), `now_watching_show_id int` (nullable) — all TMDB ids.
 - `movie_logs` — user_id, tmdb_movie_id, rating (0.5–5), review (nullable text), watched_date, rewatch (bool)
 - `show_logs` — user_id, tmdb_show_id, rating (0.5–5, overall show rating), review (nullable text)
 - `season_logs` — user_id, tmdb_show_id, season_number, rating (0.5–5), review (nullable text), watched_date
 - `watchlist` — user_id, tmdb_id, media_type (`movie` | `tv`), added_at
 
-RLS: writes (`insert`/`update`/`delete`) on every log table are always scoped to `auth.uid() = user_id` — a user can never modify another user's row. Reads are mixed: `movie_logs`, `show_logs`, and `season_logs` are publicly readable (rating + review + username, so every user's review shows up under the relevant title, visible even to guests) — this is the one deliberate exception to "no social visibility." `profiles` is publicly readable for `username` only (needed to attribute reviews); no other profile field is exposed and there is no page that lists everything a given user has logged.
+RLS: writes (`insert`/`update`/`delete`) on every log table are always scoped to `auth.uid() = user_id` — a user can never modify another user's row. Reads are mixed: `movie_logs`, `show_logs`, and `season_logs` are publicly readable (rating + review + username, so every user's review shows up under the relevant title, visible even to guests) — this is the one deliberate exception to "no social visibility." `profiles` is publicly readable for `username` only in the MVP. **Feature 9 widens this:** `avatar_url` and the Feature 8 showcase columns become publicly readable too (via column grants + a `security_invoker` `profiles_public` view), and a public `/user/[username]` page lists everything a given user has logged — the MVP's "no full log listing" rule is intentionally dropped.
 
 ## Commands
 
@@ -101,6 +101,7 @@ export const RatingStars = ({ value, onChange, readOnly = false }: RatingStarsPr
 - **Always:**
   - Every Supabase table has an RLS policy defined
   - TMDB API key and Supabase service role key stay server-side (env vars) only, never exposed to the client
+  - Public reads of `profiles` are limited to `username`, `avatar_url`, and the Feature 8 showcase columns (via column grants) — never `email` or other private fields; showcase writes stay `auth.uid() = user_id`
   - `npm run lint` and `tsc --noEmit` pass clean before commits
   - `.env.local` stays gitignored
   - Branch and commit names follow the Git Workflow format above
@@ -128,8 +129,76 @@ export const RatingStars = ({ value, onChange, readOnly = false }: RatingStarsPr
 - [ ] Writes are always scoped to the logged-in user via RLS (no user can modify another user's data)
 - [ ] Any visitor, including a logged-out guest, can see every user's rating + review (attributed by username) under a movie's, show's, or season's page
 
+**Post-MVP (see [Post-MVP Features](#post-mvp-features) for full acceptance criteria):**
+
+- [ ] User can curate up to 4 favourite movies and 4 favourite shows on their profile
+- [ ] User can set a single "currently watching" show on their profile
+- [ ] User can change their password from `/settings` (email/password accounts only)
+- [ ] Any visitor can view a public `/user/[username]` profile with that user's showcase, counts, and full logged history
+
+## Post-MVP Features
+
+Features added after the MVP was reached. Listed in `todo.md` numbering. Not yet
+built — spec only. Build in dependency order (see capability map).
+
+### Feature 8 — Profile page: favourites showcase, now-watching, change password
+
+The private `/profile` dashboard gains an editable **showcase** (managed from
+`/settings`), and `/settings` gains a **change-password** form.
+
+- **Top 4 movies / Top 4 shows** — the user searches TMDB and picks up to 4
+  movies and up to 4 shows, in a chosen order (Letterboxd "4 favourites"
+  semantics: any title, independent of whether it's been logged/watched).
+  Stored as `profiles.top_movie_ids` / `profiles.top_show_ids` (ordered
+  `int[]`, each ≤ 4 positive TMDB ids).
+- **Currently watching** — the user picks a single show from TMDB search as
+  their "currently watching"; they can change or clear it. Stored as
+  `profiles.now_watching_show_id` (nullable positive TMDB id). No auto-derivation
+  (screenlog has no episode-level progress).
+- **Change password** — a form on `/settings` (not `/profile`). Requires the
+  user to re-enter their current password (re-authenticate, then
+  `supabase.auth.updateUser({ password })`). Hidden for accounts with no
+  password (Google-OAuth-only) — those show a short note instead.
+
+### Feature 9 — Public profiles
+
+`/user/[username]` becomes a public page visible to anyone (guests included),
+showing: avatar + username, movie/show/watchlist counts, the Feature 8 showcase
+(top-4s + currently-watching), and a **browsable grid of every movie and show
+the user has logged** (with rating, linking to the title page). "See all" links
+lead to paginated `/user/[username]/films` and `/user/[username]/shows`.
+
+This deliberately drops the MVP rule that "no page lists everything a user
+logged". The existing private `/profile` stays as the owner's editable
+dashboard; `/user/[username]` is the read-only public view.
+
+### Capability map & build order
+
+| Module | Scope | Depends on | Migration |
+|---|---|---|---|
+| **M1 · showcase-schema** | Add `top_movie_ids`, `top_show_ids`, `now_watching_show_id` columns to `profiles`; Zod schema (each id array ≤ 4, positive ints) | — | `0013` |
+| **M2 · change-password** | `/settings` change-password form + server action; current-password re-auth; hidden for OAuth-only accounts | — | none |
+| **M3 · showcase-editing** | `/settings` UI to search TMDB and set/reorder/remove the 3 showcase slots; server actions writing the M1 columns | M1 | none |
+| **M4 · public-profile-rls** | Column grants so `avatar_url` + showcase columns are publicly readable; recreate `profiles_public` as a `security_invoker` view (folds in the deferred `security_definer_view` fix); a `by-username` read helper returning a user's public profile + logged titles | M1 | `0014` |
+| **M5 · public-profile-page** | `/user/[username]` route: avatar, username, counts, showcase, logged movies/shows grid (reuses `ProfileSection`, `MediaCard`); `notFound()` for unknown username | M4 | none |
+| **M6 · public-see-all** | `/user/[username]/films` and `/user/[username]/shows` — paginated full lists | M5 | none |
+
+**Order:** M1 → (M2 ∥ M3) → M4 → M5 → M6.
+
+### Acceptance criteria
+
+- [ ] A signed-in user can set up to 4 favourite movies and up to 4 favourite shows (ordered) from `/settings`, and they persist.
+- [ ] A signed-in user can set / change / clear a single "currently watching" show from `/settings`.
+- [ ] An email/password user can change their password on `/settings` after re-entering the current one; a wrong current password is rejected with a clear error.
+- [ ] A Google-OAuth-only user does not see a change-password form (sees an explanatory note).
+- [ ] Any visitor (including a logged-out guest) can open `/user/[username]` and see that user's avatar, username, counts, showcase, and a browsable list of every movie/show they've logged.
+- [ ] An unknown username at `/user/[username]` returns a 404.
+- [ ] `avatar_url` and showcase columns are the only newly-public `profiles` fields; email and other private data stay unreadable.
+- [ ] The Supabase `security_definer_view` lint on `profiles_public` is resolved.
+- [ ] RLS still blocks any user from writing another user's `profiles` row or showcase.
+
 ## Open Questions
 
 - Should a show status (`watching` / `dropped` / `completed`) be part of MVP, or should it be inferred purely from season logs? → To be resolved in the Plan phase.
 - Caching strategy against TMDB API rate limits (e.g. Next.js `fetch` cache, or caching TMDB data locally in Supabase)? → To be resolved in the Plan phase.
-- Is there no public profile page at all, or is it "closed for now, opens with social features later"? → Resolved: no browsable public profile page in MVP, but reviews are publicly readable and attributed by username inline on the title's page (decided after initial planning, during Task 8's follow-up — see `plan.md`).
+- Is there no public profile page at all, or is it "closed for now, opens with social features later"? → MVP: no browsable public profile page, reviews publicly readable inline on the title's page. **Post-MVP: reversed — see [Post-MVP Features](#post-mvp-features) Feature 9, which adds a public `/user/[username]` profile.**

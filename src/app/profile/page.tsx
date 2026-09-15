@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Settings } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getProfileSummary } from "@/lib/profile";
+import { getShowcase, resolveShowcaseItems } from "@/lib/showcase";
 import { ProfileSection, type ProfileSectionItem } from "@/components/profile-section";
 import type { MediaCardItem } from "@/components/media-card";
 import type { DiaryEntry } from "@/lib/diary";
@@ -32,6 +33,9 @@ const ProfilePage = async () => {
   }
 
   const summary = await getProfileSummary(supabase, user.id);
+  const showcase = await getShowcase(supabase, user.id);
+  const showcaseItems = await resolveShowcaseItems(showcase);
+  const nowWatchingItems = showcaseItems.nowWatching ? [showcaseItems.nowWatching] : [];
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-6">
@@ -45,6 +49,30 @@ const ProfilePage = async () => {
           <Settings className="size-5" />
         </Link>
       </div>
+
+      <ProfileSection
+        title="Currently watching"
+        items={nowWatchingItems.map(toWatchlistSectionItem)}
+        total={nowWatchingItems.length}
+        seeAllHref="/settings"
+        emptyMessage="Not watching anything right now."
+      />
+
+      <ProfileSection
+        title="Top 4 movies"
+        items={showcaseItems.topMovies.map(toWatchlistSectionItem)}
+        total={showcaseItems.topMovies.length}
+        seeAllHref="/settings"
+        emptyMessage="No favourite movies picked yet."
+      />
+
+      <ProfileSection
+        title="Top 4 shows"
+        items={showcaseItems.topShows.map(toWatchlistSectionItem)}
+        total={showcaseItems.topShows.length}
+        seeAllHref="/settings"
+        emptyMessage="No favourite shows picked yet."
+      />
 
       <ProfileSection
         title="Watchlist"
