@@ -15,7 +15,7 @@ export const DetailBackdrop = ({ url }: DetailBackdropProps) => {
         src={url}
         alt=""
         fill
-        sizes="(min-width: 768px) 768px, 100vw"
+        sizes="(min-width: 1024px) 1024px, 100vw"
         className="object-cover"
         priority
       />

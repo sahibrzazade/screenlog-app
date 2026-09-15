@@ -87,7 +87,7 @@ const ShowPage = async ({ params }: ShowPageProps) => {
   const poster = posterUrl(show.poster_path);
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-6">
+    <main className="mx-auto max-w-5xl px-4 py-6">
       <DetailBackdrop url={backdropUrl(show.backdrop_path)} />
       <div className="flex flex-col gap-4 sm:flex-row sm:gap-6">
         <div className="flex w-48 shrink-0 flex-col gap-4 self-center sm:sticky sm:top-20 sm:self-start">
@@ -113,7 +113,7 @@ const ShowPage = async ({ params }: ShowPageProps) => {
         <div className="min-w-0 flex-1">
           <h1 className="text-2xl font-semibold">{show.name}</h1>
           {show.tagline && (
-            <p className="mt-1 text-sm text-muted-foreground italic">
+            <p className="mt-1 max-w-2xl text-sm text-muted-foreground italic">
               {show.tagline}
             </p>
           )}
@@ -134,7 +134,7 @@ const ShowPage = async ({ params }: ShowPageProps) => {
               Created by <span className="text-foreground">{creators}</span>
             </p>
           )}
-          <p className="mt-3">{show.overview}</p>
+          <p className="mt-3 max-w-2xl">{show.overview}</p>
 
           <CastList cast={cast} />
 

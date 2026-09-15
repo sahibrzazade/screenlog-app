@@ -64,7 +64,7 @@ const MoviePage = async ({ params }: MoviePageProps) => {
   const poster = posterUrl(movie.poster_path);
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-6">
+    <main className="mx-auto max-w-5xl px-4 py-6">
       <DetailBackdrop url={backdropUrl(movie.backdrop_path)} />
       <div className="flex flex-col gap-4 sm:flex-row sm:gap-6">
         <div className="flex w-48 shrink-0 flex-col gap-4 self-center sm:sticky sm:top-20 sm:self-start">
@@ -92,7 +92,7 @@ const MoviePage = async ({ params }: MoviePageProps) => {
         <div className="min-w-0 flex-1">
           <h1 className="text-2xl font-semibold">{movie.title}</h1>
           {movie.tagline && (
-            <p className="mt-1 text-sm text-muted-foreground italic">
+            <p className="mt-1 max-w-2xl text-sm text-muted-foreground italic">
               {movie.tagline}
             </p>
           )}
@@ -111,7 +111,7 @@ const MoviePage = async ({ params }: MoviePageProps) => {
               Directed by <span className="text-foreground">{directors}</span>
             </p>
           )}
-          <p className="mt-3">{movie.overview}</p>
+          <p className="mt-3 max-w-2xl">{movie.overview}</p>
 
           <CastList cast={cast} />
 
