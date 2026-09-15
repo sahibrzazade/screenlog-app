@@ -65,4 +65,30 @@ describe("ReviewList", () => {
     );
     expect(screen.queryByText("null")).not.toBeInTheDocument();
   });
+
+  it("links a reviewer's username to their public profile", () => {
+    render(<ReviewList reviews={reviews} viewerId={null} />);
+    expect(screen.getByText("alice").closest("a")).toHaveAttribute(
+      "href",
+      "/user/alice",
+    );
+  });
+
+  it("still links the viewer's own 'You' row to their public profile", () => {
+    render(<ReviewList reviews={reviews} viewerId="user-2" />);
+    expect(screen.getByText("You").closest("a")).toHaveAttribute(
+      "href",
+      "/user/bob",
+    );
+  });
+
+  it("does not link an Anonymous (usernameless) row", () => {
+    render(
+      <ReviewList
+        reviews={[{ userId: "user-3", username: null, rating: 5, review: null, watchedDate: "2026-01-03" }]}
+        viewerId={null}
+      />,
+    );
+    expect(screen.getByText("Anonymous").closest("a")).toBeNull();
+  });
 });

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { CircleUserRound } from "lucide-react";
 import { RatingStars } from "@/components/rating-stars";
 
@@ -30,9 +31,15 @@ export const ReviewList = ({ reviews, viewerId }: ReviewListProps) => {
             <CircleUserRound aria-hidden size={24} className="shrink-0 text-subtle-foreground" />
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
-                <span className="font-medium">
-                  {review.userId === viewerId ? "You" : (review.username ?? "Anonymous")}
-                </span>
+                {review.username ? (
+                  <Link href={`/user/${review.username}`} className="font-medium hover:underline">
+                    {review.userId === viewerId ? "You" : review.username}
+                  </Link>
+                ) : (
+                  <span className="font-medium">
+                    {review.userId === viewerId ? "You" : "Anonymous"}
+                  </span>
+                )}
                 {review.rating !== null && (
                   <RatingStars value={review.rating} readOnly />
                 )}
