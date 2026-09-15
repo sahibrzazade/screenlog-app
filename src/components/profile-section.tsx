@@ -15,6 +15,12 @@ type ProfileSectionProps = {
   total: number;
   seeAllHref: string;
   emptyMessage: string;
+  /**
+   * Fixed number of slots to visualize (e.g. 4 for a "Top 4" showcase list).
+   * When set, unfilled slots render as empty placeholder cards instead of
+   * the section just showing fewer items or an empty-state message.
+   */
+  capacity?: number;
 };
 
 export const ProfileSection = ({
@@ -23,55 +29,66 @@ export const ProfileSection = ({
   total,
   seeAllHref,
   emptyMessage,
-}: ProfileSectionProps) => (
-  <section className="mt-8 first:mt-4">
-    <div className="flex items-center justify-between">
-      <h2 className="text-lg font-semibold">{title}</h2>
-      {total > items.length && (
-        <Link
-          href={seeAllHref}
-          className="text-sm text-accent hover:text-accent-hover"
-        >
-          See all
-        </Link>
-      )}
-    </div>
+  capacity,
+}: ProfileSectionProps) => {
+  const emptySlots = capacity ? Math.max(0, capacity - items.length) : 0;
 
-    {items.length === 0 ? (
-      <p className="mt-2 text-sm text-muted-foreground">
-        {emptyMessage}
-      </p>
-    ) : (
-      <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {items.map((item) => {
-          const poster = posterUrl(item.posterPath);
-
-          return (
-            <Link
-              key={item.id}
-              href={item.href}
-              className="block rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <div className="relative aspect-[2/3] w-full overflow-hidden rounded bg-surface">
-                {poster ? (
-                  <Image
-                    src={poster}
-                    alt={item.title}
-                    fill
-                    sizes="(min-width: 640px) 25vw, 50vw"
-                    className="object-cover"
-                  />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center text-center text-xs text-subtle-foreground">
-                    No poster
-                  </div>
-                )}
-              </div>
-              <p className="mt-1 truncate text-sm font-medium">{item.title}</p>
-            </Link>
-          );
-        })}
+  return (
+    <section className="mt-8 first:mt-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold">{title}</h2>
+        {total > items.length && (
+          <Link
+            href={seeAllHref}
+            className="text-sm text-accent hover:text-accent-hover"
+          >
+            See all
+          </Link>
+        )}
       </div>
-    )}
-  </section>
-);
+
+      {items.length === 0 && !capacity ? (
+        <p className="mt-2 text-sm text-muted-foreground">{emptyMessage}</p>
+      ) : (
+        <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {items.map((item) => {
+            const poster = posterUrl(item.posterPath);
+
+            return (
+              <Link
+                key={item.id}
+                href={item.href}
+                title={item.title}
+                aria-label={item.title}
+                className="block rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <div className="relative aspect-[2/3] w-full overflow-hidden rounded-md bg-surface">
+                  {poster ? (
+                    <Image
+                      src={poster}
+                      alt=""
+                      fill
+                      sizes="(min-width: 640px) 25vw, 50vw"
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center p-1 text-center text-xs text-subtle-foreground">
+                      {item.title}
+                    </div>
+                  )}
+                </div>
+              </Link>
+            );
+          })}
+          {Array.from({ length: emptySlots }).map((_, index) => (
+            <div
+              key={`empty-${index}`}
+              aria-hidden
+              className="aspect-[2/3] w-full rounded-md border border-dashed border-border"
+            />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+};

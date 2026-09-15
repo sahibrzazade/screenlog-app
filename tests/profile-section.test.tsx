@@ -13,7 +13,7 @@ const items: ProfileSectionItem[] = [
 ];
 
 describe("ProfileSection", () => {
-  it("renders each item's title linking to its href", () => {
+  it("renders each item as an accessibly-named link to its href", () => {
     render(
       <ProfileSection
         title="Watchlist"
@@ -24,8 +24,14 @@ describe("ProfileSection", () => {
       />,
     );
 
-    expect(screen.getByText("The Matrix").closest("a")).toHaveAttribute("href", "/movie/1");
-    expect(screen.getByText("Breaking Bad").closest("a")).toHaveAttribute("href", "/tv/2");
+    expect(screen.getByRole("link", { name: "The Matrix" })).toHaveAttribute(
+      "href",
+      "/movie/1",
+    );
+    expect(screen.getByRole("link", { name: "Breaking Bad" })).toHaveAttribute(
+      "href",
+      "/tv/2",
+    );
   });
 
   it("shows a See all link only when total exceeds the shown items", () => {
@@ -65,5 +71,39 @@ describe("ProfileSection", () => {
 
     expect(screen.getByText("Nothing here yet.")).toBeInTheDocument();
     expect(screen.queryByText("See all")).not.toBeInTheDocument();
+  });
+
+  it("fills remaining slots with placeholders when capacity is set", () => {
+    const { container } = render(
+      <ProfileSection
+        title="Top 4 movies"
+        items={items}
+        total={2}
+        seeAllHref="/settings"
+        emptyMessage="No favourites yet."
+        capacity={4}
+      />,
+    );
+
+    expect(screen.getByRole("link", { name: "The Matrix" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Breaking Bad" })).toBeInTheDocument();
+    expect(screen.queryByText("No favourites yet.")).not.toBeInTheDocument();
+    expect(container.querySelectorAll('[aria-hidden="true"]')).toHaveLength(2);
+  });
+
+  it("renders all placeholders instead of the empty message when capacity is set and there are no items", () => {
+    const { container } = render(
+      <ProfileSection
+        title="Top 4 movies"
+        items={[]}
+        total={0}
+        seeAllHref="/settings"
+        emptyMessage="No favourites yet."
+        capacity={4}
+      />,
+    );
+
+    expect(screen.queryByText("No favourites yet.")).not.toBeInTheDocument();
+    expect(container.querySelectorAll('[aria-hidden="true"]')).toHaveLength(4);
   });
 });
