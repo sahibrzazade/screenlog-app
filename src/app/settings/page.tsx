@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { UsernameForm } from "@/components/username-form";
 import { ShowcaseEditor } from "@/components/showcase-editor";
 import { NowWatchingPicker } from "@/components/now-watching-picker";
+import { ChangePasswordForm } from "@/components/change-password-form";
 import { getShowcase, resolveShowcaseItems } from "@/lib/showcase";
 import { updateTopMovies, updateTopShows } from "@/app/settings/actions";
 
@@ -24,6 +25,7 @@ const SettingsPage = async () => {
 
   const showcase = await getShowcase(supabase, user.id);
   const showcaseItems = await resolveShowcaseItems(showcase);
+  const hasPassword = user.identities?.some((identity) => identity.provider === "email") ?? false;
 
   return (
     <main className="mx-auto max-w-md px-4 py-6">
@@ -50,6 +52,17 @@ const SettingsPage = async () => {
           action={updateTopShows}
         />
         <NowWatchingPicker initialItem={showcaseItems.nowWatching} />
+      </section>
+
+      <section className="mt-8 flex flex-col gap-4">
+        <h2 className="text-lg font-semibold">Password</h2>
+        {hasPassword ? (
+          <ChangePasswordForm />
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            You signed in with Google, so there&apos;s no password to change here.
+          </p>
+        )}
       </section>
     </main>
   );
