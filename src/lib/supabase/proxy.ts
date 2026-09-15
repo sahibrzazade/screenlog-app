@@ -9,7 +9,7 @@ const PUBLIC_ROUTE_EXACT = [
   "/auth/callback",
   "/search",
 ];
-const PUBLIC_ROUTE_PREFIXES = ["/movie/", "/tv/"];
+const PUBLIC_ROUTE_PREFIXES = ["/movie/", "/tv/", "/user/"];
 const CHOOSE_USERNAME_ROUTE = "/choose-username";
 
 export const isPublicRoute = (pathname: string): boolean =>

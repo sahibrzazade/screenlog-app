@@ -1,28 +1,13 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Settings } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { getProfileSummary } from "@/lib/profile";
-import { getShowcase, resolveShowcaseItems } from "@/lib/showcase";
-import { ProfileSection, type ProfileSectionItem } from "@/components/profile-section";
-import type { MediaCardItem } from "@/components/media-card";
-import type { DiaryEntry } from "@/lib/diary";
 
-const toWatchlistSectionItem = (item: MediaCardItem): ProfileSectionItem => ({
-  id: `${item.mediaType}-${item.id}`,
-  title: item.title,
-  posterPath: item.posterPath,
-  href: `/${item.mediaType}/${item.id}`,
-});
-
-const toDiarySectionItem = (entry: DiaryEntry): ProfileSectionItem => ({
-  id: entry.id,
-  title: entry.title,
-  posterPath: entry.posterPath,
-  href: entry.href,
-});
-
-const ProfilePage = async () => {
+/**
+ * /profile no longer renders its own dashboard — the unified
+ * /user/[username] route handles both the owner and visitor views now.
+ * This stays only so old links/bookmarks land somewhere sensible instead
+ * of 404ing.
+ */
+const ProfileRedirectPage = async () => {
   const supabase = await createClient();
   const {
     data: { user },
@@ -32,75 +17,13 @@ const ProfilePage = async () => {
     redirect("/login");
   }
 
-  const summary = await getProfileSummary(supabase, user.id);
-  const showcase = await getShowcase(supabase, user.id);
-  const showcaseItems = await resolveShowcaseItems(showcase);
-  const nowWatchingItems = showcaseItems.nowWatching ? [showcaseItems.nowWatching] : [];
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("username")
+    .eq("id", user.id)
+    .single();
 
-  return (
-    <main className="mx-auto max-w-2xl px-4 py-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Profile</h1>
-        <Link
-          href="/settings"
-          aria-label="Settings"
-          className="rounded-md p-2 text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <Settings className="size-5" />
-        </Link>
-      </div>
-
-      <ProfileSection
-        title="Currently watching"
-        items={nowWatchingItems.map(toWatchlistSectionItem)}
-        total={nowWatchingItems.length}
-        seeAllHref="/settings"
-        emptyMessage="Not watching anything right now."
-      />
-
-      <ProfileSection
-        title="Top 4 movies"
-        items={showcaseItems.topMovies.map(toWatchlistSectionItem)}
-        total={showcaseItems.topMovies.length}
-        seeAllHref="/settings"
-        emptyMessage="No favourite movies picked yet."
-        capacity={4}
-      />
-
-      <ProfileSection
-        title="Top 4 shows"
-        items={showcaseItems.topShows.map(toWatchlistSectionItem)}
-        total={showcaseItems.topShows.length}
-        seeAllHref="/settings"
-        emptyMessage="No favourite shows picked yet."
-        capacity={4}
-      />
-
-      <ProfileSection
-        title="Watchlist"
-        items={summary.watchlist.items.map(toWatchlistSectionItem)}
-        total={summary.watchlist.total}
-        seeAllHref="/watchlist"
-        emptyMessage="Nothing on your watchlist yet."
-      />
-
-      <ProfileSection
-        title="Movies"
-        items={summary.movies.items.map(toDiarySectionItem)}
-        total={summary.movies.total}
-        seeAllHref="/diary"
-        emptyMessage="No movies logged yet."
-      />
-
-      <ProfileSection
-        title="Shows"
-        items={summary.shows.items.map(toDiarySectionItem)}
-        total={summary.shows.total}
-        seeAllHref="/diary"
-        emptyMessage="No shows logged yet."
-      />
-    </main>
-  );
+  redirect(profile?.username ? `/user/${profile.username}` : "/choose-username");
 };
 
-export default ProfilePage;
+export default ProfileRedirectPage;

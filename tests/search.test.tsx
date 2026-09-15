@@ -25,7 +25,9 @@ vi.mock("next/navigation", () => ({
 
 const mockGetUser = vi.fn().mockResolvedValue({ data: { user: null } });
 const mockEq = vi.fn().mockResolvedValue({ data: [] });
-const mockSelect = vi.fn(() => ({ eq: mockEq }));
+const mockLimit = vi.fn().mockResolvedValue({ data: [] });
+const mockIlike = vi.fn(() => ({ limit: mockLimit }));
+const mockSelect = vi.fn(() => ({ eq: mockEq, ilike: mockIlike }));
 const mockFrom = vi.fn(() => ({ select: mockSelect }));
 
 vi.mock("@/lib/supabase/client", () => ({
@@ -39,6 +41,7 @@ beforeEach(() => {
   window.history.replaceState(null, "", "/search");
   mockGetUser.mockResolvedValue({ data: { user: null } });
   mockEq.mockResolvedValue({ data: [] });
+  mockLimit.mockResolvedValue({ data: [] });
 });
 
 afterEach(() => {
@@ -327,5 +330,74 @@ describe("SearchPage", () => {
     expect(
       screen.getByRole("button", { name: "Add to watchlist" }),
     ).toBeInTheDocument();
+  });
+
+  it("shows the titles prompt by default and switches to the people prompt on tab click", () => {
+    render(<SearchPage />);
+    expect(
+      screen.getByText(/search for a movie or tv show/i),
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "People" }));
+    expect(
+      screen.getByText(/search for a user by username/i),
+    ).toBeInTheDocument();
+  });
+
+  it("finds and links matching users in People mode", async () => {
+    mockLimit.mockResolvedValue({
+      data: [{ id: "user-1", username: "alice", avatar_url: null }],
+    });
+
+    render(<SearchPage />);
+    fireEvent.click(screen.getByRole("button", { name: "People" }));
+    fireEvent.change(screen.getByLabelText("Search"), {
+      target: { value: "ali" },
+    });
+
+    const link = await screen.findByRole("link", { name: /alice/i });
+    expect(link).toHaveAttribute("href", "/user/alice");
+    expect(mockIlike).toHaveBeenCalledWith("username", "%ali%");
+  });
+
+  it("syncs mode=people into the URL alongside the query", async () => {
+    mockLimit.mockResolvedValue({ data: [] });
+
+    render(<SearchPage />);
+    fireEvent.click(screen.getByRole("button", { name: "People" }));
+    fireEvent.change(screen.getByLabelText("Search"), {
+      target: { value: "ali" },
+    });
+
+    await waitFor(() =>
+      expect(replaceMock).toHaveBeenCalledWith("/search?q=ali&mode=people", {
+        scroll: false,
+      }),
+    );
+  });
+
+  it("starts in People mode when the URL has mode=people", () => {
+    window.history.replaceState(null, "", "/search?q=alice&mode=people");
+
+    render(<SearchPage />);
+
+    expect(screen.getByRole("button", { name: "People" })).toHaveClass(
+      "bg-accent",
+    );
+    expect(
+      screen.queryByText(/search for a user by username/i),
+    ).not.toBeInTheDocument(); // query is prefilled, so this is the pending/results state, not the prompt
+  });
+
+  it("shows a no-users message when the people search returns nothing", async () => {
+    mockLimit.mockResolvedValue({ data: [] });
+
+    render(<SearchPage />);
+    fireEvent.click(screen.getByRole("button", { name: "People" }));
+    fireEvent.change(screen.getByLabelText("Search"), {
+      target: { value: "nobody" },
+    });
+
+    expect(await screen.findByText(/no users found/i)).toBeInTheDocument();
   });
 });

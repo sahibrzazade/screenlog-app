@@ -28,6 +28,10 @@ export const Navbar = async () => {
     data: { user },
   } = await supabase.auth.getUser();
 
+  const { data: profile } = user
+    ? await supabase.from("profiles").select("username").eq("id", user.id).single()
+    : { data: null };
+
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur-sm">
       <nav className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
@@ -44,7 +48,11 @@ export const Navbar = async () => {
             <>
               <NavLink href="/watchlist" label="Watchlist" icon={Bookmark} />
               <NavLink href="/diary" label="Diary" icon={BookOpen} />
-              <NavLink href="/profile" label="Profile" icon={CircleUserRound} />
+              <NavLink
+                href={profile?.username ? `/user/${profile.username}` : "/choose-username"}
+                label="Profile"
+                icon={CircleUserRound}
+              />
               <form action={logout} className="ml-1">
                 <button
                   type="submit"

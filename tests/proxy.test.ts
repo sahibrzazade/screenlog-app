@@ -14,6 +14,12 @@ describe("isPublicRoute", () => {
     expect(isPublicRoute("/tv/1399")).toBe(true);
   });
 
+  it("treats public profile routes as public", () => {
+    expect(isPublicRoute("/user/example")).toBe(true);
+    expect(isPublicRoute("/user/example/films")).toBe(true);
+    expect(isPublicRoute("/user/example/shows")).toBe(true);
+  });
+
   it("keeps the watchlist route protected", () => {
     expect(isPublicRoute("/watchlist")).toBe(false);
   });
