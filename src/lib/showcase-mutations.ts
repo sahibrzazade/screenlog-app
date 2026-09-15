@@ -21,6 +21,6 @@ export const updateShowcaseColumn = async (
   if (error) return { error: "Failed to save. Please try again." };
 
   revalidatePath("/settings");
-  revalidatePath("/profile");
+  revalidatePath("/user/[username]", "page");
   return { success: true };
 };
