@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { UsernameForm } from "@/components/username-form";
 import { ShowcaseEditor } from "@/components/showcase-editor";
+import { NowWatchingPicker } from "@/components/now-watching-picker";
 import { getShowcase, resolveShowcaseItems } from "@/lib/showcase";
 import { updateTopMovies, updateTopShows } from "@/app/settings/actions";
 
@@ -48,6 +49,7 @@ const SettingsPage = async () => {
           initialItems={showcaseItems.topShows}
           action={updateTopShows}
         />
+        <NowWatchingPicker initialItem={showcaseItems.nowWatching} />
       </section>
     </main>
   );

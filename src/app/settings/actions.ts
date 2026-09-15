@@ -1,6 +1,6 @@
 "use server";
 
-import { showcaseIdsSchema } from "@/lib/validation/showcase";
+import { nowWatchingIdSchema, showcaseIdsSchema } from "@/lib/validation/showcase";
 import {
   updateShowcaseColumn,
   type ShowcaseMutationState,
@@ -36,4 +36,16 @@ export const updateTopShows = async (
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
   return updateShowcaseColumn("top_show_ids", parsed.data);
+};
+
+export const updateNowWatching = async (
+  _prevState: UpdateShowcaseState,
+  formData: FormData,
+): Promise<UpdateShowcaseState> => {
+  const raw = formData.get("nowWatchingShowId");
+  const parsed = nowWatchingIdSchema.safeParse(raw === "" ? null : raw);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  }
+  return updateShowcaseColumn("now_watching_show_id", parsed.data);
 };
