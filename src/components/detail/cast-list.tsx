@@ -13,12 +13,12 @@ export const CastList = ({ cast }: CastListProps) => {
   return (
     <section className="mt-6">
       <h2 className="text-lg font-semibold">Cast</h2>
-      <ul className="mt-2 flex flex-wrap gap-4">
+      <ul className="mt-2 flex gap-4 overflow-x-auto pb-1">
         {cast.map((member) => {
           const photo = profileUrl(member.profile_path);
 
           return (
-            <li key={member.id} className="w-20 text-center text-xs">
+            <li key={member.id} className="w-20 shrink-0 text-center text-xs">
               <div className="aspect-[2/3] w-20 overflow-hidden rounded bg-surface">
                 {photo && (
                   <Image

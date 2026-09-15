@@ -64,6 +64,7 @@ const ProfilePage = async () => {
         total={showcaseItems.topMovies.length}
         seeAllHref="/settings"
         emptyMessage="No favourite movies picked yet."
+        capacity={4}
       />
 
       <ProfileSection
@@ -72,6 +73,7 @@ const ProfilePage = async () => {
         total={showcaseItems.topShows.length}
         seeAllHref="/settings"
         emptyMessage="No favourite shows picked yet."
+        capacity={4}
       />
 
       <ProfileSection
