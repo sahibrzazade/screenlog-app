@@ -35,7 +35,7 @@ export const MediaCard = ({
         href={`/${mediaType}/${id}`}
         className="block w-full rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
-        <div className="relative aspect-[2/3] w-full overflow-hidden rounded-md bg-surface shadow-lg shadow-black/40 transition-transform duration-200 group-hover:scale-[1.03]">
+        <div className="relative aspect-2/3 w-full overflow-hidden rounded-md bg-surface shadow-lg shadow-black/40 transition-transform duration-200 group-hover:scale-[1.03]">
           {poster ? (
             <Image
               src={poster}

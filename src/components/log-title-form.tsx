@@ -256,7 +256,7 @@ export const LogTitleForm = ({
                 className="h-auto w-full"
               />
             ) : (
-              <div className="flex aspect-[2/3] items-center justify-center text-center text-[10px] text-subtle-foreground">
+              <div className="flex aspect-2/3 items-center justify-center text-center text-[10px] text-subtle-foreground">
                 No poster
               </div>
             )}

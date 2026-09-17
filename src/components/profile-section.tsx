@@ -62,7 +62,7 @@ export const ProfileSection = ({
                 aria-label={item.title}
                 className="block rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
-                <div className="relative aspect-[2/3] w-full overflow-hidden rounded-md bg-surface">
+                <div className="relative aspect-2/3 w-full overflow-hidden rounded-md bg-surface">
                   {poster ? (
                     <Image
                       src={poster}
@@ -84,7 +84,7 @@ export const ProfileSection = ({
             <div
               key={`empty-${index}`}
               aria-hidden
-              className="aspect-[2/3] w-full rounded-md border border-dashed border-border"
+              className="aspect-2/3 w-full rounded-md border border-dashed border-border"
             />
           ))}
         </div>

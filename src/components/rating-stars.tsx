@@ -50,7 +50,7 @@ export const RatingStars = ({
               className={
                 readOnly
                   ? `relative inline-block ${starSizeClass}`
-                  : `relative inline-block ${starSizeClass} rounded has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring`
+                  : `relative inline-block ${starSizeClass} rounded has-focus-visible:ring-2 has-focus-visible:ring-ring`
               }
             >
               <Star

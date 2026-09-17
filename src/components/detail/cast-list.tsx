@@ -19,7 +19,7 @@ export const CastList = ({ cast }: CastListProps) => {
 
           return (
             <li key={member.id} className="w-20 shrink-0 text-center text-xs">
-              <div className="aspect-[2/3] w-20 overflow-hidden rounded bg-surface">
+              <div className="aspect-2/3 w-20 overflow-hidden rounded bg-surface">
                 {photo && (
                   <Image
                     src={photo}
