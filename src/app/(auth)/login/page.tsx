@@ -55,7 +55,7 @@ const LoginPage = () => {
           type="submit"
           className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-border px-4 py-2 text-sm text-foreground transition-colors hover:bg-surface"
         >
-          <FcGoogle className="size-[18px]" />
+          <FcGoogle className="size-4.5" />
           Continue with Google
         </button>
       </form>

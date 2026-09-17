@@ -44,7 +44,7 @@ export const SeasonList = ({
             key={season.season_number}
             className="flex flex-col gap-3 border-t border-border pt-4 first:border-t-0 first:pt-0 sm:flex-row sm:items-start sm:gap-4"
           >
-            <div className="aspect-[2/3] w-16 shrink-0 overflow-hidden rounded bg-surface">
+            <div className="aspect-2/3 w-16 shrink-0 overflow-hidden rounded bg-surface">
               {poster ? (
                 <Image
                   src={poster}

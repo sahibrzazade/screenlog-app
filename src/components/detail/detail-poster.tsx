@@ -19,7 +19,7 @@ export const DetailPoster = ({ url, alt, watchlist }: DetailPosterProps) => (
     {url ? (
       <Image src={url} alt={alt} width={185} height={278} className="h-auto w-full" />
     ) : (
-      <div className="flex aspect-[2/3] items-center justify-center text-center text-xs text-subtle-foreground">
+      <div className="flex aspect-2/3 items-center justify-center text-center text-xs text-subtle-foreground">
         No poster
       </div>
     )}

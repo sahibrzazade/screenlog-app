@@ -26,7 +26,7 @@ export const PosterTile = ({
       <div
         {...dragHandleProps}
         title={title}
-        className={`aspect-[2/3] w-full overflow-hidden rounded-md bg-surface ${
+        className={`aspect-2/3 w-full overflow-hidden rounded-md bg-surface ${
           dragHandleProps ? "cursor-grab active:cursor-grabbing" : ""
         }`}
       >
@@ -65,7 +65,7 @@ export const EmptySlot = ({ onClick, label }: EmptySlotProps) => (
     type="button"
     onClick={onClick}
     aria-label={label}
-    className="flex aspect-[2/3] w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-md border border-dashed border-border text-muted-foreground transition-colors hover:border-accent hover:text-accent"
+    className="flex aspect-2/3 w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-md border border-dashed border-border text-muted-foreground transition-colors hover:border-accent hover:text-accent"
   >
     <Plus className="size-6" aria-hidden />
   </button>

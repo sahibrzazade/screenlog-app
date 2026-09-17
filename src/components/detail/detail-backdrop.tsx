@@ -19,7 +19,7 @@ export const DetailBackdrop = ({ url }: DetailBackdropProps) => {
         className="object-cover"
         priority
       />
-      <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent" />
+      <div className="absolute inset-0 bg-linear-to-t from-background to-transparent" />
     </div>
   );
 };
