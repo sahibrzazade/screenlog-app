@@ -9,7 +9,7 @@ import {
 } from "@testing-library/react";
 import { WatchedButton } from "@/components/watched-button";
 import { toggleMovieWatched } from "@/app/movie/[id]/actions";
-import { toggleShowWatched } from "@/app/tv/[id]/actions";
+import { toggleShowWatched, toggleSeasonWatched } from "@/app/tv/[id]/actions";
 
 vi.mock("@/app/movie/[id]/actions", () => ({
   toggleMovieWatched: vi.fn(),
@@ -17,6 +17,7 @@ vi.mock("@/app/movie/[id]/actions", () => ({
 
 vi.mock("@/app/tv/[id]/actions", () => ({
   toggleShowWatched: vi.fn(),
+  toggleSeasonWatched: vi.fn(),
 }));
 
 vi.mock("sonner", () => ({
@@ -29,6 +30,7 @@ describe("WatchedButton", () => {
   beforeEach(() => {
     vi.mocked(toggleMovieWatched).mockReset();
     vi.mocked(toggleShowWatched).mockReset();
+    vi.mocked(toggleSeasonWatched).mockReset();
   });
 
   it("shows 'Mark as watched' when not yet watched", () => {
@@ -73,6 +75,27 @@ describe("WatchedButton", () => {
     await waitFor(() => expect(toggleShowWatched).toHaveBeenCalledTimes(1));
     const formData = vi.mocked(toggleShowWatched).mock.calls[0][1];
     expect(formData.get("tmdbShowId")).toBe("1399");
+    expect(toggleMovieWatched).not.toHaveBeenCalled();
+  });
+
+  it("submits tmdbShowId and seasonNumber to toggleSeasonWatched for a season", async () => {
+    vi.mocked(toggleSeasonWatched).mockResolvedValue({ isWatched: true });
+    render(
+      <WatchedButton
+        tmdbId={1399}
+        mediaType="season"
+        seasonNumber={1}
+        initialIsWatched={false}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Mark as watched" }));
+
+    await waitFor(() => expect(toggleSeasonWatched).toHaveBeenCalledTimes(1));
+    const formData = vi.mocked(toggleSeasonWatched).mock.calls[0][1];
+    expect(formData.get("tmdbShowId")).toBe("1399");
+    expect(formData.get("seasonNumber")).toBe("1");
+    expect(toggleShowWatched).not.toHaveBeenCalled();
     expect(toggleMovieWatched).not.toHaveBeenCalled();
   });
 

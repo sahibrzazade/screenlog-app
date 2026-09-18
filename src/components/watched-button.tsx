@@ -7,20 +7,25 @@ import {
   toggleMovieWatched,
   type ToggleMovieWatchedState,
 } from "@/app/movie/[id]/actions";
-import { toggleShowWatched } from "@/app/tv/[id]/actions";
+import { toggleShowWatched, toggleSeasonWatched } from "@/app/tv/[id]/actions";
 
-type WatchedButtonProps = {
-  tmdbId: number;
-  mediaType: "movie" | "tv";
-  initialIsWatched: boolean;
-};
+type WatchedButtonProps =
+  | { tmdbId: number; mediaType: "movie" | "tv"; initialIsWatched: boolean }
+  | {
+      tmdbId: number;
+      mediaType: "season";
+      seasonNumber: number;
+      initialIsWatched: boolean;
+    };
 
-export const WatchedButton = ({
-  tmdbId,
-  mediaType,
-  initialIsWatched,
-}: WatchedButtonProps) => {
-  const action = mediaType === "movie" ? toggleMovieWatched : toggleShowWatched;
+export const WatchedButton = (props: WatchedButtonProps) => {
+  const { tmdbId, mediaType, initialIsWatched } = props;
+  const action =
+    mediaType === "movie"
+      ? toggleMovieWatched
+      : mediaType === "tv"
+        ? toggleShowWatched
+        : toggleSeasonWatched;
   const [state, formAction, pending] = useActionState<
     ToggleMovieWatchedState,
     FormData
@@ -56,6 +61,9 @@ export const WatchedButton = ({
         name={mediaType === "movie" ? "tmdbMovieId" : "tmdbShowId"}
         value={tmdbId}
       />
+      {mediaType === "season" && (
+        <input type="hidden" name="seasonNumber" value={props.seasonNumber} />
+      )}
       <input type="hidden" name="isWatched" value={String(isWatched)} />
       <button
         type="submit"

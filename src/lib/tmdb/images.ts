@@ -3,6 +3,7 @@ const TMDB_IMAGE_BASE_URL = "https://image.tmdb.org/t/p";
 type PosterSize = "w154" | "w185" | "w500";
 type ProfileSize = "w185";
 type BackdropSize = "w780" | "w1280";
+type StillSize = "w300";
 
 const buildUrl = (
   path: string | null | undefined,
@@ -25,4 +26,10 @@ export const profileUrl = (
 export const backdropUrl = (
   path: string | null | undefined,
   size: BackdropSize = "w1280",
+): string | null => buildUrl(path, size);
+
+/** TMDB episode still image URL, or null when there's no still. */
+export const stillUrl = (
+  path: string | null | undefined,
+  size: StillSize = "w300",
 ): string | null => buildUrl(path, size);

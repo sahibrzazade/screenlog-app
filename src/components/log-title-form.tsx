@@ -23,9 +23,17 @@ type LogTitleFormProps = {
   tmdbId: number;
   /** Hidden form field the paired server actions read the id from. */
   idField: "tmdbMovieId" | "tmdbShowId";
+  /**
+   * Extra hidden fields every submission needs beyond `idField` — e.g.
+   * `{ seasonNumber }` for a season log, which is scoped by both the show id
+   * and a season number.
+   */
+  extraFields?: Record<string, string | number>;
   /** Prefix for the (id-scoped) `<form>` id, e.g. `log-movie-form`. */
   formIdPrefix: string;
-  mediaType: "movie" | "tv";
+  mediaType: "movie" | "tv" | "season";
+  /** Required when `mediaType` is `"season"` — passed through to `WatchedButton`. */
+  seasonNumber?: number;
   title: string;
   posterUrl: string | null;
   /** Label on the watched-date field ("Watched date" vs "Date finished"). */
@@ -50,8 +58,10 @@ type LogTitleFormProps = {
 export const LogTitleForm = ({
   tmdbId,
   idField,
+  extraFields,
   formIdPrefix,
   mediaType,
+  seasonNumber,
   title,
   posterUrl,
   watchedDateLabel,
@@ -91,10 +101,14 @@ export const LogTitleForm = ({
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const modalRef = useRef<HTMLDialogElement>(null);
-  const formId = `${formIdPrefix}-${tmdbId}`;
+  const extraFieldsSuffix = Object.values(extraFields ?? {}).join("-");
+  const formId = `${formIdPrefix}-${tmdbId}${extraFieldsSuffix ? `-${extraFieldsSuffix}` : ""}`;
 
   const setIdField = (formData: FormData) => {
     formData.set(idField, String(tmdbId));
+    for (const [key, value] of Object.entries(extraFields ?? {})) {
+      formData.set(key, String(value));
+    }
     return formData;
   };
 
@@ -184,11 +198,20 @@ export const LogTitleForm = ({
   return (
     <>
       <div className="flex flex-col items-start gap-3 rounded-md border border-border bg-surface p-3">
-        <WatchedButton
-          tmdbId={tmdbId}
-          mediaType={mediaType}
-          initialIsWatched={initialLog !== null}
-        />
+        {mediaType === "season" ? (
+          <WatchedButton
+            tmdbId={tmdbId}
+            mediaType="season"
+            seasonNumber={seasonNumber!}
+            initialIsWatched={initialLog !== null}
+          />
+        ) : (
+          <WatchedButton
+            tmdbId={tmdbId}
+            mediaType={mediaType}
+            initialIsWatched={initialLog !== null}
+          />
+        )}
 
         <div>
           <span className="mb-1 block text-xs font-medium text-muted-foreground">Your Rating</span>
@@ -275,11 +298,20 @@ export const LogTitleForm = ({
               </button>
             </div>
 
-            <WatchedButton
-              tmdbId={tmdbId}
-              mediaType={mediaType}
-              initialIsWatched={initialLog !== null}
-            />
+            {mediaType === "season" ? (
+              <WatchedButton
+                tmdbId={tmdbId}
+                mediaType="season"
+                seasonNumber={seasonNumber!}
+                initialIsWatched={initialLog !== null}
+              />
+            ) : (
+              <WatchedButton
+                tmdbId={tmdbId}
+                mediaType={mediaType}
+                initialIsWatched={initialLog !== null}
+              />
+            )}
 
             <div>
               <span className="mb-1 block text-sm font-medium">Rating</span>
@@ -310,6 +342,9 @@ export const LogTitleForm = ({
 
             <form key={formResetKey} id={formId} action={formAction} className="flex flex-col gap-4">
               <input type="hidden" name={idField} value={tmdbId} />
+              {Object.entries(extraFields ?? {}).map(([key, value]) => (
+                <input key={key} type="hidden" name={key} value={value} />
+              ))}
               <div>
                 <label htmlFor="watchedDate" className="mb-1 block text-sm font-medium">
                   {watchedDateLabel}

@@ -71,30 +71,3 @@ export const fetchReviews = async (
 
   return logs.filter(hasReviewContent).map((log) => toReview(log, profileById));
 };
-
-export const fetchSeasonReviewsByNumber = async (
-  supabase: SupabaseClient,
-  tmdbShowId: number,
-): Promise<Record<number, Review[]>> => {
-  const { data: logs } = await supabase
-    .from("season_logs")
-    .select("user_id, season_number, rating, review, watched_date")
-    .eq("tmdb_show_id", tmdbShowId)
-    .order("created_at", { ascending: false });
-
-  if (!logs || logs.length === 0) {
-    return {};
-  }
-
-  const profileById = await fetchProfileMap(
-    supabase,
-    [...new Set(logs.map((log) => log.user_id as string))],
-  );
-
-  const reviewsBySeason: Record<number, Review[]> = {};
-  for (const log of logs) {
-    if (!hasReviewContent(log)) continue;
-    (reviewsBySeason[log.season_number] ??= []).push(toReview(log, profileById));
-  }
-  return reviewsBySeason;
-};

@@ -25,6 +25,7 @@ export type DeleteShowLogFormState = MutationState;
 
 export type LogSeasonFormState = MutationState;
 export type SetSeasonRatingState = RatingState;
+export type ToggleSeasonWatchedState = WatchedState;
 export type ClearSeasonLogFieldState = MutationState;
 export type DeleteSeasonLogFormState = MutationState;
 
@@ -174,6 +175,24 @@ export const setSeasonRating = async (
     parsedRating.data,
     prevState.rating,
   );
+};
+
+export const toggleSeasonWatched = async (
+  _prevState: ToggleSeasonWatchedState,
+  formData: FormData,
+): Promise<ToggleSeasonWatchedState> => {
+  const currentlyWatched = formData.get("isWatched") === "true";
+  const tmdbShowId = parseTmdbId(formData.get("tmdbShowId"));
+  if (tmdbShowId === null) {
+    return { isWatched: currentlyWatched, error: "Invalid show." };
+  }
+
+  const seasonNumber = parseSeasonNumber(formData.get("seasonNumber"));
+  if (seasonNumber === null) {
+    return { isWatched: currentlyWatched, error: "Invalid season." };
+  }
+
+  return toggleWatched(seasonTarget(tmdbShowId, seasonNumber), currentlyWatched);
 };
 
 export const clearSeasonLogField = async (
