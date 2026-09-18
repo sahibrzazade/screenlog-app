@@ -1,10 +1,11 @@
+import Image from "next/image";
 import Link from "next/link";
-import { CircleUserRound } from "lucide-react";
 import { RatingStars } from "@/components/rating-stars";
 
 export type Review = {
   userId: string;
   username: string | null;
+  avatarUrl: string | null;
   rating: number | null;
   review: string | null;
   watchedDate: string;
@@ -28,7 +29,15 @@ export const ReviewList = ({ reviews, viewerId }: ReviewListProps) => {
           className="border-t border-border pt-4 first:border-t-0 first:pt-0"
         >
           <div className="flex items-start gap-2">
-            <CircleUserRound aria-hidden size={24} className="shrink-0 text-subtle-foreground" />
+            <div className="relative size-6 shrink-0 overflow-hidden rounded-full bg-surface">
+              <Image
+                src={review.avatarUrl || "/default-avatar.png"}
+                alt=""
+                fill
+                sizes="24px"
+                className="object-cover"
+              />
+            </div>
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
                 {review.username ? (

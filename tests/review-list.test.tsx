@@ -1,7 +1,14 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect, afterEach, vi } from "vitest";
 import { render, screen, cleanup } from "@testing-library/react";
 import { ReviewList } from "@/components/review-list";
+
+vi.mock("next/image", () => ({
+  default: (props: React.ComponentProps<"img">) => (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img {...props} alt={props.alt ?? ""} />
+  ),
+}));
 
 afterEach(() => {
   cleanup();
@@ -11,6 +18,7 @@ const reviews = [
   {
     userId: "user-1",
     username: "alice",
+    avatarUrl: null,
     rating: 4.5,
     review: "Loved it.",
     watchedDate: "2026-01-01",
@@ -18,6 +26,7 @@ const reviews = [
   {
     userId: "user-2",
     username: "bob",
+    avatarUrl: "https://example.com/bob.jpg",
     rating: 3,
     review: null,
     watchedDate: "2026-01-02",
@@ -44,7 +53,7 @@ describe("ReviewList", () => {
   it("falls back to Anonymous when username is null", () => {
     render(
       <ReviewList
-        reviews={[{ userId: "user-3", username: null, rating: 5, review: null, watchedDate: "2026-01-03" }]}
+        reviews={[{ userId: "user-3", username: null, avatarUrl: null, rating: 5, review: null, watchedDate: "2026-01-03" }]}
         viewerId={null}
       />,
     );
@@ -59,7 +68,7 @@ describe("ReviewList", () => {
   it("does not render review text when review is null", () => {
     render(
       <ReviewList
-        reviews={[{ userId: "user-2", username: "bob", rating: 3, review: null, watchedDate: "2026-01-02" }]}
+        reviews={[{ userId: "user-2", username: "bob", avatarUrl: null, rating: 3, review: null, watchedDate: "2026-01-02" }]}
         viewerId={null}
       />,
     );
@@ -85,7 +94,7 @@ describe("ReviewList", () => {
   it("does not link an Anonymous (usernameless) row", () => {
     render(
       <ReviewList
-        reviews={[{ userId: "user-3", username: null, rating: 5, review: null, watchedDate: "2026-01-03" }]}
+        reviews={[{ userId: "user-3", username: null, avatarUrl: null, rating: 5, review: null, watchedDate: "2026-01-03" }]}
         viewerId={null}
       />,
     );

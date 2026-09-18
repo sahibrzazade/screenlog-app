@@ -14,29 +14,40 @@ type ReviewLogRow = {
 const hasReviewContent = (log: ReviewLogRow) =>
   log.rating !== null || log.review !== null;
 
-/** username-by-id for the given user ids, read from the public profiles view. */
-const fetchUsernameMap = async (
+type ReviewerProfile = { username: string | null; avatarUrl: string | null };
+
+/** username/avatar-by-id for the given user ids, read from the public profiles view. */
+const fetchProfileMap = async (
   supabase: SupabaseClient,
   userIds: string[],
-): Promise<Map<string, string | null>> => {
+): Promise<Map<string, ReviewerProfile>> => {
   const { data: profiles } = await supabase
     .from("profiles_public")
-    .select("id, username")
+    .select("id, username, avatar_url")
     .in("id", userIds);
 
-  return new Map((profiles ?? []).map((profile) => [profile.id, profile.username]));
+  return new Map(
+    (profiles ?? []).map((profile) => [
+      profile.id,
+      { username: profile.username, avatarUrl: profile.avatar_url },
+    ]),
+  );
 };
 
 const toReview = (
   log: ReviewLogRow,
-  usernameById: Map<string, string | null>,
-): Review => ({
-  userId: log.user_id,
-  username: usernameById.get(log.user_id) ?? null,
-  rating: log.rating === null ? null : Number(log.rating),
-  review: log.review,
-  watchedDate: log.watched_date,
-});
+  profileById: Map<string, ReviewerProfile>,
+): Review => {
+  const profile = profileById.get(log.user_id);
+  return {
+    userId: log.user_id,
+    username: profile?.username ?? null,
+    avatarUrl: profile?.avatarUrl ?? null,
+    rating: log.rating === null ? null : Number(log.rating),
+    review: log.review,
+    watchedDate: log.watched_date,
+  };
+};
 
 export const fetchReviews = async (
   supabase: SupabaseClient,
@@ -53,12 +64,12 @@ export const fetchReviews = async (
     return [];
   }
 
-  const usernameById = await fetchUsernameMap(
+  const profileById = await fetchProfileMap(
     supabase,
     [...new Set(logs.map((log) => log.user_id as string))],
   );
 
-  return logs.filter(hasReviewContent).map((log) => toReview(log, usernameById));
+  return logs.filter(hasReviewContent).map((log) => toReview(log, profileById));
 };
 
 export const fetchSeasonReviewsByNumber = async (
@@ -75,7 +86,7 @@ export const fetchSeasonReviewsByNumber = async (
     return {};
   }
 
-  const usernameById = await fetchUsernameMap(
+  const profileById = await fetchProfileMap(
     supabase,
     [...new Set(logs.map((log) => log.user_id as string))],
   );
@@ -83,7 +94,7 @@ export const fetchSeasonReviewsByNumber = async (
   const reviewsBySeason: Record<number, Review[]> = {};
   for (const log of logs) {
     if (!hasReviewContent(log)) continue;
-    (reviewsBySeason[log.season_number] ??= []).push(toReview(log, usernameById));
+    (reviewsBySeason[log.season_number] ??= []).push(toReview(log, profileById));
   }
   return reviewsBySeason;
 };
