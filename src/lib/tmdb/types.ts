@@ -58,6 +58,27 @@ export type TmdbSeasonSummary = {
   air_date: string | null;
 };
 
+export type TmdbEpisode = {
+  id: number;
+  episode_number: number;
+  name: string;
+  overview: string;
+  air_date: string | null;
+  still_path: string | null;
+  vote_average: number;
+  vote_count: number;
+};
+
+export type TmdbSeasonDetails = {
+  id: number;
+  season_number: number;
+  name: string;
+  overview: string;
+  poster_path: string | null;
+  air_date: string | null;
+  episodes: TmdbEpisode[];
+};
+
 export type TmdbShowDetails = {
   id: number;
   name: string;
