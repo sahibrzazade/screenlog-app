@@ -15,9 +15,9 @@ const NavLink = ({
   <Link
     href={href}
     aria-label={label}
-    className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+    className="flex items-center gap-1.5 rounded-md p-2.5 text-sm text-muted-foreground transition-colors hover:text-foreground sm:px-2 sm:py-1.5"
   >
-    <Icon aria-hidden="true" className="size-4" />
+    <Icon aria-hidden="true" className="size-5" />
     <span className="hidden sm:inline">{label}</span>
   </Link>
 );
@@ -57,9 +57,9 @@ export const Navbar = async () => {
                 <button
                   type="submit"
                   aria-label="Log out"
-                  className="flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                  className="flex cursor-pointer items-center gap-1.5 rounded-md p-2.5 text-sm text-muted-foreground transition-colors hover:text-foreground sm:px-2 sm:py-1.5"
                 >
-                  <LogOut aria-hidden="true" className="size-4" />
+                  <LogOut aria-hidden="true" className="size-5" />
                   <span className="hidden sm:inline">Log out</span>
                 </button>
               </form>
