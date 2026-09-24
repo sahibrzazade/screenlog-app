@@ -91,6 +91,23 @@ describe("ProfileSection", () => {
     expect(container.querySelectorAll('[aria-hidden="true"]')).toHaveLength(2);
   });
 
+  it("shows an Edit link to editHref instead of See all when editHref is set", () => {
+    render(
+      <ProfileSection
+        title="Top 4 movies"
+        items={items}
+        total={2}
+        seeAllHref="/user/alice"
+        emptyMessage="No favourites yet."
+        capacity={4}
+        editHref="/settings"
+      />,
+    );
+
+    expect(screen.getByText("Edit")).toHaveAttribute("href", "/settings");
+    expect(screen.queryByText("See all")).not.toBeInTheDocument();
+  });
+
   it("renders all placeholders instead of the empty message when capacity is set and there are no items", () => {
     const { container } = render(
       <ProfileSection
