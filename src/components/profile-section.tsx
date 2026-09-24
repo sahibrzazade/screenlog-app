@@ -21,6 +21,13 @@ type ProfileSectionProps = {
    * the section just showing fewer items or an empty-state message.
    */
   capacity?: number;
+  /**
+   * Owner-only shortcut to `/settings` for showcase sections (Top 4 movies/
+   * shows, Currently watching) — these never have a "See all" (their `total`
+   * never exceeds what's already shown), so this replaces that slot instead
+   * of competing with it.
+   */
+  editHref?: string;
 };
 
 export const ProfileSection = ({
@@ -30,6 +37,7 @@ export const ProfileSection = ({
   seeAllHref,
   emptyMessage,
   capacity,
+  editHref,
 }: ProfileSectionProps) => {
   const emptySlots = capacity ? Math.max(0, capacity - items.length) : 0;
 
@@ -37,13 +45,22 @@ export const ProfileSection = ({
     <section className="mt-8 first:mt-4">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">{title}</h2>
-        {total > items.length && (
+        {editHref ? (
           <Link
-            href={seeAllHref}
+            href={editHref}
             className="text-sm text-accent hover:text-accent-hover"
           >
-            See all
+            Edit
           </Link>
+        ) : (
+          total > items.length && (
+            <Link
+              href={seeAllHref}
+              className="text-sm text-accent hover:text-accent-hover"
+            >
+              See all
+            </Link>
+          )
         )}
       </div>
 

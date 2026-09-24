@@ -96,6 +96,7 @@ const PublicProfilePage = async ({ params }: PublicProfilePageProps) => {
         total={nowWatchingItems.length}
         seeAllHref={`/user/${profile.username}`}
         emptyMessage="Not watching anything right now."
+        editHref={isOwner ? "/settings" : undefined}
       />
 
       <ProfileSection
@@ -105,6 +106,7 @@ const PublicProfilePage = async ({ params }: PublicProfilePageProps) => {
         seeAllHref={`/user/${profile.username}`}
         emptyMessage="No favourite movies picked yet."
         capacity={4}
+        editHref={isOwner ? "/settings" : undefined}
       />
 
       <ProfileSection
@@ -114,6 +116,7 @@ const PublicProfilePage = async ({ params }: PublicProfilePageProps) => {
         seeAllHref={`/user/${profile.username}`}
         emptyMessage="No favourite shows picked yet."
         capacity={4}
+        editHref={isOwner ? "/settings" : undefined}
       />
 
       {isOwner && (
