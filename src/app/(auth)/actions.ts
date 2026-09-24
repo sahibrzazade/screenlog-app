@@ -13,6 +13,11 @@ export const signup = async (
 ): Promise<AuthFormState> => {
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
+  const confirmPassword = formData.get("confirmPassword") as string;
+
+  if (password !== confirmPassword) {
+    return { error: "Passwords don't match." };
+  }
 
   const parsedUsername = usernameSchema.safeParse({
     username: formData.get("username"),

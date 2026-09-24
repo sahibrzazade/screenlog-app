@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import { FcGoogle } from "react-icons/fc";
+import { PasswordInput } from "@/components/password-input";
 import { login, loginWithGoogle } from "@/app/(auth)/actions";
 
 const LoginPage = () => {
@@ -28,13 +29,12 @@ const LoginPage = () => {
           <label htmlFor="password" className="mb-1 block text-sm font-medium">
             Password
           </label>
-          <input
+          <PasswordInput
             id="password"
             name="password"
-            type="password"
             required
             minLength={6}
-            className="w-full rounded-md border border-border bg-surface px-3 py-1.5 text-foreground focus:border-accent focus:outline-none"
+            autoComplete="current-password"
           />
         </div>
         {state?.error && (

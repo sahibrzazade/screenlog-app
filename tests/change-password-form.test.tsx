@@ -33,6 +33,7 @@ describe("ChangePasswordForm", () => {
 
     expect(screen.getByLabelText("Current password")).toBeInTheDocument();
     expect(screen.getByLabelText("New password")).toBeInTheDocument();
+    expect(screen.getByLabelText("Confirm new password")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Save" })).toBeInTheDocument();
   });
 
@@ -57,12 +58,16 @@ describe("ChangePasswordForm", () => {
     fireEvent.change(screen.getByLabelText("New password"), {
       target: { value: "new-password-123" },
     });
+    fireEvent.change(screen.getByLabelText("Confirm new password"), {
+      target: { value: "new-password-123" },
+    });
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
     await waitFor(() => expect(changePassword).toHaveBeenCalledTimes(1));
     const formData = vi.mocked(changePassword).mock.calls[0][1];
     expect(formData.get("currentPassword")).toBe("old-password");
     expect(formData.get("newPassword")).toBe("new-password-123");
+    expect(formData.get("confirmNewPassword")).toBe("new-password-123");
   });
 
   it("shows the error message and stays open on failure", async () => {
@@ -78,12 +83,31 @@ describe("ChangePasswordForm", () => {
     fireEvent.change(screen.getByLabelText("New password"), {
       target: { value: "new-password-123" },
     });
+    fireEvent.change(screen.getByLabelText("Confirm new password"), {
+      target: { value: "new-password-123" },
+    });
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "Current password is incorrect.",
     );
     expect(screen.getByLabelText("Current password")).toBeInTheDocument();
+  });
+
+  it("disables Save and shows an inline hint when the confirmation doesn't match", () => {
+    render(<ChangePasswordForm />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Change password" }));
+    fireEvent.change(screen.getByLabelText("New password"), {
+      target: { value: "new-password-123" },
+    });
+    fireEvent.change(screen.getByLabelText("Confirm new password"), {
+      target: { value: "something-else" },
+    });
+
+    expect(screen.getByText("Passwords don't match.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
+    expect(changePassword).not.toHaveBeenCalled();
   });
 
   it("closes back to the button on success", async () => {
@@ -95,6 +119,9 @@ describe("ChangePasswordForm", () => {
       target: { value: "old-password" },
     });
     fireEvent.change(screen.getByLabelText("New password"), {
+      target: { value: "new-password-123" },
+    });
+    fireEvent.change(screen.getByLabelText("Confirm new password"), {
       target: { value: "new-password-123" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Save" }));

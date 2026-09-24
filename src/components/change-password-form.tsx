@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { PasswordInput } from "@/components/password-input";
 import { changePassword, type ChangePasswordState } from "@/app/settings/actions";
 
 export const ChangePasswordForm = () => {
@@ -12,6 +13,10 @@ export const ChangePasswordForm = () => {
   const [isOpen, setIsOpen] = useState(false);
   const handledSuccessRef = useRef(false);
   const currentPasswordRef = useRef<HTMLInputElement>(null);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const passwordsMismatch =
+    confirmNewPassword.length > 0 && newPassword !== confirmNewPassword;
 
   // Adjusting state when a value changes, during render rather than in an
   // effect (https://react.dev/learn/you-might-not-need-an-effect): once a
@@ -55,29 +60,47 @@ export const ChangePasswordForm = () => {
         <label htmlFor="currentPassword" className="text-sm font-medium">
           Current password
         </label>
-        <input
+        <PasswordInput
           ref={currentPasswordRef}
           id="currentPassword"
           name="currentPassword"
-          type="password"
           required
           autoComplete="current-password"
-          className="mt-1 block w-full rounded-md border border-border bg-surface px-3 py-1.5 text-foreground focus:border-accent focus:outline-none"
+          className="mt-1"
         />
       </div>
       <div>
         <label htmlFor="newPassword" className="text-sm font-medium">
           New password
         </label>
-        <input
+        <PasswordInput
           id="newPassword"
           name="newPassword"
-          type="password"
           required
           minLength={8}
           autoComplete="new-password"
-          className="mt-1 block w-full rounded-md border border-border bg-surface px-3 py-1.5 text-foreground focus:border-accent focus:outline-none"
+          className="mt-1"
+          value={newPassword}
+          onChange={(event) => setNewPassword(event.target.value)}
         />
+      </div>
+      <div>
+        <label htmlFor="confirmNewPassword" className="text-sm font-medium">
+          Confirm new password
+        </label>
+        <PasswordInput
+          id="confirmNewPassword"
+          name="confirmNewPassword"
+          required
+          minLength={8}
+          autoComplete="new-password"
+          className="mt-1"
+          value={confirmNewPassword}
+          onChange={(event) => setConfirmNewPassword(event.target.value)}
+        />
+        {passwordsMismatch && (
+          <p className="mt-1 text-xs text-destructive">Passwords don&apos;t match.</p>
+        )}
       </div>
       {state && "error" in state && (
         <p role="alert" className="text-destructive">
@@ -87,7 +110,7 @@ export const ChangePasswordForm = () => {
       <div className="flex gap-2">
         <button
           type="submit"
-          disabled={pending}
+          disabled={pending || passwordsMismatch}
           className="cursor-pointer self-start rounded-md border border-border px-4 py-2 text-foreground disabled:cursor-not-allowed disabled:opacity-50"
         >
           {pending ? "Saving..." : "Save"}

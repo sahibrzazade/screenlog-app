@@ -93,6 +93,9 @@ describe("SignupPage", () => {
     fireEvent.change(screen.getByLabelText("Password"), {
       target: { value: "secret123" },
     });
+    fireEvent.change(screen.getByLabelText("Confirm password"), {
+      target: { value: "secret123" },
+    });
     fireEvent.click(screen.getByRole("button", { name: /sign up/i }));
 
     await waitFor(() => expect(signup).toHaveBeenCalledTimes(1));
@@ -100,6 +103,7 @@ describe("SignupPage", () => {
     expect(formData.get("username")).toBe("example");
     expect(formData.get("email")).toBe("new@example.com");
     expect(formData.get("password")).toBe("secret123");
+    expect(formData.get("confirmPassword")).toBe("secret123");
   });
 
   it("shows the error message returned by the signup action", async () => {
@@ -115,10 +119,28 @@ describe("SignupPage", () => {
     fireEvent.change(screen.getByLabelText("Password"), {
       target: { value: "secret123" },
     });
+    fireEvent.change(screen.getByLabelText("Confirm password"), {
+      target: { value: "secret123" },
+    });
     fireEvent.click(screen.getByRole("button", { name: /sign up/i }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "User already registered",
     );
+  });
+
+  it("disables Sign up and shows an inline hint when the passwords don't match", () => {
+    render(<SignupPage />);
+
+    fireEvent.change(screen.getByLabelText("Password"), {
+      target: { value: "secret123" },
+    });
+    fireEvent.change(screen.getByLabelText("Confirm password"), {
+      target: { value: "something-else" },
+    });
+
+    expect(screen.getByText("Passwords don't match.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /sign up/i })).toBeDisabled();
+    expect(signup).not.toHaveBeenCalled();
   });
 });

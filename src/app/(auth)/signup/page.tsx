@@ -1,11 +1,15 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import Link from "next/link";
+import { PasswordInput } from "@/components/password-input";
 import { signup } from "@/app/(auth)/actions";
 
 const SignupPage = () => {
   const [state, formAction, pending] = useActionState(signup, undefined);
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const passwordsMismatch = confirmPassword.length > 0 && password !== confirmPassword;
 
   return (
     <main className="mx-auto flex min-h-[calc(100dvh-3.5rem)] max-w-sm flex-col justify-center px-4 py-12">
@@ -42,14 +46,32 @@ const SignupPage = () => {
           <label htmlFor="password" className="mb-1 block text-sm font-medium">
             Password
           </label>
-          <input
+          <PasswordInput
             id="password"
             name="password"
-            type="password"
             required
             minLength={6}
-            className="w-full rounded-md border border-border bg-surface px-3 py-1.5 text-foreground focus:border-accent focus:outline-none"
+            autoComplete="new-password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
           />
+        </div>
+        <div>
+          <label htmlFor="confirmPassword" className="mb-1 block text-sm font-medium">
+            Confirm password
+          </label>
+          <PasswordInput
+            id="confirmPassword"
+            name="confirmPassword"
+            required
+            minLength={6}
+            autoComplete="new-password"
+            value={confirmPassword}
+            onChange={(event) => setConfirmPassword(event.target.value)}
+          />
+          {passwordsMismatch && (
+            <p className="mt-1 text-xs text-destructive">Passwords don&apos;t match.</p>
+          )}
         </div>
         {state?.error && (
           <p role="alert" className="text-sm text-destructive">
@@ -58,7 +80,7 @@ const SignupPage = () => {
         )}
         <button
           type="submit"
-          disabled={pending}
+          disabled={pending || passwordsMismatch}
           className="cursor-pointer rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
         >
           {pending ? "Signing up..." : "Sign up"}
