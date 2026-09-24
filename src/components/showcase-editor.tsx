@@ -105,6 +105,7 @@ export const ShowcaseEditor = ({
   const handleSelect = (item: MediaCardItem) => {
     if (items.length >= SHOWCASE_LIMIT || items.some((i) => i.id === item.id)) return;
     persist([...items, item]);
+    setIsPickerOpen(false);
   };
 
   const handleRemove = (id: number) => {
@@ -130,6 +131,7 @@ export const ShowcaseEditor = ({
 
       <div className="grid grid-cols-4 gap-3">
         <DndContext
+          id={`showcase-${mediaType}`}
           sensors={sensors}
           collisionDetection={closestCenter}
           onDragEnd={handleDragEnd}
