@@ -1,8 +1,8 @@
 import "@testing-library/jest-dom/vitest";
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, waitFor, cleanup } from "@testing-library/react";
-import LoginPage from "@/app/(auth)/login/page";
-import SignupPage from "@/app/(auth)/signup/page";
+import { LoginForm } from "@/components/login-form";
+import { SignupForm } from "@/components/signup-form";
 import { login, signup, loginWithGoogle } from "@/app/(auth)/actions";
 
 vi.mock("@/app/(auth)/actions", () => ({
@@ -13,20 +13,20 @@ vi.mock("@/app/(auth)/actions", () => ({
 
 afterEach(cleanup);
 
-describe("LoginPage", () => {
+describe("LoginForm", () => {
   beforeEach(() => {
     vi.mocked(login).mockReset();
   });
 
   it("renders email and password fields", () => {
-    render(<LoginPage />);
+    render(<LoginForm />);
     expect(screen.getByLabelText("Email")).toBeInTheDocument();
     expect(screen.getByLabelText("Password")).toBeInTheDocument();
   });
 
   it("submits the entered credentials to the login action", async () => {
     vi.mocked(login).mockResolvedValue(undefined);
-    render(<LoginPage />);
+    render(<LoginForm />);
 
     fireEvent.change(screen.getByLabelText("Email"), {
       target: { value: "user@example.com" },
@@ -44,7 +44,7 @@ describe("LoginPage", () => {
 
   it("shows the error message returned by the login action", async () => {
     vi.mocked(login).mockResolvedValue({ error: "Invalid login credentials" });
-    render(<LoginPage />);
+    render(<LoginForm />);
 
     fireEvent.change(screen.getByLabelText("Email"), {
       target: { value: "user@example.com" },
@@ -60,7 +60,7 @@ describe("LoginPage", () => {
   });
 
   it("renders a Continue with Google button", () => {
-    render(<LoginPage />);
+    render(<LoginForm />);
     expect(
       screen.getByRole("button", { name: "Continue with Google" }),
     ).toBeInTheDocument();
@@ -68,13 +68,13 @@ describe("LoginPage", () => {
   });
 });
 
-describe("SignupPage", () => {
+describe("SignupForm", () => {
   beforeEach(() => {
     vi.mocked(signup).mockReset();
   });
 
   it("renders username, email, and password fields", () => {
-    render(<SignupPage />);
+    render(<SignupForm />);
     expect(screen.getByLabelText("Username")).toBeInTheDocument();
     expect(screen.getByLabelText("Email")).toBeInTheDocument();
     expect(screen.getByLabelText("Password")).toBeInTheDocument();
@@ -82,7 +82,7 @@ describe("SignupPage", () => {
 
   it("submits the entered credentials to the signup action", async () => {
     vi.mocked(signup).mockResolvedValue(undefined);
-    render(<SignupPage />);
+    render(<SignupForm />);
 
     fireEvent.change(screen.getByLabelText("Username"), {
       target: { value: "example" },
@@ -108,7 +108,7 @@ describe("SignupPage", () => {
 
   it("shows the error message returned by the signup action", async () => {
     vi.mocked(signup).mockResolvedValue({ error: "User already registered" });
-    render(<SignupPage />);
+    render(<SignupForm />);
 
     fireEvent.change(screen.getByLabelText("Username"), {
       target: { value: "example" },
@@ -130,7 +130,7 @@ describe("SignupPage", () => {
   });
 
   it("disables Sign up and shows an inline hint when the passwords don't match", () => {
-    render(<SignupPage />);
+    render(<SignupForm />);
 
     fireEvent.change(screen.getByLabelText("Password"), {
       target: { value: "secret123" },

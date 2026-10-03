@@ -8,18 +8,8 @@ import { getDiaryData } from "@/lib/diary";
 import { MediaCard } from "@/components/media-card";
 import { toMediaCardItem } from "@/lib/tmdb/to-media-card-item";
 import { backdropUrl } from "@/lib/tmdb/images";
+import { NON_SCRIPTED_TV_GENRE_IDS, MIN_VOTE_COUNT } from "@/lib/tmdb/discover";
 import type { TmdbSearchResponse } from "@/lib/tmdb/types";
-
-// TMDB tags non-scripted TV (reality/talk/news) with these genre ids.
-// Excluded via /discover/tv so the home page's "Popular TV shows" row reads
-// as watchable stories (Breaking Bad, Game of Thrones) rather than TMDB's
-// raw popularity mix — search stays unfiltered.
-const NON_SCRIPTED_TV_GENRE_IDS = "10764,10767,10763";
-
-// A high popularity score can come from a handful of votes on something new
-// or obscure. Requiring a minimum vote count keeps the "Popular" rows to
-// titles with an actual track record, without changing the sort itself.
-const MIN_VOTE_COUNT = "500";
 
 const Home = async () => {
   const supabase = await createClient();
