@@ -75,9 +75,20 @@ const Home = async () => {
         )}
 
         <div className="relative mx-auto max-w-xl px-4 py-24 text-center">
-          <h1 className="font-display text-5xl text-foreground italic sm:text-6xl">
-            {profile?.username ? `Welcome back, ${profile.username}` : "Screenlog"}
-          </h1>
+          {profile?.username ? (
+            <h1 className="font-display text-5xl text-foreground italic sm:text-6xl">
+              Welcome back, {profile.username}
+            </h1>
+          ) : (
+            <Image
+              src="/screenlog-brand-assets/02-logo/screenlog-logo-dark-trimmed.png"
+              alt="Screenlog"
+              width={1763}
+              height={349}
+              priority
+              className="mx-auto h-14 w-auto sm:h-16"
+            />
+          )}
           <p className="mt-4 text-lg text-muted-foreground">
             {profile?.username
               ? "Here's what's popular right now."

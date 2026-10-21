@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Bookmark, BookOpen, CircleUserRound, LogOut, Search } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { logout } from "@/app/(auth)/actions";
@@ -35,11 +36,23 @@ export const Navbar = async () => {
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur-sm">
       <nav className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
-        <Link
-          href="/"
-          className="font-display text-xl text-foreground italic"
-        >
-          Screenlog
+        <Link href="/" aria-label="Screenlog" className="flex items-center">
+          <Image
+            src="/screenlog-brand-assets/01-mark/screenlog-mark-gold.png"
+            alt="Screenlog"
+            width={1024}
+            height={1404}
+            priority
+            className="h-8 w-auto sm:hidden"
+          />
+          <Image
+            src="/screenlog-brand-assets/02-logo/screenlog-logo-dark-trimmed.png"
+            alt="Screenlog"
+            width={1763}
+            height={349}
+            priority
+            className="hidden h-8 w-auto sm:block"
+          />
         </Link>
 
         <div className="flex items-center gap-1 sm:gap-2">

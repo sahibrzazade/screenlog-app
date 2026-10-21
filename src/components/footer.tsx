@@ -3,9 +3,15 @@ import Image from "next/image";
 export const Footer = () => (
   <footer className="mt-auto border-t border-border">
     <div className="mx-auto flex max-w-5xl flex-col items-center gap-6 px-4 py-8 text-center">
-      <div>
-        <p className="font-display text-lg text-foreground italic">Screenlog</p>
-        <p className="mt-1 text-sm text-muted-foreground">Track what you watch.</p>
+      <div className="flex flex-col items-center gap-1.5 opacity-70">
+        <Image
+          src="/screenlog-brand-assets/02-logo/screenlog-logo-dark-trimmed.png"
+          alt="Screenlog"
+          width={1763}
+          height={349}
+          className="h-6 w-auto"
+        />
+        <p className="text-sm text-muted-foreground">Track what you watch.</p>
       </div>
 
       <a
