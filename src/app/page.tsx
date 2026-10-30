@@ -5,7 +5,9 @@ import { createClient } from "@/lib/supabase/server";
 import { tmdbFetch } from "@/lib/tmdb/client";
 import { getWatchlistItems } from "@/lib/watchlist";
 import { getDiaryData } from "@/lib/diary";
-import { MediaCard } from "@/components/media-card";
+import { HomeSection } from "@/components/home-section";
+import { MediaRow } from "@/components/media-row";
+import { MoodPicker } from "@/components/mood-picker";
 import { toMediaCardItem } from "@/lib/tmdb/to-media-card-item";
 import { backdropUrl } from "@/lib/tmdb/images";
 import { NON_SCRIPTED_TV_GENRE_IDS, MIN_VOTE_COUNT } from "@/lib/tmdb/discover";
@@ -153,59 +155,37 @@ const Home = async () => {
         </div>
       </section>
 
-      {continueWatchlistItems.length > 0 && (
-        <section className="mx-auto max-w-5xl px-4 pt-12">
-          <div className="flex items-baseline justify-between">
-            <h2 className="text-xl font-semibold">
-              Pick up where you left off
-            </h2>
-            <Link
-              href="/watchlist"
-              className="text-sm text-accent hover:text-accent-hover"
-            >
-              See all
-            </Link>
-          </div>
-          <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-            {continueWatchlistItems.map((item) => (
-              <MediaCard
-                key={`${item.mediaType}-${item.id}`}
-                {...item}
-                showWatchlistButton
-                initialInWatchlist
-              />
-            ))}
-          </div>
-        </section>
-      )}
+      <div className="pb-16">
+        <MoodPicker userId={user?.id ?? null} watchlistKeys={watchlistKeys} />
 
-      <section className="mx-auto max-w-5xl px-4 py-12">
-        <h2 className="text-xl font-semibold">Popular movies</h2>
-        <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-          {movieItems.map((item) => (
-            <MediaCard
-              key={`movie-${item.id}`}
-              {...item}
-              showWatchlistButton={user !== null}
-              initialInWatchlist={watchlistKeys.has(`movie-${item.id}`)}
+        {continueWatchlistItems.length > 0 && (
+          <HomeSection
+            title="Pick up where you left off"
+            action={
+              <Link
+                href="/watchlist"
+                className="text-sm text-accent hover:text-accent-hover"
+              >
+                See all
+              </Link>
+            }
+          >
+            <MediaRow
+              items={continueWatchlistItems}
+              userId={user?.id ?? null}
+              watchlistKeys={watchlistKeys}
             />
-          ))}
-        </div>
-      </section>
+          </HomeSection>
+        )}
 
-      <section className="mx-auto max-w-5xl px-4 pb-12">
-        <h2 className="text-xl font-semibold">Popular TV shows</h2>
-        <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-          {showItems.map((item) => (
-            <MediaCard
-              key={`tv-${item.id}`}
-              {...item}
-              showWatchlistButton={user !== null}
-              initialInWatchlist={watchlistKeys.has(`tv-${item.id}`)}
-            />
-          ))}
-        </div>
-      </section>
+        <HomeSection title="Popular movies">
+          <MediaRow items={movieItems} userId={user?.id ?? null} watchlistKeys={watchlistKeys} />
+        </HomeSection>
+
+        <HomeSection title="Popular TV shows">
+          <MediaRow items={showItems} userId={user?.id ?? null} watchlistKeys={watchlistKeys} />
+        </HomeSection>
+      </div>
     </main>
   );
 };
