@@ -6,6 +6,8 @@ import { getWatchlistItems } from "@/lib/watchlist";
 import { getDiaryData } from "@/lib/diary";
 import { HomeSection } from "@/components/home-section";
 import { MediaRow } from "@/components/media-row";
+import { ActivityFeed } from "@/components/activity-feed";
+import { getActivityFeed } from "@/lib/activity";
 import { toMediaCardItem } from "@/lib/tmdb/to-media-card-item";
 import { backdropUrl } from "@/lib/tmdb/images";
 import { fetchPopularMovies, fetchPopularShows } from "@/lib/tmdb/discover";
@@ -21,7 +23,7 @@ const Home = async () => {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [popularMovies, popularShows, watchlistItems, diaryData, profile] =
+  const [popularMovies, popularShows, watchlistItems, diaryData, profile, activity] =
     await Promise.all([
       // Fetched for signed-in users too: the hero backdrop comes from it.
       fetchPopularMovies(),
@@ -38,6 +40,8 @@ const Home = async () => {
             .single()
             .then(({ data }) => data)
         : Promise.resolve(null),
+      // Guests have no feed at all.
+      user ? getActivityFeed(supabase, user.id) : Promise.resolve(null),
     ]);
 
   const watchlistKeys = new Set(
@@ -169,6 +173,12 @@ const Home = async () => {
               userId={user?.id ?? null}
               watchlistKeys={watchlistKeys}
             />
+          </HomeSection>
+        )}
+
+        {activity && (
+          <HomeSection title="Activity">
+            <ActivityFeed initialItems={activity.items} initialCursor={activity.nextCursor} />
           </HomeSection>
         )}
 

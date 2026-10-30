@@ -38,9 +38,9 @@ type PublicProfilePageProps = {
  * their own username gets the fuller "my profile" experience (watchlist,
  * settings shortcut); anyone else (including guests) gets the read-only
  * public view. The distinction is computed server-side from the verified
- * session — never from anything the client supplies — and the watchlist
- * section additionally stays behind the `watchlist` table's owner-only RLS,
- * so a mistake here couldn't leak it to the wrong viewer.
+ * session — never from anything the client supplies. Watchlists are
+ * publicly readable since 0016 (for the activity feed), so the watchlist
+ * section being owner-only is a product choice enforced here, not by RLS.
  */
 const PublicProfilePage = async ({ params }: PublicProfilePageProps) => {
   const { username } = await params;
