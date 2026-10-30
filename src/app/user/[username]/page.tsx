@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getPublicProfileByUsername } from "@/lib/public-profile";
 import { getWatchlistItems } from "@/lib/watchlist";
 import { ProfileSection, type ProfileSectionItem } from "@/components/profile-section";
+import { FollowButton } from "@/components/follow-button";
 import type { MediaCardItem } from "@/components/media-card";
 import type { DiaryEntry } from "@/lib/diary";
 
@@ -55,6 +56,16 @@ const PublicProfilePage = async ({ params }: PublicProfilePageProps) => {
   const viewer = authResult.data.user;
   const isOwner = viewer?.id === profile.id;
   const watchlistItems = isOwner ? await getWatchlistItems(supabase, profile.id) : [];
+  const isFollowing =
+    viewer && !isOwner
+      ? await supabase
+          .from("follows")
+          .select("follower_id")
+          .eq("follower_id", viewer.id)
+          .eq("following_id", profile.id)
+          .maybeSingle()
+          .then(({ data }) => data !== null)
+      : false;
 
   const nowWatchingItems = profile.showcase.nowWatching ? [profile.showcase.nowWatching] : [];
 
@@ -79,7 +90,7 @@ const PublicProfilePage = async ({ params }: PublicProfilePageProps) => {
             </p>
           </div>
         </div>
-        {isOwner && (
+        {isOwner ? (
           <Link
             href="/settings"
             aria-label="Settings"
@@ -87,6 +98,8 @@ const PublicProfilePage = async ({ params }: PublicProfilePageProps) => {
           >
             <Settings className="size-5" />
           </Link>
+        ) : (
+          viewer && <FollowButton targetUserId={profile.id} initialFollowing={isFollowing} />
         )}
       </div>
 
