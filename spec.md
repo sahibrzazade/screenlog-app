@@ -225,8 +225,8 @@ The navbar gains a `Discover` link next to `Search`, visible to guests too.
 - **Open, one-way follow** (Letterboxd model): following is instant, no
   request/approval, no private accounts.
 - **Where:** a Follow / Following button on `/user/[username]` (hidden on your
-  own profile) and on each row of the follower/following modals. A guest who
-  clicks it is sent to `/login`.
+  own profile) and on each row of the follower/following modals. Guests don't
+  see the button at all.
 - **Counts + lists:** `/user/[username]` shows follower and following counts,
   visible to anyone including guests. Clicking a count opens a **modal on the
   same page** (not a separate route) listing those users: avatar, username
@@ -285,7 +285,7 @@ The navbar gains a `Discover` link next to `Search`, visible to guests too.
 - [ ] A signed-in user can follow and unfollow another user from their profile; the state persists across reloads.
 - [ ] A user cannot follow themselves (no button on own profile; DB check rejects it).
 - [ ] RLS blocks inserting or deleting a `follows` row whose `follower_id` isn't the current user.
-- [ ] A guest clicking Follow is sent to `/login`.
+- [ ] Guests see no Follow button anywhere.
 - [ ] Anyone, guests included, sees follower/following counts on `/user/[username]`, and clicking either opens a modal listing those users with links to their profiles.
 - [ ] A signed-in user following others sees one combined, newest-first list of their logs and watchlist additions on `/`, 10 at a time, with "Show more" loading the next 10 and no duplicates or gaps between pages.
 - [ ] When someone follows the viewer, a "**user** followed you" item appears in the viewer's feed, even if the viewer doesn't follow them back.

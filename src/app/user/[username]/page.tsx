@@ -6,6 +6,9 @@ import { createClient } from "@/lib/supabase/server";
 import { getPublicProfileByUsername } from "@/lib/public-profile";
 import { getWatchlistItems } from "@/lib/watchlist";
 import { ProfileSection, type ProfileSectionItem } from "@/components/profile-section";
+import { FollowButton } from "@/components/follow-button";
+import { ProfileStats } from "@/components/profile-stats";
+import { getFollowCounts } from "@/lib/follows";
 import type { MediaCardItem } from "@/components/media-card";
 import type { DiaryEntry } from "@/lib/diary";
 
@@ -54,41 +57,58 @@ const PublicProfilePage = async ({ params }: PublicProfilePageProps) => {
 
   const viewer = authResult.data.user;
   const isOwner = viewer?.id === profile.id;
-  const watchlistItems = isOwner ? await getWatchlistItems(supabase, profile.id) : [];
+  const [watchlistItems, isFollowing, followCounts] = await Promise.all([
+    isOwner ? getWatchlistItems(supabase, profile.id) : Promise.resolve([]),
+    viewer && !isOwner
+      ? supabase
+          .from("follows")
+          .select("follower_id")
+          .eq("follower_id", viewer.id)
+          .eq("following_id", profile.id)
+          .maybeSingle()
+          .then(({ data }) => data !== null)
+      : Promise.resolve(false),
+    getFollowCounts(supabase, profile.id),
+  ]);
 
   const nowWatchingItems = profile.showcase.nowWatching ? [profile.showcase.nowWatching] : [];
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="relative size-16 shrink-0 overflow-hidden rounded-full bg-surface">
-            <Image
-              src={profile.avatarUrl || "/default-avatar.png"}
-              alt={`${profile.username}'s avatar`}
-              fill
-              sizes="64px"
-              className="object-cover"
-            />
-          </div>
-          <div>
-            <h1 className="text-2xl font-semibold">{profile.username}</h1>
-            <p className="text-sm text-muted-foreground">
-              {profile.movies.length} film{profile.movies.length === 1 ? "" : "s"} ·{" "}
-              {profile.shows.length} show{profile.shows.length === 1 ? "" : "s"}
-            </p>
-          </div>
+      <div className="flex items-center gap-4">
+        <div className="relative size-16 shrink-0 overflow-hidden rounded-full bg-surface">
+          <Image
+            src={profile.avatarUrl || "/default-avatar.png"}
+            alt={`${profile.username}'s avatar`}
+            fill
+            sizes="64px"
+            className="object-cover"
+          />
         </div>
-        {isOwner && (
-          <Link
-            href="/settings"
-            aria-label="Settings"
-            className="rounded-md p-2 text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <Settings className="size-5" />
-          </Link>
-        )}
+        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
+          <h1 className="truncate text-2xl font-semibold">{profile.username}</h1>
+          {isOwner ? (
+            <Link
+              href="/settings"
+              aria-label="Settings"
+              className="rounded-md p-2 text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <Settings className="size-5" />
+            </Link>
+          ) : (
+            viewer && <FollowButton targetUserId={profile.id} initialFollowing={isFollowing} />
+          )}
+        </div>
       </div>
+
+      <ProfileStats
+        profileId={profile.id}
+        films={profile.movies.length}
+        shows={profile.shows.length}
+        followers={followCounts.followers}
+        following={followCounts.following}
+        viewerId={viewer?.id ?? null}
+      />
 
       <ProfileSection
         title="Currently watching"
