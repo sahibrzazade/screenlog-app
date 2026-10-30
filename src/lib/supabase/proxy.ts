@@ -8,6 +8,7 @@ const PUBLIC_ROUTE_EXACT = [
   "/signup/check-email",
   "/auth/callback",
   "/search",
+  "/discover",
 ];
 const PUBLIC_ROUTE_PREFIXES = ["/movie/", "/tv/", "/user/"];
 const CHOOSE_USERNAME_ROUTE = "/choose-username";

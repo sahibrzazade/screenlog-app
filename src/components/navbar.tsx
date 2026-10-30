@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Bookmark, BookOpen, CircleUserRound, LogOut, Search } from "lucide-react";
+import { Bookmark, BookOpen, CircleUserRound, Compass, LogOut, Search } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { logout } from "@/app/(auth)/actions";
 
@@ -57,6 +57,7 @@ export const Navbar = async () => {
 
         <div className="flex items-center gap-1 sm:gap-2">
           <NavLink href="/search" label="Search" icon={Search} />
+          <NavLink href="/discover" label="Discover" icon={Compass} />
           {user ? (
             <>
               <NavLink href="/watchlist" label="Watchlist" icon={Bookmark} />

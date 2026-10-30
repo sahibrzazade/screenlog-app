@@ -2,17 +2,19 @@ import Image from "next/image";
 import Link from "next/link";
 import { Bookmark, Film, Search, Tv } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { tmdbFetch } from "@/lib/tmdb/client";
 import { getWatchlistItems } from "@/lib/watchlist";
 import { getDiaryData } from "@/lib/diary";
 import { HomeSection } from "@/components/home-section";
 import { MediaRow } from "@/components/media-row";
-import { MoodPicker } from "@/components/mood-picker";
 import { toMediaCardItem } from "@/lib/tmdb/to-media-card-item";
 import { backdropUrl } from "@/lib/tmdb/images";
-import { NON_SCRIPTED_TV_GENRE_IDS, MIN_VOTE_COUNT } from "@/lib/tmdb/discover";
-import type { TmdbSearchResponse } from "@/lib/tmdb/types";
+import { fetchPopularMovies, fetchPopularShows } from "@/lib/tmdb/discover";
 
+/**
+ * Home is the personal page: signed-in users get their own sections, while
+ * browse content (mood picker, popular rows) lives on /discover. Guests have
+ * nothing personal yet, so they keep the popular rows to avoid an empty page.
+ */
 const Home = async () => {
   const supabase = await createClient();
   const {
@@ -21,15 +23,9 @@ const Home = async () => {
 
   const [popularMovies, popularShows, watchlistItems, diaryData, profile] =
     await Promise.all([
-      tmdbFetch<TmdbSearchResponse>("/discover/movie", {
-        sort_by: "popularity.desc",
-        "vote_count.gte": MIN_VOTE_COUNT,
-      }),
-      tmdbFetch<TmdbSearchResponse>("/discover/tv", {
-        sort_by: "popularity.desc",
-        "vote_count.gte": MIN_VOTE_COUNT,
-        without_genres: NON_SCRIPTED_TV_GENRE_IDS,
-      }),
+      // Fetched for signed-in users too: the hero backdrop comes from it.
+      fetchPopularMovies(),
+      user ? Promise.resolve(null) : fetchPopularShows(),
       user ? getWatchlistItems(supabase, user.id) : Promise.resolve([]),
       user
         ? getDiaryData(supabase, user.id)
@@ -56,7 +52,7 @@ const Home = async () => {
   const movieItems = popularMovies.results
     .slice(0, 12)
     .map((result) => toMediaCardItem(result, "movie"));
-  const showItems = popularShows.results
+  const showItems = (popularShows?.results ?? [])
     .slice(0, 12)
     .map((result) => toMediaCardItem(result, "tv"));
 
@@ -93,7 +89,7 @@ const Home = async () => {
           )}
           <p className="mt-4 text-lg text-muted-foreground">
             {profile?.username
-              ? "Here's what's popular right now."
+              ? "Pick up where you left off, or find something new."
               : "Track every movie and show you watch. Rate it, review it, remember it."}
           </p>
 
@@ -156,8 +152,6 @@ const Home = async () => {
       </section>
 
       <div className="pb-16">
-        <MoodPicker userId={user?.id ?? null} watchlistKeys={watchlistKeys} />
-
         {continueWatchlistItems.length > 0 && (
           <HomeSection
             title="Pick up where you left off"
@@ -178,13 +172,17 @@ const Home = async () => {
           </HomeSection>
         )}
 
-        <HomeSection title="Popular movies">
-          <MediaRow items={movieItems} userId={user?.id ?? null} watchlistKeys={watchlistKeys} />
-        </HomeSection>
+        {!user && (
+          <>
+            <HomeSection title="Popular movies">
+              <MediaRow items={movieItems} userId={null} watchlistKeys={watchlistKeys} />
+            </HomeSection>
 
-        <HomeSection title="Popular TV shows">
-          <MediaRow items={showItems} userId={user?.id ?? null} watchlistKeys={watchlistKeys} />
-        </HomeSection>
+            <HomeSection title="Popular TV shows">
+              <MediaRow items={showItems} userId={null} watchlistKeys={watchlistKeys} />
+            </HomeSection>
+          </>
+        )}
       </div>
     </main>
   );
