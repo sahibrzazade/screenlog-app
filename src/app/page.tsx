@@ -78,7 +78,7 @@ const Home = async () => {
 
         <div className="relative mx-auto max-w-xl px-4 py-24 text-center">
           {profile?.username ? (
-            <h1 className="font-display text-5xl text-foreground italic sm:text-6xl">
+            <h1 className="text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
               Welcome back, {profile.username}
             </h1>
           ) : (
