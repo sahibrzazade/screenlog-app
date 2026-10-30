@@ -46,7 +46,6 @@
   --color-ring: var(--ring);
 
   --font-sans: var(--font-inter);
-  --font-display: var(--font-playfair-display);
   --font-mono: var(--font-jetbrains-mono);
 
   --radius-sm: 6px;
