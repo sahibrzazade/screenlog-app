@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { startTransition, useActionState, type FormEvent } from "react";
 import Link from "next/link";
 import { FcGoogle } from "react-icons/fc";
 import { PasswordInput } from "@/components/password-input";
@@ -9,10 +9,21 @@ import { login, loginWithGoogle } from "@/app/(auth)/actions";
 export const LoginForm = () => {
   const [state, formAction, pending] = useActionState(login, undefined);
 
+  // Submitting via onSubmit instead of <form action> because React resets a
+  // form after its action runs — including on a failed login, which would
+  // wipe what the user typed. Success redirects away, so no reset is needed.
+  // method="post" matters: if the form is submitted before hydration, the
+  // browser's native submit must never put the password in the URL (GET).
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    startTransition(() => formAction(formData));
+  };
+
   return (
     <>
       <h1 className="text-2xl font-semibold">Log in</h1>
-      <form action={formAction} className="mt-6 flex flex-col gap-4">
+      <form method="post" onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
         <div>
           <label htmlFor="email" className="mb-1 block text-sm font-medium">
             Email
