@@ -6,6 +6,10 @@ describe("isPublicRoute", () => {
     expect(isPublicRoute("/search")).toBe(true);
   });
 
+  it("treats the discover page as public", () => {
+    expect(isPublicRoute("/discover")).toBe(true);
+  });
+
   it("treats dynamic movie detail routes as public", () => {
     expect(isPublicRoute("/movie/550")).toBe(true);
   });
