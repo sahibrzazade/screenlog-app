@@ -33,7 +33,7 @@ export const LogSeasonForm = ({
     title={seasonName}
     posterUrl={posterUrl}
     watchedDateLabel="Date finished"
-    submitLabel="Log season"
+    submitLabel="Save"
     initialLog={initialLog}
     actions={{
       log: logSeason,

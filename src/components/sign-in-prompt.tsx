@@ -4,7 +4,7 @@ type SignInPromptProps = {
   message?: string;
 };
 
-export const SignInPrompt = ({ message = "Sign in to log this" }: SignInPromptProps) => (
+export const SignInPrompt = ({ message = "Sign in to rate and review" }: SignInPromptProps) => (
   <div className="rounded-md border border-border p-4 text-sm">
     <p>{message}</p>
     <Link href="/login" className="mt-2 inline-block underline">

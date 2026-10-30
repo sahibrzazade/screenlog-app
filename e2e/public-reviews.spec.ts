@@ -43,8 +43,8 @@ test("a logged-in user's review is publicly visible to a guest, and labeled You 
     await page.getByLabel("Rate 4 out of 5 stars", { exact: true }).check({ force: true });
     await page.getByLabel("Watched date").fill("2020-01-01");
     await page.getByLabel("Review (optional)").fill("Public review text.");
-    await page.getByRole("button", { name: "Log movie" }).click();
-    await expect(page.getByText("Log saved")).toBeVisible();
+    await page.getByRole("button", { name: "Save", exact: true }).click();
+    await expect(page.getByText("Saved", { exact: true })).toBeVisible();
 
     const reviewsSection = page
       .locator("section")
@@ -68,8 +68,8 @@ test("a logged-in user's review is publicly visible to a guest, and labeled You 
     }
 
     page.on("dialog", (dialog) => dialog.accept());
-    await page.getByRole("button", { name: "Delete log" }).click();
-    await expect(page.getByText("Log deleted")).toBeVisible();
+    await page.getByRole("button", { name: "Delete", exact: true }).click();
+    await expect(page.getByText("Deleted", { exact: true })).toBeVisible();
   } finally {
     await adminClient.auth.admin.deleteUser(userId);
   }
