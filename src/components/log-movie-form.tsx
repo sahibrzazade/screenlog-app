@@ -29,7 +29,7 @@ export const LogMovieForm = ({
     title={title}
     posterUrl={posterUrl}
     watchedDateLabel="Watched date"
-    submitLabel="Log movie"
+    submitLabel="Save"
     initialLog={initialLog}
     actions={{
       log: logMovie,

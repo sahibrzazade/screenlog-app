@@ -39,8 +39,8 @@ test("logs a movie and a season, then confirms both show up in their correct /di
     await page.getByLabel("Rate 3.5 out of 5 stars", { exact: true }).check({ force: true });
     await page.getByLabel("Watched date").fill("2020-01-01");
     await page.getByLabel("Review (optional)").fill("Great movie.");
-    await page.getByRole("button", { name: "Log movie" }).click();
-    await expect(page.getByText("Log saved")).toBeVisible();
+    await page.getByRole("button", { name: "Save", exact: true }).click();
+    await expect(page.getByText("Saved", { exact: true })).toBeVisible();
 
     await page.goto(`/tv/${BREAKING_BAD_TMDB_ID}`);
     await expect(page.getByRole("heading", { name: "Breaking Bad" })).toBeVisible();

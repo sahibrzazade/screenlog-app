@@ -38,7 +38,7 @@ type LogTitleFormProps = {
   posterUrl: string | null;
   /** Label on the watched-date field ("Watched date" vs "Date finished"). */
   watchedDateLabel: string;
-  /** Label on the submit button when creating a log ("Log movie" vs "Log show"). */
+  /** Label on the submit button when creating a log (e.g. "Save"). */
   submitLabel: string;
   initialLog: { rating: number | null; review: string | null; watchedDate: string } | null;
   actions: {
@@ -134,14 +134,14 @@ export const LogTitleForm = ({
 
   useEffect(() => {
     if (state && "success" in state) {
-      toast.success(wasExistingLogRef.current ? "Log updated" : "Log saved");
+      toast.success(wasExistingLogRef.current ? "Changes saved" : "Saved");
       wasExistingLogRef.current = true;
     }
   }, [state]);
 
   useEffect(() => {
     if (deleteState && "success" in deleteState) {
-      toast.success("Log deleted");
+      toast.success("Deleted");
       wasExistingLogRef.current = false;
     }
   }, [deleteState]);
@@ -246,7 +246,7 @@ export const LogTitleForm = ({
           onClick={() => setModalOpen(true)}
           className="cursor-pointer self-stretch rounded-md bg-accent px-3 py-1.5 text-center text-sm text-accent-foreground transition-colors hover:bg-accent-hover"
         >
-          {initialLog ? "Edit log" : "Add log"}
+          {initialLog ? "Edit review" : "Rate & review"}
         </button>
 
         {initialLog && (
@@ -255,7 +255,7 @@ export const LogTitleForm = ({
             onClick={() => setConfirmDeleteOpen(true)}
             className="cursor-pointer self-stretch rounded-md border border-destructive px-3 py-1.5 text-center text-sm text-destructive"
           >
-            Delete log
+            Delete
           </button>
         )}
       </div>
@@ -409,7 +409,7 @@ export const LogTitleForm = ({
                 disabled={pending}
                 className="cursor-pointer rounded-md bg-accent px-4 py-2 text-accent-foreground transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {pending ? "Saving..." : initialLog ? "Update log" : submitLabel}
+                {pending ? "Saving..." : initialLog ? "Save changes" : submitLabel}
               </button>
               {initialLog && (
                 <button
@@ -417,7 +417,7 @@ export const LogTitleForm = ({
                   onClick={() => setConfirmDeleteOpen(true)}
                   className="cursor-pointer rounded-md border border-destructive px-4 py-2 text-destructive"
                 >
-                  Delete log
+                  Delete
                 </button>
               )}
             </div>
@@ -428,7 +428,7 @@ export const LogTitleForm = ({
       {initialLog && (
         <ConfirmDialog
           open={confirmDeleteOpen}
-          title="Delete this log?"
+          title="Delete your rating and review?"
           description="This can't be undone."
           error={deleteState && "error" in deleteState ? deleteState.error : undefined}
           pending={deletePending}

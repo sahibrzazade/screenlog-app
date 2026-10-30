@@ -37,9 +37,9 @@ test("logs a movie end-to-end and persists it in Supabase", async ({ page }) => 
     await page.getByLabel("Rate 3.5 out of 5 stars").check({ force: true });
     await page.getByLabel("Watched date").fill("2020-01-01");
     await page.getByLabel("Review (optional)").fill("Great movie.");
-    await page.getByRole("button", { name: "Log movie" }).click();
+    await page.getByRole("button", { name: "Save", exact: true }).click();
 
-    await expect(page.getByText("Log saved")).toBeVisible();
+    await expect(page.getByText("Saved", { exact: true })).toBeVisible();
 
     const { data: log, error: selectError } = await adminClient
       .from("movie_logs")
@@ -54,9 +54,9 @@ test("logs a movie end-to-end and persists it in Supabase", async ({ page }) => 
     expect(log.watched_date).toBe("2020-01-01");
 
     page.on("dialog", (dialog) => dialog.accept());
-    await page.getByRole("button", { name: "Delete log" }).click();
+    await page.getByRole("button", { name: "Delete", exact: true }).click();
 
-    await expect(page.getByText("Log deleted")).toBeVisible();
+    await expect(page.getByText("Deleted", { exact: true })).toBeVisible();
 
     const { data: deletedLog } = await adminClient
       .from("movie_logs")
