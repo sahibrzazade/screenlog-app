@@ -24,6 +24,11 @@ describe("LoginForm", () => {
     expect(screen.getByLabelText("Password")).toBeInTheDocument();
   });
 
+  it("uses POST so a pre-hydration submit never puts the password in the URL", () => {
+    render(<LoginForm />);
+    expect(screen.getByLabelText("Password").closest("form")).toHaveAttribute("method", "post");
+  });
+
   it("submits the entered credentials to the login action", async () => {
     vi.mocked(login).mockResolvedValue(undefined);
     render(<LoginForm />);
@@ -57,6 +62,9 @@ describe("LoginForm", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "Invalid login credentials",
     );
+    // A failed login must not wipe what the user typed.
+    expect(screen.getByLabelText("Email")).toHaveValue("user@example.com");
+    expect(screen.getByLabelText("Password")).toHaveValue("secret123");
   });
 
   it("renders a Continue with Google button", () => {
@@ -78,6 +86,11 @@ describe("SignupForm", () => {
     expect(screen.getByLabelText("Username")).toBeInTheDocument();
     expect(screen.getByLabelText("Email")).toBeInTheDocument();
     expect(screen.getByLabelText("Password")).toBeInTheDocument();
+  });
+
+  it("uses POST so a pre-hydration submit never puts passwords in the URL", () => {
+    render(<SignupForm />);
+    expect(screen.getByLabelText("Password").closest("form")).toHaveAttribute("method", "post");
   });
 
   it("submits the entered credentials to the signup action", async () => {
@@ -127,6 +140,11 @@ describe("SignupForm", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "User already registered",
     );
+    // A failed signup must not wipe what the user typed.
+    expect(screen.getByLabelText("Username")).toHaveValue("example");
+    expect(screen.getByLabelText("Email")).toHaveValue("new@example.com");
+    expect(screen.getByLabelText("Password")).toHaveValue("secret123");
+    expect(screen.getByLabelText("Confirm password")).toHaveValue("secret123");
   });
 
   it("disables Sign up and shows an inline hint when the passwords don't match", () => {

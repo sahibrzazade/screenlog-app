@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { startTransition, useActionState, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { PasswordInput } from "@/components/password-input";
 import { signup } from "@/app/(auth)/actions";
@@ -11,10 +11,21 @@ export const SignupForm = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const passwordsMismatch = confirmPassword.length > 0 && password !== confirmPassword;
 
+  // Submitting via onSubmit instead of <form action> because React resets a
+  // form after its action runs — including on an error like a taken
+  // username, which would wipe every field. Success redirects away.
+  // method="post" matters: if the form is submitted before hydration, the
+  // browser's native submit must never put the passwords in the URL (GET).
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    startTransition(() => formAction(formData));
+  };
+
   return (
     <>
       <h1 className="text-2xl font-semibold">Sign up</h1>
-      <form action={formAction} className="mt-6 flex flex-col gap-4">
+      <form method="post" onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
         <div>
           <label htmlFor="username" className="mb-1 block text-sm font-medium">
             Username
