@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { tmdbFetch } from "@/lib/tmdb/client";
 import { getWatchlistItems } from "@/lib/watchlist";
 import { getDiaryData } from "@/lib/diary";
+import { HomeSection } from "@/components/home-section";
 import { MediaRow } from "@/components/media-row";
 import { toMediaCardItem } from "@/lib/tmdb/to-media-card-item";
 import { backdropUrl } from "@/lib/tmdb/images";
@@ -153,36 +154,35 @@ const Home = async () => {
         </div>
       </section>
 
-      {continueWatchlistItems.length > 0 && (
-        <section className="mx-auto max-w-5xl px-4 pt-12">
-          <div className="flex items-baseline justify-between">
-            <h2 className="text-xl font-semibold">
-              Pick up where you left off
-            </h2>
-            <Link
-              href="/watchlist"
-              className="text-sm text-accent hover:text-accent-hover"
-            >
-              See all
-            </Link>
-          </div>
-          <MediaRow
-            items={continueWatchlistItems}
-            userId={user?.id ?? null}
-            watchlistKeys={watchlistKeys}
-          />
-        </section>
-      )}
+      <div className="pb-16">
+        {continueWatchlistItems.length > 0 && (
+          <HomeSection
+            title="Pick up where you left off"
+            action={
+              <Link
+                href="/watchlist"
+                className="text-sm text-accent hover:text-accent-hover"
+              >
+                See all
+              </Link>
+            }
+          >
+            <MediaRow
+              items={continueWatchlistItems}
+              userId={user?.id ?? null}
+              watchlistKeys={watchlistKeys}
+            />
+          </HomeSection>
+        )}
 
-      <section className="mx-auto max-w-5xl px-4 py-12">
-        <h2 className="text-xl font-semibold">Popular movies</h2>
-        <MediaRow items={movieItems} userId={user?.id ?? null} watchlistKeys={watchlistKeys} />
-      </section>
+        <HomeSection title="Popular movies">
+          <MediaRow items={movieItems} userId={user?.id ?? null} watchlistKeys={watchlistKeys} />
+        </HomeSection>
 
-      <section className="mx-auto max-w-5xl px-4 pb-12">
-        <h2 className="text-xl font-semibold">Popular TV shows</h2>
-        <MediaRow items={showItems} userId={user?.id ?? null} watchlistKeys={watchlistKeys} />
-      </section>
+        <HomeSection title="Popular TV shows">
+          <MediaRow items={showItems} userId={user?.id ?? null} watchlistKeys={watchlistKeys} />
+        </HomeSection>
+      </div>
     </main>
   );
 };
