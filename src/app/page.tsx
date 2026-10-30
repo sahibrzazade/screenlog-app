@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { tmdbFetch } from "@/lib/tmdb/client";
 import { getWatchlistItems } from "@/lib/watchlist";
 import { getDiaryData } from "@/lib/diary";
-import { MediaCard } from "@/components/media-card";
+import { MediaRow } from "@/components/media-row";
 import { toMediaCardItem } from "@/lib/tmdb/to-media-card-item";
 import { backdropUrl } from "@/lib/tmdb/images";
 import { NON_SCRIPTED_TV_GENRE_IDS, MIN_VOTE_COUNT } from "@/lib/tmdb/discover";
@@ -166,45 +166,22 @@ const Home = async () => {
               See all
             </Link>
           </div>
-          <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-            {continueWatchlistItems.map((item) => (
-              <MediaCard
-                key={`${item.mediaType}-${item.id}`}
-                {...item}
-                showWatchlistButton
-                initialInWatchlist
-              />
-            ))}
-          </div>
+          <MediaRow
+            items={continueWatchlistItems}
+            userId={user?.id ?? null}
+            watchlistKeys={watchlistKeys}
+          />
         </section>
       )}
 
       <section className="mx-auto max-w-5xl px-4 py-12">
         <h2 className="text-xl font-semibold">Popular movies</h2>
-        <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-          {movieItems.map((item) => (
-            <MediaCard
-              key={`movie-${item.id}`}
-              {...item}
-              showWatchlistButton={user !== null}
-              initialInWatchlist={watchlistKeys.has(`movie-${item.id}`)}
-            />
-          ))}
-        </div>
+        <MediaRow items={movieItems} userId={user?.id ?? null} watchlistKeys={watchlistKeys} />
       </section>
 
       <section className="mx-auto max-w-5xl px-4 pb-12">
         <h2 className="text-xl font-semibold">Popular TV shows</h2>
-        <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-          {showItems.map((item) => (
-            <MediaCard
-              key={`tv-${item.id}`}
-              {...item}
-              showWatchlistButton={user !== null}
-              initialInWatchlist={watchlistKeys.has(`tv-${item.id}`)}
-            />
-          ))}
-        </div>
+        <MediaRow items={showItems} userId={user?.id ?? null} watchlistKeys={watchlistKeys} />
       </section>
     </main>
   );
