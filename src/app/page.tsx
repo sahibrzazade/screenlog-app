@@ -7,6 +7,7 @@ import { getWatchlistItems } from "@/lib/watchlist";
 import { getDiaryData } from "@/lib/diary";
 import { HomeSection } from "@/components/home-section";
 import { MediaRow } from "@/components/media-row";
+import { MoodPicker } from "@/components/mood-picker";
 import { toMediaCardItem } from "@/lib/tmdb/to-media-card-item";
 import { backdropUrl } from "@/lib/tmdb/images";
 import { NON_SCRIPTED_TV_GENRE_IDS, MIN_VOTE_COUNT } from "@/lib/tmdb/discover";
@@ -155,6 +156,8 @@ const Home = async () => {
       </section>
 
       <div className="pb-16">
+        <MoodPicker userId={user?.id ?? null} watchlistKeys={watchlistKeys} />
+
         {continueWatchlistItems.length > 0 && (
           <HomeSection
             title="Pick up where you left off"
