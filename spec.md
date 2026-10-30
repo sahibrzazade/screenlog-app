@@ -135,6 +135,9 @@ export const RatingStars = ({ value, onChange, readOnly = false }: RatingStarsPr
 - [ ] User can set a single "currently watching" show on their profile
 - [ ] User can change their password from `/settings` (email/password accounts only)
 - [ ] Any visitor can view a public `/user/[username]` profile with that user's showcase, counts, and full logged history
+- [ ] Browse sections live on a `/discover` page, separate from the personal home page
+- [ ] User can follow/unfollow other users and see anyone's follower/following counts and lists
+- [ ] Signed-in user sees a combined activity feed (logs + watchlist additions) from the people they follow on the home page
 
 ## Post-MVP Features
 
@@ -196,6 +199,98 @@ dashboard; `/user/[username]` is the read-only public view.
 - [ ] `avatar_url` and showcase columns are the only newly-public `profiles` fields; email and other private data stay unreadable.
 - [ ] The Supabase `security_definer_view` lint on `profiles_public` is resolved.
 - [ ] RLS still blocks any user from writing another user's `profiles` row or showcase.
+
+### Discover, Follow, Activity feed
+
+Three features, built in this order. Realtime notifications (first type:
+"X followed you") are a **separate later spec** that builds on Follow — not
+part of this one.
+
+#### Discover page
+
+The home page is splitting into personal content (yours + people you follow)
+and browse content (same for everyone). Browse content moves to a new
+`/discover` route; no new logic, only relocation of existing sections.
+
+| Page | Sections |
+|---|---|
+| `/` (signed in) | Search, Pick up where you left off, Activity feed (once built) |
+| `/` (guest) | Hero + search + sign-up prompt, then Popular movies and Popular TV shows rows so the page isn't empty |
+| `/discover` (anyone) | Mood picker, Popular movies, Popular TV shows (the seasonal mood section from the mood spec was never built; it would land here if added later) |
+
+The navbar gains a `Discover` link next to `Search`, visible to guests too.
+
+#### Follow users
+
+- **Open, one-way follow** (Letterboxd model): following is instant, no
+  request/approval, no private accounts.
+- **Where:** a Follow / Following button on `/user/[username]` (hidden on your
+  own profile) and on each row of the follower/following modals. A guest who
+  clicks it is sent to `/login`.
+- **Counts + lists:** `/user/[username]` shows follower and following counts,
+  visible to anyone including guests. Clicking a count opens a **modal on the
+  same page** (not a separate route) listing those users: avatar, username
+  (links to their profile), Follow button.
+- Users are found via the existing People mode on `/search`
+  (`?mode=people`) and the username links on review lists — no new user
+  search is needed.
+
+#### Activity feed
+
+- Signed-in home page section listing recent activity from the people you
+  follow, as **one combined stream** sorted newest-first:
+  - movie logs, show logs, season logs (`created_at`): "**user** watched
+    *Title*" (or "rewatched"), rating stars if present, first ~2 lines of the
+    review if present; season logs read "*Show* — Season N"
+  - watchlist additions (`added_at`): "**user** added *Title* to their watchlist"
+  - new followers of **the viewer** (`follows.created_at` where
+    `following_id` = viewer): "**user** followed you" — from anyone, whether
+    or not the viewer follows them back. Other people's follows ("X followed
+    Y") and the viewer's own follows are not shown.
+- **Vertical list**, not a `MediaRow`: small poster, avatar, the line above,
+  relative time ("2h ago"). Poster/title link to the title page; username
+  links to the profile.
+- **10 items** on load, total across all activity types (not 10 per type). A
+  "Show more" button loads the next 10. No infinite scroll, no realtime.
+- Editing a log does not bump it — ordering is by creation time only.
+  Removing a watchlist item removes that activity (no history is kept).
+- **Watchlists become publicly readable** (explicit decision, 2026-10-30) —
+  needed so the feed can read followed users' watchlists. This applies to
+  every user's existing watchlist. A public watchlist tab on `/user/[username]`
+  is **not** in this scope.
+- Empty state (no followed-user activity and no new followers yet): short message linking
+  to People search (`/search?mode=people`) to find users to follow. Guests
+  don't see the feed at all.
+- Known limitation, accepted for v1: one user adding many watchlist items in
+  a row can fill the feed. Grouping consecutive watchlist adds is deferred.
+
+#### Capability map & build order
+
+| Module | Scope | Depends on | Migration |
+|---|---|---|---|
+| **D1 · discover-page** | `/discover` route with the moved sections; trimmed `/` for guests and signed-in users; navbar link | — | none |
+| **F1 · follows-schema** | `follows` table: `follower_id`, `following_id` (FK `profiles.id`, cascade delete), `created_at`; PK `(follower_id, following_id)`; check `follower_id <> following_id`; index on `following_id`. RLS: select for anyone; insert/delete only where `auth.uid() = follower_id` | — | `0015` |
+| **F2 · follow-actions** | Follow/unfollow server actions (Zod-validated target id, idempotent) + `FollowButton` component | F1 | none |
+| **F3 · follow-profile-ui** | Counts on `/user/[username]` and the follower/following modals | F2 | none |
+| **A1 · watchlist-public-read** | Replace `watchlist: select own` with a public select policy (writes stay owner-only) | — | `0016` |
+| **A2 · feed-query** | `getActivityFeed(supabase, userId, cursor?)`: take the newest 10 from each of 5 sources (4 tables for followed ids + `follows` rows targeting the viewer), merge, sort, slice 10; returns items + next cursor | F1, A1 | none |
+| **A3 · feed-ui** | Home page feed section, empty state, "Show more" loading the next page | A2, D1 | none |
+
+**Order:** D1 → F1 → F2 → F3 → A1 → A2 → A3.
+
+#### Acceptance criteria
+
+- [ ] `/discover` shows the mood picker and both Popular rows; the navbar links to it for guests and signed-in users.
+- [ ] `/` no longer shows the mood sections; guests see hero + search + sign-up prompt + Popular movies + Popular TV shows; signed-in users see search + Pick up where you left off.
+- [ ] A signed-in user can follow and unfollow another user from their profile; the state persists across reloads.
+- [ ] A user cannot follow themselves (no button on own profile; DB check rejects it).
+- [ ] RLS blocks inserting or deleting a `follows` row whose `follower_id` isn't the current user.
+- [ ] A guest clicking Follow is sent to `/login`.
+- [ ] Anyone, guests included, sees follower/following counts on `/user/[username]`, and clicking either opens a modal listing those users with links to their profiles.
+- [ ] A signed-in user following others sees one combined, newest-first list of their logs and watchlist additions on `/`, 10 at a time, with "Show more" loading the next 10 and no duplicates or gaps between pages.
+- [ ] When someone follows the viewer, a "**user** followed you" item appears in the viewer's feed, even if the viewer doesn't follow them back.
+- [ ] A signed-in user with no followed-user activity and no followers sees the empty state; guests see no feed.
+- [ ] Watchlist writes remain owner-only after the read policy is widened.
 
 ## Open Questions
 
