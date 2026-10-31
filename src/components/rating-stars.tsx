@@ -11,6 +11,8 @@ type RatingStarsProps = {
   hideClearButton?: boolean;
   /** Smaller interactive stars (24px) for tight spaces, e.g. a sidebar card. */
   compact?: boolean;
+  /** Tiny read-only stars (14px) for dense layouts, e.g. under a grid poster. */
+  small?: boolean;
 };
 
 export const RatingStars = ({
@@ -20,11 +22,12 @@ export const RatingStars = ({
   readOnly = false,
   hideClearButton = false,
   compact = false,
+  small = false,
 }: RatingStarsProps) => {
   const [hoveredValue, setHoveredValue] = useState<number | null>(null);
   const displayValue = hoveredValue ?? value;
-  const starSizeClass = readOnly || compact ? "h-6 w-6" : "h-12 w-12";
-  const gapClass = compact && !readOnly ? "gap-1" : "gap-2";
+  const starSizeClass = small ? "h-3.5 w-3.5" : readOnly || compact ? "h-6 w-6" : "h-12 w-12";
+  const gapClass = small ? "gap-0.5" : compact && !readOnly ? "gap-1" : "gap-2";
 
   return (
     <div className={`inline-flex items-center ${gapClass}`}>

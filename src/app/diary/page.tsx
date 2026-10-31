@@ -1,8 +1,27 @@
 import { createClient } from "@/lib/supabase/server";
-import { getDiaryData } from "@/lib/diary";
+import { getDiaryData, type DiaryEntry as DiaryEntryData } from "@/lib/diary";
+import { parseDiaryView, type DiaryView } from "@/lib/diary-view";
 import { DiaryEntry } from "@/components/diary-entry";
+import { DiaryGrid } from "@/components/diary-grid";
+import { DiaryViewToggle } from "@/components/diary-view-toggle";
 
-const DiaryPage = async () => {
+type DiaryPageProps = {
+  searchParams: Promise<{ view?: string | string[] }>;
+};
+
+const DiaryEntries = ({ entries, view }: { entries: DiaryEntryData[]; view: DiaryView }) =>
+  view === "grid" ? (
+    <DiaryGrid entries={entries} />
+  ) : (
+    <ul className="mt-2 flex flex-col gap-1">
+      {entries.map((entry) => (
+        <DiaryEntry key={entry.id} entry={entry} />
+      ))}
+    </ul>
+  );
+
+const DiaryPage = async ({ searchParams }: DiaryPageProps) => {
+  const view = parseDiaryView((await searchParams).view);
   const supabase = await createClient();
   const {
     data: { user },
@@ -11,12 +30,16 @@ const DiaryPage = async () => {
   const { movies, shows } = user
     ? await getDiaryData(supabase, user.id)
     : { movies: [], shows: [] };
+  const isEmpty = movies.length === 0 && shows.length === 0;
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-6">
-      <h1 className="text-2xl font-semibold">Diary</h1>
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="text-2xl font-semibold">Diary</h1>
+        {!isEmpty && <DiaryViewToggle basePath="/diary" view={view} />}
+      </div>
 
-      {movies.length === 0 && shows.length === 0 ? (
+      {isEmpty ? (
         <p className="mt-4 text-muted-foreground">
           Nothing logged yet.
         </p>
@@ -29,11 +52,7 @@ const DiaryPage = async () => {
                 No movies logged yet.
               </p>
             ) : (
-              <ul className="mt-2 flex flex-col gap-1">
-                {movies.map((entry) => (
-                  <DiaryEntry key={entry.id} entry={entry} />
-                ))}
-              </ul>
+              <DiaryEntries entries={movies} view={view} />
             )}
           </section>
 
@@ -44,11 +63,7 @@ const DiaryPage = async () => {
                 No shows logged yet.
               </p>
             ) : (
-              <ul className="mt-2 flex flex-col gap-1">
-                {shows.map((entry) => (
-                  <DiaryEntry key={entry.id} entry={entry} />
-                ))}
-              </ul>
+              <DiaryEntries entries={shows} view={view} />
             )}
           </section>
         </>
