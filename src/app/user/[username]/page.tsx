@@ -102,8 +102,10 @@ const PublicProfilePage = async ({ params }: PublicProfilePageProps) => {
 
       <ProfileStats
         profileId={profile.id}
+        username={profile.username}
         films={profile.movies.length}
         shows={profile.shows.length}
+        watchlist={watchlistItems.length}
         followers={followCounts.followers}
         following={followCounts.following}
         viewerId={viewer?.id ?? null}

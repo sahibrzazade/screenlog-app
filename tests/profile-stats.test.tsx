@@ -29,8 +29,10 @@ const renderStats = (
   render(
     <ProfileStats
       profileId={PROFILE_ID}
+      username="bob"
       films={12}
       shows={1}
+      watchlist={5}
       followers={overrides.followers ?? 0}
       following={overrides.following ?? 0}
       viewerId={overrides.viewerId ?? null}
@@ -42,15 +44,32 @@ describe("ProfileStats", () => {
     vi.mocked(getFollowList).mockReset();
   });
 
-  it("shows all four stats with singular/plural labels", () => {
+  it("shows all five stats with singular/plural labels", () => {
     renderStats({ followers: 1, following: 3 });
-    expect(screen.getByText("Films")).toBeInTheDocument();
-    expect(screen.getByText("Show")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "12 Films" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "1 Show" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "5 Watchlist" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "1 Follower" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "3 Following" })).toBeInTheDocument();
   });
 
-  it("only makes the follow counts clickable", () => {
+  it("links the film, show and watchlist counts to the user's see-all lists", () => {
+    renderStats();
+    expect(screen.getByRole("link", { name: "5 Watchlist" })).toHaveAttribute(
+      "href",
+      "/user/bob/watchlist",
+    );
+    expect(screen.getByRole("link", { name: "12 Films" })).toHaveAttribute(
+      "href",
+      "/user/bob/films",
+    );
+    expect(screen.getByRole("link", { name: "1 Show" })).toHaveAttribute(
+      "href",
+      "/user/bob/shows",
+    );
+  });
+
+  it("makes only the follow counts open a modal", () => {
     renderStats();
     expect(screen.getAllByRole("button")).toHaveLength(2);
   });

@@ -338,8 +338,14 @@ makes them visible on profiles too, Letterboxd-style. No migration.
   read-only. Owner is decided server-side from the verified session.
 - **`/watchlist`** redirects a signed-in user to `/user/{their username}/watchlist`,
   so existing links keep working. Signed-out behaviour is unchanged.
-- **Out of scope:** hiding a watchlist (no private setting), a watchlist count
-  in the profile stats, Movies/TV filter, pagination.
+- **Clickable counts:** the Films and Shows counts in the profile stats strip
+  link to `/user/[username]/films` and `/shows` (follow counts keep opening
+  their modals).
+- **Watchlist count:** the stats strip becomes five columns — Films, Shows,
+  Watchlist, Followers, Following — and the Watchlist count links to
+  `/user/[username]/watchlist`. Labels shrink slightly on phones so all five fit.
+- **Out of scope:** hiding a watchlist (no private setting), Movies/TV filter,
+  pagination.
 
 #### Acceptance criteria
 
@@ -347,6 +353,8 @@ makes them visible on profiles too, Letterboxd-style. No migration.
 - [ ] `/user/[username]/watchlist` lists the whole watchlist; an unknown username returns a 404.
 - [ ] Visitors see no remove/edit controls on the watchlist; the owner can still remove items there.
 - [ ] Visiting `/watchlist` while signed in lands on `/user/{username}/watchlist`.
+- [ ] Clicking the Films / Shows count on a profile opens that user's films / shows list.
+- [ ] The profile stats show a Watchlist count; clicking it opens `/user/[username]/watchlist`. All five labels fit on a 375px-wide screen.
 
 ## Open Questions
 
