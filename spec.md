@@ -256,8 +256,8 @@ The navbar gains a `Discover` link next to `Search`, visible to guests too.
   Removing a watchlist item removes that activity (no history is kept).
 - **Watchlists become publicly readable** (explicit decision, 2026-10-30) —
   needed so the feed can read followed users' watchlists. This applies to
-  every user's existing watchlist. A public watchlist tab on `/user/[username]`
-  is **not** in this scope.
+  every user's existing watchlist. Showing watchlists on profiles was added
+  later — see [Public watchlists on profiles](#public-watchlists-on-profiles).
 - Empty state (no followed-user activity and no new followers yet): short message linking
   to People search (`/search?mode=people`) to find users to follow. Guests
   don't see the feed at all.
@@ -323,6 +323,38 @@ The diary (`/diary`) and the see-all lists (`/user/[username]/films`,
 - [ ] On a see-all page, Next/Previous keep the view (`?page=2&view=list`), and switching view keeps the page.
 - [ ] An unknown `view` value renders grid; the toggle is hidden when a list is empty.
 - [ ] Toggle links are keyboard-reachable, have visible focus and accessible names.
+
+### Public watchlists on profiles
+
+Watchlists are already publicly readable (`0016`, for the activity feed); this
+makes them visible on profiles too, Letterboxd-style. No migration.
+
+- **Profile section:** `/user/[username]` shows a Watchlist section (first 4,
+  newest-added first, "See all") to every visitor, guests included — not only
+  the owner.
+- **One shared page:** `/user/[username]/watchlist` is the full watchlist for
+  everyone; "See all" links there for owner and visitors alike. The owner
+  sees the editable grid (remove from watchlist); visitors see the same grid
+  read-only. Owner is decided server-side from the verified session.
+- **`/watchlist`** redirects a signed-in user to `/user/{their username}/watchlist`,
+  so existing links keep working. Signed-out behaviour is unchanged.
+- **Clickable counts:** the Films and Shows counts in the profile stats strip
+  link to `/user/[username]/films` and `/shows` (follow counts keep opening
+  their modals).
+- **Watchlist count:** the stats strip becomes five columns — Films, Shows,
+  Watchlist, Followers, Following — and the Watchlist count links to
+  `/user/[username]/watchlist`. Labels shrink slightly on phones so all five fit.
+- **Out of scope:** hiding a watchlist (no private setting), Movies/TV filter,
+  pagination.
+
+#### Acceptance criteria
+
+- [ ] A guest and another signed-in user both see the Watchlist section on `/user/[username]`.
+- [ ] `/user/[username]/watchlist` lists the whole watchlist; an unknown username returns a 404.
+- [ ] Visitors see no remove/edit controls on the watchlist; the owner can still remove items there.
+- [ ] Visiting `/watchlist` while signed in lands on `/user/{username}/watchlist`.
+- [ ] Clicking the Films / Shows count on a profile opens that user's films / shows list.
+- [ ] The profile stats show a Watchlist count; clicking it opens `/user/[username]/watchlist`. All five labels fit on a 375px-wide screen.
 
 ## Open Questions
 

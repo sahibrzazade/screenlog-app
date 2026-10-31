@@ -6,6 +6,12 @@ import { watchlistToggleSchema } from "@/lib/validation/watchlist";
 
 export type ToggleWatchlistState = { inWatchlist: boolean; error?: string };
 
+/** The watchlist is shown on the profile and its see-all page (/watchlist only redirects). */
+const revalidateWatchlistPages = () => {
+  revalidatePath("/user/[username]", "page");
+  revalidatePath("/user/[username]/watchlist", "page");
+};
+
 export const toggleWatchlist = async (
   prevState: ToggleWatchlistState,
   formData: FormData,
@@ -46,7 +52,7 @@ export const toggleWatchlist = async (
       };
     }
 
-    revalidatePath("/watchlist");
+    revalidateWatchlistPages();
     revalidatePath(
       mediaType === "movie" ? `/movie/${tmdbId}` : `/tv/${tmdbId}`,
     );
@@ -64,7 +70,7 @@ export const toggleWatchlist = async (
     };
   }
 
-  revalidatePath("/watchlist");
+  revalidateWatchlistPages();
   revalidatePath(mediaType === "movie" ? `/movie/${tmdbId}` : `/tv/${tmdbId}`);
   return { inWatchlist: true };
 };

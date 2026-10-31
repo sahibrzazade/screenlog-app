@@ -161,7 +161,7 @@ const Home = async () => {
             title="Pick up where you left off"
             action={
               <Link
-                href="/watchlist"
+                href={profile?.username ? `/user/${profile.username}/watchlist` : "/watchlist"}
                 className="text-sm text-accent hover:text-accent-hover"
               >
                 See all

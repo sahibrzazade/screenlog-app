@@ -1,21 +1,28 @@
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getWatchlistItems } from "@/lib/watchlist";
-import { WatchlistGrid } from "@/components/watchlist-grid";
 
-const WatchlistPage = async () => {
+/**
+ * /watchlist no longer renders its own grid — /user/[username]/watchlist is
+ * the one watchlist page for owner and visitors alike. This stays only so the
+ * navbar link and old bookmarks land on the signed-in user's own watchlist.
+ */
+const WatchlistRedirectPage = async () => {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const items = user ? await getWatchlistItems(supabase, user.id) : [];
+  if (!user) {
+    redirect("/login");
+  }
 
-  return (
-    <main className="mx-auto max-w-5xl px-4 py-6">
-      <h1 className="text-2xl font-semibold">Watchlist</h1>
-      <WatchlistGrid initialItems={items} />
-    </main>
-  );
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("username")
+    .eq("id", user.id)
+    .single();
+
+  redirect(profile?.username ? `/user/${profile.username}/watchlist` : "/choose-username");
 };
 
-export default WatchlistPage;
+export default WatchlistRedirectPage;
