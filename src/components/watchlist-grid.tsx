@@ -5,9 +5,16 @@ import { MediaCard, type MediaCardItem } from "@/components/media-card";
 
 type WatchlistGridProps = {
   initialItems: MediaCardItem[];
+  /** Owner view: each card gets a remove-from-watchlist button. Visitors get a read-only grid. */
+  editable?: boolean;
+  emptyMessage?: string;
 };
 
-export const WatchlistGrid = ({ initialItems }: WatchlistGridProps) => {
+export const WatchlistGrid = ({
+  initialItems,
+  editable = false,
+  emptyMessage = "Nothing on your watchlist yet.",
+}: WatchlistGridProps) => {
   const [items, setItems] = useState(initialItems);
 
   const handleRemoved = (mediaType: "movie" | "tv", id: number) => {
@@ -18,9 +25,7 @@ export const WatchlistGrid = ({ initialItems }: WatchlistGridProps) => {
 
   if (items.length === 0) {
     return (
-      <p className="mt-4 text-muted-foreground">
-        Nothing on your watchlist yet.
-      </p>
+      <p className="mt-4 text-muted-foreground">{emptyMessage}</p>
     );
   }
 
@@ -30,7 +35,7 @@ export const WatchlistGrid = ({ initialItems }: WatchlistGridProps) => {
         <MediaCard
           key={`${item.mediaType}-${item.id}`}
           {...item}
-          showWatchlistButton
+          showWatchlistButton={editable}
           initialInWatchlist
           onWatchlistToggle={(inWatchlist) => {
             if (!inWatchlist) handleRemoved(item.mediaType, item.id);
