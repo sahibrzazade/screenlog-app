@@ -86,18 +86,24 @@ const PublicProfilePage = async ({ params }: PublicProfilePageProps) => {
           />
         </div>
         <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
-          <h1 className="truncate text-2xl font-semibold">{profile.username}</h1>
-          <CopyProfileLinkButton username={profile.username} />
-          {isOwner ? (
-            <Link
-              href="/settings"
-              aria-label="Settings"
-              className="rounded-md p-2 text-muted-foreground transition-colors hover:text-foreground"
-            >
-              <Settings className="size-5" />
-            </Link>
-          ) : (
-            viewer && <FollowButton targetUserId={profile.id} initialFollowing={isFollowing} />
+          {/* Username and icons never wrap apart: a long username truncates instead. */}
+          <div className="flex min-w-0 items-center gap-1">
+            <h1 className="min-w-0 truncate text-xl font-semibold sm:text-2xl">{profile.username}</h1>
+            <div className="flex shrink-0 items-center">
+              <CopyProfileLinkButton username={profile.username} />
+              {isOwner && (
+                <Link
+                  href="/settings"
+                  aria-label="Settings"
+                  className="rounded-md p-2 text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  <Settings className="size-5" />
+                </Link>
+              )}
+            </div>
+          </div>
+          {!isOwner && viewer && (
+            <FollowButton targetUserId={profile.id} initialFollowing={isFollowing} />
           )}
         </div>
       </div>
