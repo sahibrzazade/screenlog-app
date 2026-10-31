@@ -7,6 +7,7 @@ import { getPublicProfileByUsername } from "@/lib/public-profile";
 import { getWatchlistItems } from "@/lib/watchlist";
 import { ProfileSection, type ProfileSectionItem } from "@/components/profile-section";
 import { FollowButton } from "@/components/follow-button";
+import { CopyProfileLinkButton } from "@/components/copy-profile-link-button";
 import { ProfileStats } from "@/components/profile-stats";
 import { getFollowCounts } from "@/lib/follows";
 import type { MediaCardItem } from "@/components/media-card";
@@ -86,6 +87,7 @@ const PublicProfilePage = async ({ params }: PublicProfilePageProps) => {
         </div>
         <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
           <h1 className="truncate text-2xl font-semibold">{profile.username}</h1>
+          <CopyProfileLinkButton username={profile.username} />
           {isOwner ? (
             <Link
               href="/settings"
