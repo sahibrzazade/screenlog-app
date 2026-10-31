@@ -29,7 +29,7 @@ test("adds and removes a movie from the watchlist end-to-end", async ({ page }) 
     await page.getByLabel("Password").fill(password);
     await page.getByRole("button", { name: "Log in" }).click();
 
-    await expect(page.getByText(`Logged in as ${email}`)).toBeVisible();
+    await expect(page.getByRole("button", { name: "Log out" })).toBeVisible();
 
     await page.goto(`/movie/${THE_MATRIX_TMDB_ID}`);
     await expect(page.getByRole("heading", { name: "The Matrix" })).toBeVisible();
