@@ -35,12 +35,11 @@ type PublicProfilePageProps = {
 
 /**
  * A single profile route for both audiences: the signed-in owner viewing
- * their own username gets the fuller "my profile" experience (watchlist,
- * settings shortcut); anyone else (including guests) gets the read-only
+ * their own username gets the fuller "my profile" experience (settings
+ * shortcut, edit links); anyone else (including guests) gets the read-only
  * public view. The distinction is computed server-side from the verified
  * session — never from anything the client supplies. Watchlists are
- * publicly readable since 0016 (for the activity feed), so the watchlist
- * section being owner-only is a product choice enforced here, not by RLS.
+ * publicly readable (0016), so the Watchlist section is shown to everyone.
  */
 const PublicProfilePage = async ({ params }: PublicProfilePageProps) => {
   const { username } = await params;
@@ -58,7 +57,7 @@ const PublicProfilePage = async ({ params }: PublicProfilePageProps) => {
   const viewer = authResult.data.user;
   const isOwner = viewer?.id === profile.id;
   const [watchlistItems, isFollowing, followCounts] = await Promise.all([
-    isOwner ? getWatchlistItems(supabase, profile.id) : Promise.resolve([]),
+    getWatchlistItems(supabase, profile.id),
     viewer && !isOwner
       ? supabase
           .from("follows")
@@ -139,15 +138,13 @@ const PublicProfilePage = async ({ params }: PublicProfilePageProps) => {
         editHref={isOwner ? "/settings" : undefined}
       />
 
-      {isOwner && (
-        <ProfileSection
-          title="Watchlist"
-          items={watchlistItems.slice(0, SECTION_PREVIEW_LIMIT).map(toShowcaseSectionItem)}
-          total={watchlistItems.length}
-          seeAllHref="/watchlist"
-          emptyMessage="Nothing on your watchlist yet."
-        />
-      )}
+      <ProfileSection
+        title="Watchlist"
+        items={watchlistItems.slice(0, SECTION_PREVIEW_LIMIT).map(toShowcaseSectionItem)}
+        total={watchlistItems.length}
+        seeAllHref={`/user/${profile.username}/watchlist`}
+        emptyMessage={isOwner ? "Nothing on your watchlist yet." : "Nothing on the watchlist yet."}
+      />
 
       <ProfileSection
         title="Movies"
