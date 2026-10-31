@@ -60,7 +60,11 @@ export const Navbar = async () => {
           <NavLink href="/discover" label="Discover" icon={Compass} />
           {user ? (
             <>
-              <NavLink href="/watchlist" label="Watchlist" icon={Bookmark} />
+              <NavLink
+                href={profile?.username ? `/user/${profile.username}/watchlist` : "/choose-username"}
+                label="Watchlist"
+                icon={Bookmark}
+              />
               <NavLink href="/diary" label="Diary" icon={BookOpen} />
               <NavLink
                 href={profile?.username ? `/user/${profile.username}` : "/choose-username"}
