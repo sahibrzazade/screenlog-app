@@ -292,6 +292,38 @@ The navbar gains a `Discover` link next to `Search`, visible to guests too.
 - [ ] A signed-in user with no followed-user activity and no followers sees the empty state; guests see no feed.
 - [ ] Watchlist writes remain owner-only after the read policy is widened.
 
+### Diary grid view
+
+The diary (`/diary`) and the see-all lists (`/user/[username]/films`,
+`/user/[username]/shows`) gain a **grid / list view toggle**, Letterboxd-style.
+
+- **Grid (default):** a poster grid with small read-only rating stars under
+  each poster. No title text, date or review — the title is the poster's
+  alt text and tooltip. 3 columns on mobile, 4 from `sm` up. Unrated entries
+  show the poster only; a missing poster shows the title as a placeholder.
+  Each poster links to the title page.
+- **List:** the current row layout (poster, title, date, stars, review),
+  unchanged.
+- **Toggle:** two icon links (`LayoutGrid`, `List`) next to the page title,
+  each with an accessible name; the active one is marked `aria-current`.
+  Hidden when there are no entries.
+- **State lives in the URL:** no `view` param = grid, `?view=list` = list,
+  any other value falls back to grid. On the see-all pages, pagination links
+  keep the current view and switching view keeps the current page (page size
+  stays 24, which divides evenly into 3 and 4 columns).
+- **Width** stays `max-w-2xl` in both views.
+- **Out of scope:** pagination on `/diary`; DB-level pagination (the lists
+  still fetch every entry and slice in memory).
+
+#### Acceptance criteria
+
+- [ ] `/diary` opens in grid view: Movies and Shows sections each show a poster grid with stars under rated entries.
+- [ ] Clicking the list icon switches `/diary` to the current row layout and the URL to `/diary?view=list`; clicking the grid icon returns to `/diary`.
+- [ ] `/user/[username]/films` and `/shows` open in grid view and have the same toggle.
+- [ ] On a see-all page, Next/Previous keep the view (`?page=2&view=list`), and switching view keeps the page.
+- [ ] An unknown `view` value renders grid; the toggle is hidden when a list is empty.
+- [ ] Toggle links are keyboard-reachable, have visible focus and accessible names.
+
 ## Open Questions
 
 - Should a show status (`watching` / `dropped` / `completed`) be part of MVP, or should it be inferred purely from season logs? → To be resolved in the Plan phase.

@@ -74,5 +74,10 @@ describe("RatingStars", () => {
       fireEvent.click(screen.getByRole("img", { name: "2 out of 5 stars" }));
       expect(onChange).not.toHaveBeenCalled();
     });
+
+    it("keeps the accessible label at the small size", () => {
+      render(<RatingStars value={4} readOnly small />);
+      expect(screen.getByRole("img", { name: "4 out of 5 stars" })).toBeInTheDocument();
+    });
   });
 });

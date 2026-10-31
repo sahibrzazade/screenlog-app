@@ -25,12 +25,14 @@ describe("PaginatedDiaryList", () => {
       <PaginatedDiaryList
         title="Movies"
         backHref="/user/example"
+        basePath="/user/example/films"
         entries={[]}
         emptyMessage="Nothing here."
       />,
     );
 
     expect(screen.getByText("Nothing here.")).toBeInTheDocument();
+    expect(screen.queryByRole("navigation", { name: "Diary view" })).not.toBeInTheDocument();
   });
 
   it("renders no pagination controls for a single page of entries", () => {
@@ -40,7 +42,9 @@ describe("PaginatedDiaryList", () => {
       <PaginatedDiaryList
         title="Movies"
         backHref="/user/example"
+        basePath="/user/example/films"
         entries={entries}
+        view="list"
         emptyMessage="Nothing here."
       />,
     );
@@ -57,8 +61,10 @@ describe("PaginatedDiaryList", () => {
       <PaginatedDiaryList
         title="Movies"
         backHref="/user/example"
+        basePath="/user/example/films"
         entries={entries}
         page="2"
+        view="list"
         emptyMessage="Nothing here."
       />,
     );
@@ -68,7 +74,52 @@ describe("PaginatedDiaryList", () => {
     expect(screen.getByText("Title 29")).toBeInTheDocument();
     expect(screen.queryByText("Title 0")).not.toBeInTheDocument();
     expect(screen.getByText("Page 2 of 2")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Previous/ })).toHaveAttribute("href", "?page=1");
+    expect(screen.getByRole("link", { name: /Previous/ })).toHaveAttribute(
+      "href",
+      "/user/example/films?view=list",
+    );
+  });
+
+  it("defaults to the grid view and keeps it in pagination links", () => {
+    const entries = Array.from({ length: 30 }, (_, i) => entry({ id: `${i}`, title: `Title ${i}` }));
+
+    render(
+      <PaginatedDiaryList
+        title="Movies"
+        backHref="/user/example"
+        basePath="/user/example/films"
+        entries={entries}
+        emptyMessage="Nothing here."
+      />,
+    );
+
+    expect(screen.getByRole("link", { name: "Grid view" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: /Next/ })).toHaveAttribute(
+      "href",
+      "/user/example/films?page=2",
+    );
+  });
+
+  it("keeps the current page when switching view", () => {
+    const entries = Array.from({ length: 30 }, (_, i) => entry({ id: `${i}`, title: `Title ${i}` }));
+
+    render(
+      <PaginatedDiaryList
+        title="Movies"
+        backHref="/user/example"
+        basePath="/user/example/films"
+        entries={entries}
+        page="2"
+        view="list"
+        emptyMessage="Nothing here."
+      />,
+    );
+
+    expect(screen.getByRole("link", { name: "List view" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "Grid view" })).toHaveAttribute(
+      "href",
+      "/user/example/films?page=2",
+    );
   });
 
   it("clamps an out-of-range page to the last valid page", () => {
@@ -78,6 +129,7 @@ describe("PaginatedDiaryList", () => {
       <PaginatedDiaryList
         title="Movies"
         backHref="/user/example"
+        basePath="/user/example/films"
         entries={entries}
         page="99"
         emptyMessage="Nothing here."
