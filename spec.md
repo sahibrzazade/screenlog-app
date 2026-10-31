@@ -356,6 +356,28 @@ makes them visible on profiles too, Letterboxd-style. No migration.
 - [ ] Clicking the Films / Shows count on a profile opens that user's films / shows list.
 - [ ] The profile stats show a Watchlist count; clicking it opens `/user/[username]/watchlist`. All five labels fit on a 375px-wide screen.
 
+### Copy profile link
+
+A share shortcut on profiles: one click copies the profile's URL so it can be
+pasted anywhere.
+
+- **Where:** an icon button (lucide `Link`) in the `/user/[username]` header,
+  next to the username alongside the Settings / Follow controls. Visible to
+  everyone — owner, other users and guests. Styled like the Settings icon.
+- **Behaviour:** copies `{window.location.origin}/user/{username}` with
+  `navigator.clipboard.writeText` and shows a "Link copied" toast (`sonner`);
+  on failure (e.g. non-secure context) shows "Couldn't copy the link". Write
+  only — the clipboard is never read. No `execCommand` fallback.
+- **Out of scope:** native share sheet, rich link previews (Open Graph), short
+  links.
+
+#### Acceptance criteria
+
+- [ ] A guest, another signed-in user and the owner all see the copy button on `/user/[username]`.
+- [ ] Clicking it puts the profile's absolute URL on the clipboard and shows a success toast.
+- [ ] If the clipboard write fails, an error toast is shown.
+- [ ] The button is keyboard-reachable, has visible focus and the accessible name "Copy profile link".
+
 ## Open Questions
 
 - Should a show status (`watching` / `dropped` / `completed`) be part of MVP, or should it be inferred purely from season logs? → To be resolved in the Plan phase.
