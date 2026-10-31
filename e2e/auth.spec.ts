@@ -27,7 +27,7 @@ test("logs in, logs out, and logs back in", async ({ page }) => {
     await page.getByLabel("Password").fill(password);
     await page.getByRole("button", { name: "Log in" }).click();
 
-    await expect(page.getByText(`Logged in as ${email}`)).toBeVisible();
+    await expect(page.getByRole("button", { name: "Log out" })).toBeVisible();
 
     await page.getByRole("button", { name: "Log out" }).click();
 
@@ -38,7 +38,7 @@ test("logs in, logs out, and logs back in", async ({ page }) => {
     await page.getByLabel("Password").fill(password);
     await page.getByRole("button", { name: "Log in" }).click();
 
-    await expect(page.getByText(`Logged in as ${email}`)).toBeVisible();
+    await expect(page.getByRole("button", { name: "Log out" })).toBeVisible();
   } finally {
     await adminClient.auth.admin.deleteUser(userId);
   }

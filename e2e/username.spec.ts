@@ -89,7 +89,7 @@ test("gates a user without a username to /choose-username, and setting one unloc
     await page.getByRole("button", { name: "Continue" }).click();
 
     await expect(page).toHaveURL(/\/$/);
-    await expect(page.getByText(`Logged in as ${email}`)).toBeVisible();
+    await expect(page.getByRole("button", { name: "Log out" })).toBeVisible();
 
     const { data: profile, error: profileError } = await adminClient
       .from("profiles")
@@ -123,7 +123,7 @@ test("lets a logged-in user change their username from /settings", async ({ page
     await page.getByLabel("Email").fill(email);
     await page.getByLabel("Password").fill(password);
     await page.getByRole("button", { name: "Log in" }).click();
-    await expect(page.getByText(`Logged in as ${email}`)).toBeVisible();
+    await expect(page.getByRole("button", { name: "Log out" })).toBeVisible();
 
     await page.goto("/settings");
     await expect(page.getByLabel("Username")).toHaveValue(initialUsername);

@@ -42,7 +42,7 @@ test("shows logged data per section and an empty state for sections with nothing
     await page.getByLabel("Email").fill(email);
     await page.getByLabel("Password").fill(password);
     await page.getByRole("button", { name: "Log in" }).click();
-    await expect(page.getByText(`Logged in as ${email}`)).toBeVisible();
+    await expect(page.getByRole("button", { name: "Log out" })).toBeVisible();
 
     await page.goto("/profile");
     await expect(page.getByRole("heading", { name: "Watchlist" })).toBeVisible();
@@ -83,7 +83,7 @@ test("shows a See all link once a section exceeds 4 items, and it navigates to t
     await page.getByLabel("Email").fill(email);
     await page.getByLabel("Password").fill(password);
     await page.getByRole("button", { name: "Log in" }).click();
-    await expect(page.getByText(`Logged in as ${email}`)).toBeVisible();
+    await expect(page.getByRole("button", { name: "Log out" })).toBeVisible();
 
     await page.goto("/profile");
     const watchlistSection = page

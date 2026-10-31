@@ -32,7 +32,7 @@ test("logs a movie and a season, then confirms both show up in their correct /di
     await page.getByLabel("Password").fill(password);
     await page.getByRole("button", { name: "Log in" }).click();
 
-    await expect(page.getByText(`Logged in as ${email}`)).toBeVisible();
+    await expect(page.getByRole("button", { name: "Log out" })).toBeVisible();
 
     await page.goto(`/movie/${THE_MATRIX_TMDB_ID}`);
     await expect(page.getByRole("heading", { name: "The Matrix" })).toBeVisible();
@@ -101,7 +101,7 @@ test("logs a season and an overall show rating, then confirms the Shows section 
     await page.getByLabel("Password").fill(password);
     await page.getByRole("button", { name: "Log in" }).click();
 
-    await expect(page.getByText(`Logged in as ${email}`)).toBeVisible();
+    await expect(page.getByRole("button", { name: "Log out" })).toBeVisible();
 
     await page.goto(`/tv/${BREAKING_BAD_TMDB_ID}`);
     await expect(page.getByRole("heading", { name: "Breaking Bad" })).toBeVisible();

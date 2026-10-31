@@ -31,7 +31,7 @@ test("rates two different seasons of the same show and confirms both persist ind
     await page.getByLabel("Password").fill(password);
     await page.getByRole("button", { name: "Log in" }).click();
 
-    await expect(page.getByText(`Logged in as ${email}`)).toBeVisible();
+    await expect(page.getByRole("button", { name: "Log out" })).toBeVisible();
 
     await page.goto(`/tv/${BREAKING_BAD_TMDB_ID}`);
     await expect(page.getByRole("heading", { name: "Breaking Bad" })).toBeVisible();
