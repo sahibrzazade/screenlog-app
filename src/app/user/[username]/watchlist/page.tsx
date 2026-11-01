@@ -4,9 +4,21 @@ import { createClient } from "@/lib/supabase/server";
 import { getPublicProfileByUsername } from "@/lib/public-profile";
 import { getWatchlistItems } from "@/lib/watchlist";
 import { WatchlistGrid } from "@/components/watchlist-grid";
+import { WatchlistFilterLinks } from "@/components/watchlist-filter-links";
+import {
+  filterWatchlistItems,
+  parseWatchlistFilter,
+  type WatchlistFilter,
+} from "@/lib/watchlist-filter";
 
 type UserWatchlistPageProps = {
   params: Promise<{ username: string }>;
+  searchParams: Promise<{ type?: string | string[] }>;
+};
+
+const emptyMessageFor = (filter: WatchlistFilter, isOwner: boolean): string => {
+  const what = { all: "Nothing", movie: "No movies", tv: "No shows" }[filter];
+  return `${what} on ${isOwner ? "your" : "the"} watchlist yet.`;
 };
 
 /**
@@ -14,8 +26,9 @@ type UserWatchlistPageProps = {
  * buttons), visitors — guests included — the same grid read-only. Ownership
  * comes from the verified session; writes are owner-only in RLS regardless.
  */
-const UserWatchlistPage = async ({ params }: UserWatchlistPageProps) => {
+const UserWatchlistPage = async ({ params, searchParams }: UserWatchlistPageProps) => {
   const { username } = await params;
+  const filter = parseWatchlistFilter((await searchParams).type);
   const supabase = await createClient();
 
   const [profile, authResult] = await Promise.all([
@@ -38,11 +51,18 @@ const UserWatchlistPage = async ({ params }: UserWatchlistPageProps) => {
       >
         ← Back to profile
       </Link>
-      <h1 className="mt-2 text-2xl font-semibold">{profile.username}&apos;s watchlist</h1>
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-4">
+        <h1 className="text-2xl font-semibold">{profile.username}&apos;s watchlist</h1>
+        {items.length > 0 && (
+          <WatchlistFilterLinks basePath={`/user/${profile.username}/watchlist`} filter={filter} />
+        )}
+      </div>
+      {/* Keyed by filter: the grid keeps its items in local state, so it must reset when the filter changes. */}
       <WatchlistGrid
-        initialItems={items}
+        key={filter}
+        initialItems={filterWatchlistItems(items, filter)}
         editable={isOwner}
-        emptyMessage={isOwner ? "Nothing on your watchlist yet." : "Nothing on the watchlist yet."}
+        emptyMessage={emptyMessageFor(filter, isOwner)}
       />
     </main>
   );
