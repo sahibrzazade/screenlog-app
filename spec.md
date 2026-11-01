@@ -378,6 +378,41 @@ pasted anywhere.
 - [ ] If the clipboard write fails, an error toast is shown.
 - [ ] The button is keyboard-reachable, has visible focus and the accessible name "Copy profile link".
 
+### Watchlist type filter
+
+The full watchlist page mixes movies and shows; a filter lets the viewer see
+just one type ("what movie do I watch tonight?"). The diary and see-all lists
+already split Films / Shows — the watchlist is the only mixed list. No
+migration.
+
+- **Where:** `/user/[username]/watchlist` only, for owner and visitors alike.
+  The profile's Watchlist preview (4 items) stays unfiltered.
+- **Control:** three text links — **All**, **Movies**, **Shows** — next to the
+  page title, styled like the diary view toggle (bordered segmented group,
+  active one marked `aria-current`). Hidden when the watchlist is empty.
+- **State lives in the URL:** no `type` param = All, `?type=movie` = movies,
+  `?type=tv` = shows; any other value falls back to All. The values match
+  `mediaType`, so filtering is a plain equality check.
+- **Filtering:** server-side, in memory, on the items `getWatchlistItems`
+  already returns. Order stays newest-added first.
+- **Owner removals:** the owner can still remove items in every filter. The
+  grid keeps local state from its initial items, so it is keyed by the
+  filter to reset when the filter changes.
+- **Empty states:** a filter with no matches shows "No movies on the
+  watchlist yet." / "No shows on the watchlist yet." (owner: "…on your
+  watchlist yet."). The whole-watchlist empty message is unchanged.
+- **Out of scope:** per-type counts on the filter links, sorting options,
+  filter on the profile preview, pagination.
+
+#### Acceptance criteria
+
+- [ ] `/user/[username]/watchlist` shows All / Movies / Shows links next to the title for the owner, other users and guests.
+- [ ] Clicking Movies changes the URL to `?type=movie` and shows only movies; Shows → `?type=tv`, only shows; All → no param, everything.
+- [ ] An unknown `type` value renders All; the filter links are hidden when the watchlist is empty.
+- [ ] A filter with no matching items shows its own empty message.
+- [ ] The owner can remove items while a filter is active; switching filter afterwards shows the correct items.
+- [ ] Filter links are keyboard-reachable, have visible focus, and the active one has `aria-current`.
+
 ## Open Questions
 
 - Should a show status (`watching` / `dropped` / `completed`) be part of MVP, or should it be inferred purely from season logs? → To be resolved in the Plan phase.
