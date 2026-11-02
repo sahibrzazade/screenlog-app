@@ -16,6 +16,7 @@ const log = (id: string, seconds: number): ActivityEvent => ({
   rating: 4,
   review: null,
   rewatch: false,
+  showStatus: null,
 });
 
 const watchlistAdd = (id: string, seconds: number): ActivityEvent => ({

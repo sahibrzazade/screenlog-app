@@ -47,9 +47,10 @@ const seasonTarget = (tmdbShowId: number, seasonNumber: number): LogTarget => ({
 
 /* --------------------------------- shows ---------------------------------- */
 
-// Saves the review + watched date only. Rating is set separately (see
-// setShowRating) so that clicking a star saves immediately without
-// requiring this form to be submitted.
+// Saves the review, date and completed/dropped status (the "I dropped this
+// show" checkbox). Rating is set separately (see setShowRating) so that
+// clicking a star saves immediately without requiring this form to be
+// submitted.
 export const logShow = async (
   _prevState: LogShowFormState,
   formData: FormData,
@@ -58,6 +59,7 @@ export const logShow = async (
     tmdbShowId: formData.get("tmdbShowId"),
     review: formData.get("review"),
     watchedDate: formData.get("watchedDate"),
+    status: formData.get("dropped") === "on" ? "dropped" : "completed",
   });
 
   if (!parsed.success) {
@@ -68,6 +70,7 @@ export const logShow = async (
     showTarget(parsed.data.tmdbShowId),
     parsed.data.review ?? null,
     parsed.data.watchedDate,
+    { status: parsed.data.status },
   );
 };
 

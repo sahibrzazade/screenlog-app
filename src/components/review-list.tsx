@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { RatingStars } from "@/components/rating-stars";
+import { DroppedBadge } from "@/components/dropped-badge";
 
 export type Review = {
   userId: string;
@@ -9,6 +10,8 @@ export type Review = {
   rating: number | null;
   review: string | null;
   watchedDate: string;
+  /** Show reviews only: the reviewer marked the show dropped. */
+  dropped?: boolean;
 };
 
 type ReviewListProps = {
@@ -39,7 +42,7 @@ export const ReviewList = ({ reviews, viewerId }: ReviewListProps) => {
               />
             </div>
             <div className="flex flex-col">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 {review.username ? (
                   <Link href={`/user/${review.username}`} className="font-medium hover:underline">
                     {review.userId === viewerId ? "You" : review.username}
@@ -52,6 +55,7 @@ export const ReviewList = ({ reviews, viewerId }: ReviewListProps) => {
                 {review.rating !== null && (
                   <RatingStars value={review.rating} readOnly />
                 )}
+                {review.dropped && <DroppedBadge />}
               </div>
               {review.review && <p className="mt-1 text-sm">{review.review}</p>}
             </div>

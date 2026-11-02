@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { DroppedBadge } from "@/components/dropped-badge";
 import { posterUrl } from "@/lib/tmdb/images";
 
 export type ProfileSectionItem = {
@@ -7,6 +8,7 @@ export type ProfileSectionItem = {
   title: string;
   posterPath: string | null;
   href: string;
+  dropped?: boolean;
 };
 
 type ProfileSectionProps = {
@@ -76,7 +78,7 @@ export const ProfileSection = ({
                 key={item.id}
                 href={item.href}
                 title={item.title}
-                aria-label={item.title}
+                aria-label={item.dropped ? `${item.title} (dropped)` : item.title}
                 className="block rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <div className="relative aspect-2/3 w-full overflow-hidden rounded-md bg-surface">
@@ -93,6 +95,7 @@ export const ProfileSection = ({
                       {item.title}
                     </div>
                   )}
+                  {item.dropped && <DroppedBadge variant="overlay" />}
                 </div>
               </Link>
             );

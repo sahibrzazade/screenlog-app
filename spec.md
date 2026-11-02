@@ -413,6 +413,75 @@ migration.
 - [ ] The owner can remove items while a filter is active; switching filter afterwards shows the correct items.
 - [ ] Filter links are keyboard-reachable, have visible focus, and the active one has `aria-current`.
 
+### Show status: completed / dropped
+
+A show log currently means "I finished this show" (its date field is already
+labelled "Date finished"). This adds the one exception: a show the user gave
+up on. It also lets the planned stats page count watch hours honestly.
+
+- **Data:** migration `0017` adds `show_logs.status text not null default
+  'completed'` with a check constraint `status in ('completed', 'dropped')`.
+  Existing rows become `completed`. Existing RLS/grants cover the new column.
+  Movies and seasons are unchanged.
+- **UX principle:** Completed is the common case and stays one click away;
+  Dropped is rare and lives one step deeper (progressive disclosure). The
+  log card keeps a single pill, in the same place as movies' and seasons'
+  "Watched" pill.
+- **Log card pill (show page, card and modal):** the show's "Watched" pill
+  becomes a three-state pill, same toggle behaviour and `aria-pressed`:
+  - No log: "Mark as completed" (lucide `CircleCheck`, muted). Clicking it
+    creates a bare `completed` log dated today.
+  - Completed: "Completed" (`CircleCheck`, accent gold — today's watched
+    style).
+  - Dropped: "Dropped" (`CircleSlash`), with the same pressed anatomy as
+    Completed (tinted border + fill + text) in the neutral foreground
+    colour, so it reads as selected. Not red (it isn't an error or a
+    destructive action, and the card's Delete button is red) and not gold
+    (that reads as an achievement). Icon + text, never colour alone.
+  - Clicking a pressed pill removes the log with today's watched rules:
+    refused (inline error) while the log has a rating or review.
+  - Toasts: "Marked as completed" / "Removed".
+  - Movies and seasons keep their "Watched" pill as is.
+- **Log modal:** an "I dropped this show" checkbox under the date field,
+  with the hint "Stopped watching before the end." It is checked for a
+  dropped show and saved with the rest of the form (**Save**); unticking it
+  and saving makes the show completed again. While ticked, the date field
+  is labelled "Date dropped" (live, before saving); otherwise "Date
+  finished". To log a show as dropped straight away: Rate & review → tick →
+  Save.
+- Rating a show when it has no log creates the log as `completed` (the
+  column default), as happens with "watched" today.
+- **Where "Dropped" shows:** a small "Dropped" label next to the show's
+  entry in the diary (`/diary`, grid and list), the profile's shows list
+  (`/user/[username]/shows`) and its Shows preview, and in the show page's
+  public review list. Completed shows get no label (it's the default).
+- **Activity feed:** a show log reads "**user** completed *Show*" or
+  "**user** dropped *Show*" (current status of the row). Movie and season
+  logs keep "watched".
+- **Validation:** the show log schema accepts only `completed` / `dropped`
+  (Zod enum, default `completed`); anything else is rejected without
+  writing.
+- **Tests:** existing unit and e2e tests that refer to the show "Watched"
+  pill / "watched" feed text for shows are renamed and updated to the new
+  labels; new tests cover the pill states, the checkbox and the feed
+  wording.
+- **Out of scope:** "Watching" / "On hold" statuses (the profile's Now
+  watching covers watching), statuses for movies or seasons, filtering by
+  status, a separate feed event when the status changes.
+
+#### Acceptance criteria
+
+- [ ] After migration `0017`, existing show logs read as `completed`; writing any other value than `completed`/`dropped` fails.
+- [ ] On a show page with no log, the pill reads "Mark as completed"; clicking it creates a completed log and the pill reads "Completed".
+- [ ] Ticking "I dropped this show" in the modal and saving makes the pill read "Dropped"; unticking and saving makes it "Completed" again — rating, review and date are kept.
+- [ ] A show with no log can be saved as dropped straight from the modal.
+- [ ] Clicking a pressed pill removes a bare log; with a rating or review it shows an error and keeps the log.
+- [ ] The date label reads "Date dropped" while the box is ticked (before saving) and "Date finished" otherwise.
+- [ ] A dropped show shows a "Dropped" label in the diary (grid + list), the profile shows list/preview and the review list; completed shows don't.
+- [ ] The activity feed says "completed" / "dropped" for show logs and still "watched" for movies and seasons.
+- [ ] Movie and season pages still show the unchanged Watched button.
+- [ ] `npm test` and the touched e2e specs pass with the renamed tests.
+
 ## Open Questions
 
 - Should a show status (`watching` / `dropped` / `completed`) be part of MVP, or should it be inferred purely from season logs? → To be resolved in the Plan phase.

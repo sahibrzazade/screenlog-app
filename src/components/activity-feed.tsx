@@ -9,6 +9,10 @@ import { posterUrl } from "@/lib/tmdb/images";
 import { formatRelativeTime } from "@/lib/date";
 import type { ActivityCursor, ActivityItem } from "@/lib/activity";
 
+/** Show logs read "completed" / "dropped"; movie and season logs "watched" / "rewatched". */
+const logVerb = (item: Extract<ActivityItem, { kind: "log" }>) =>
+  item.showStatus ?? (item.rewatch ? "rewatched" : "watched");
+
 type ActivityFeedProps = {
   initialItems: ActivityItem[];
   initialCursor: ActivityCursor | null;
@@ -153,7 +157,7 @@ const ActivityRow = ({ item }: { item: ActivityItem }) => {
               )}
               {item.kind === "log" && (
                 <>
-                  {user} {item.rewatch ? "rewatched" : "watched"} {title}
+                  {user} {logVerb(item)} {title}
                 </>
               )}
             </span>

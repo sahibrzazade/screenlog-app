@@ -25,6 +25,7 @@ const toDiarySectionItem = (entry: DiaryEntry): ProfileSectionItem => ({
   title: entry.title,
   posterPath: entry.posterPath,
   href: entry.href,
+  dropped: entry.dropped,
 });
 
 /** How many items a preview section (Watchlist/Movies/Shows) shows before "See all". */

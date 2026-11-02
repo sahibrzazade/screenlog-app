@@ -1,5 +1,6 @@
 import type { User } from "@supabase/supabase-js";
 import type { SupabaseServerClient } from "@/lib/supabase/auth";
+import type { ShowStatus } from "@/lib/validation/show-log";
 
 export type OwnLog = {
   rating: number | null;
@@ -33,6 +34,31 @@ export const fetchOwnLog = async (
     rating: data.rating === null ? null : Number(data.rating),
     review: data.review,
     watchedDate: data.watched_date,
+  };
+};
+
+/** The signed-in user's show log plus its completed/dropped status (migration 0017). */
+export const fetchOwnShowLog = async (
+  supabase: SupabaseServerClient,
+  user: User | null,
+  tmdbShowId: number,
+): Promise<(OwnLog & { status: ShowStatus }) | null> => {
+  if (!user) return null;
+
+  const { data } = await supabase
+    .from("show_logs")
+    .select("rating, review, watched_date, status")
+    .eq("user_id", user.id)
+    .eq("tmdb_show_id", tmdbShowId)
+    .maybeSingle();
+
+  if (!data) return null;
+
+  return {
+    rating: data.rating === null ? null : Number(data.rating),
+    review: data.review,
+    watchedDate: data.watched_date,
+    status: data.status === "dropped" ? "dropped" : "completed",
   };
 };
 

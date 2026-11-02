@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { RatingStars } from "@/components/rating-stars";
+import { DroppedBadge } from "@/components/dropped-badge";
 import { posterUrl } from "@/lib/tmdb/images";
 
 // Parse/format in UTC so the displayed calendar date matches the stored
@@ -21,6 +22,7 @@ export type DiaryEntryData = {
   review: string | null;
   watchedDate?: string;
   href: string;
+  dropped?: boolean;
 };
 
 type DiaryEntryProps = {
@@ -47,9 +49,12 @@ export const DiaryEntry = ({ entry }: DiaryEntryProps) => {
       </Link>
       <div className="flex flex-1 flex-col gap-1">
         <div className="flex items-center justify-between gap-2">
-          <Link href={entry.href} className="font-medium hover:underline">
-            {entry.title}
-          </Link>
+          <span className="flex min-w-0 flex-wrap items-center gap-2">
+            <Link href={entry.href} className="font-medium hover:underline">
+              {entry.title}
+            </Link>
+            {entry.dropped && <DroppedBadge />}
+          </span>
           {entry.watchedDate && (
             <span className="shrink-0 text-xs text-subtle-foreground">
               {formatDate(entry.watchedDate)}

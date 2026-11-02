@@ -28,6 +28,7 @@ const movieLog: ActivityItem = {
   rating: 4,
   review: "Loved the sound design.",
   rewatch: false,
+  showStatus: null,
 };
 
 const seasonLog: ActivityItem = {
@@ -88,6 +89,27 @@ describe("ActivityFeed", () => {
       "href",
       "/tv/1399/season/2",
     );
+  });
+
+  it("says 'completed' and 'dropped' for show logs instead of 'watched'", () => {
+    const showLog: ActivityItem = {
+      ...movieLog,
+      key: "show_log:4",
+      title: got,
+      mediaType: "tv",
+      tmdbId: 1399,
+      showStatus: "completed",
+    };
+    render(
+      <ActivityFeed
+        initialItems={[showLog, { ...showLog, key: "show_log:5", username: "bob", showStatus: "dropped" }]}
+        initialCursor={null}
+      />,
+    );
+    const [first, second] = screen.getAllByRole("listitem");
+    expect(first).toHaveTextContent("alice completed Game of Thrones");
+    expect(second).toHaveTextContent("bob dropped Game of Thrones");
+    expect(first).not.toHaveTextContent("watched");
   });
 
   it("renders watchlist additions and new followers", () => {

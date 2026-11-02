@@ -12,6 +12,8 @@ export type DiaryEntry = {
   watchedDate: string;
   createdAt: string;
   href: string;
+  /** Show logs only: the user marked the show dropped (migration 0017). */
+  dropped?: boolean;
 };
 
 /**
@@ -86,7 +88,7 @@ export const getDiaryData = async (
       .order("watched_date", { ascending: false }),
     supabase
       .from("show_logs")
-      .select("id, tmdb_show_id, rating, review, watched_date, created_at")
+      .select("id, tmdb_show_id, rating, review, watched_date, created_at, status")
       .eq("user_id", userId)
       .order("watched_date", { ascending: false }),
   ]);
@@ -156,6 +158,7 @@ export const getDiaryData = async (
         watchedDate: log.watched_date,
         createdAt: log.created_at,
         href: `/tv/${log.tmdb_show_id}`,
+        dropped: log.status === "dropped",
       },
     ];
   });

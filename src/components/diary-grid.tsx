@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { RatingStars } from "@/components/rating-stars";
+import { DroppedBadge } from "@/components/dropped-badge";
 import type { DiaryEntryData } from "@/components/diary-entry";
 import { posterUrl } from "@/lib/tmdb/images";
 
@@ -35,6 +36,7 @@ export const DiaryGrid = ({ entries }: DiaryGridProps) => (
                   {entry.title}
                 </div>
               )}
+              {entry.dropped && <DroppedBadge variant="overlay" />}
             </div>
           </Link>
           {entry.rating !== null && <RatingStars value={entry.rating} readOnly small />}

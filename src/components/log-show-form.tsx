@@ -7,12 +7,18 @@ import {
   logShow,
   setShowRating,
 } from "@/app/tv/[id]/actions";
+import type { ShowStatus } from "@/lib/validation/show-log";
 
 type LogShowFormProps = {
   tmdbShowId: number;
   title: string;
   posterUrl: string | null;
-  initialLog: { rating: number | null; review: string | null; watchedDate: string } | null;
+  initialLog: {
+    rating: number | null;
+    review: string | null;
+    watchedDate: string;
+    status: ShowStatus;
+  } | null;
 };
 
 export const LogShowForm = ({
@@ -29,6 +35,7 @@ export const LogShowForm = ({
     title={title}
     posterUrl={posterUrl}
     watchedDateLabel="Date finished"
+    droppable
     submitLabel="Save"
     initialLog={initialLog}
     actions={{

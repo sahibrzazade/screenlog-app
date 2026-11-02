@@ -9,6 +9,7 @@ import { RatingStars } from "@/components/rating-stars";
 import { WatchedButton } from "@/components/watched-button";
 import { todayIso } from "@/lib/date";
 import type { MutationState, RatingState } from "@/lib/logs/mutations";
+import type { ShowStatus } from "@/lib/validation/show-log";
 
 type MutationAction = (
   state: MutationState,
@@ -38,9 +39,20 @@ type LogTitleFormProps = {
   posterUrl: string | null;
   /** Label on the watched-date field ("Watched date" vs "Date finished"). */
   watchedDateLabel: string;
+  /**
+   * Shows only: adds an "I dropped this show" checkbox to the modal; while
+   * checked the date field is labelled "Date dropped".
+   */
+  droppable?: boolean;
   /** Label on the submit button when creating a log (e.g. "Save"). */
   submitLabel: string;
-  initialLog: { rating: number | null; review: string | null; watchedDate: string } | null;
+  initialLog: {
+    rating: number | null;
+    review: string | null;
+    watchedDate: string;
+    /** Shows only (completed / dropped). */
+    status?: ShowStatus;
+  } | null;
   actions: {
     log: MutationAction;
     deleteLog: MutationAction;
@@ -65,10 +77,22 @@ export const LogTitleForm = ({
   title,
   posterUrl,
   watchedDateLabel,
+  droppable = false,
   submitLabel,
   initialLog,
   actions,
 }: LogTitleFormProps) => {
+  // Mirrors the (uncontrolled) checkbox, only to relabel the date field before
+  // saving. Resyncs when the saved status changes (save, delete) — same
+  // prop-sync pattern as rating.
+  const savedDropped = initialLog?.status === "dropped";
+  const [dropped, setDropped] = useState(savedDropped);
+  const [prevSavedDropped, setPrevSavedDropped] = useState(savedDropped);
+  if (savedDropped !== prevSavedDropped) {
+    setPrevSavedDropped(savedDropped);
+    setDropped(savedDropped);
+  }
+
   const [state, formAction, pending] = useActionState<MutationState, FormData>(
     actions.log,
     undefined,
@@ -195,23 +219,30 @@ export const LogTitleForm = ({
     ratingState?.error ??
     (clearRatingState && "error" in clearRatingState ? clearRatingState.error : undefined);
 
+  // Shows read "Completed" / "Dropped"; movies and seasons "Watched".
+  const watchedControl =
+    mediaType === "tv" ? (
+      <WatchedButton
+        tmdbId={tmdbId}
+        mediaType="tv"
+        initialIsWatched={initialLog !== null}
+        showStatus={initialLog?.status ?? null}
+      />
+    ) : mediaType === "season" ? (
+      <WatchedButton
+        tmdbId={tmdbId}
+        mediaType="season"
+        seasonNumber={seasonNumber!}
+        initialIsWatched={initialLog !== null}
+      />
+    ) : (
+      <WatchedButton tmdbId={tmdbId} mediaType="movie" initialIsWatched={initialLog !== null} />
+    );
+
   return (
     <>
       <div className="flex flex-col items-start gap-3 rounded-md border border-border bg-surface p-3">
-        {mediaType === "season" ? (
-          <WatchedButton
-            tmdbId={tmdbId}
-            mediaType="season"
-            seasonNumber={seasonNumber!}
-            initialIsWatched={initialLog !== null}
-          />
-        ) : (
-          <WatchedButton
-            tmdbId={tmdbId}
-            mediaType={mediaType}
-            initialIsWatched={initialLog !== null}
-          />
-        )}
+        {watchedControl}
 
         <div>
           <span className="mb-1 block text-xs font-medium text-muted-foreground">Your Rating</span>
@@ -298,20 +329,7 @@ export const LogTitleForm = ({
               </button>
             </div>
 
-            {mediaType === "season" ? (
-              <WatchedButton
-                tmdbId={tmdbId}
-                mediaType="season"
-                seasonNumber={seasonNumber!}
-                initialIsWatched={initialLog !== null}
-              />
-            ) : (
-              <WatchedButton
-                tmdbId={tmdbId}
-                mediaType={mediaType}
-                initialIsWatched={initialLog !== null}
-              />
-            )}
+            {watchedControl}
 
             <div>
               <span className="mb-1 block text-sm font-medium">Rating</span>
@@ -347,7 +365,7 @@ export const LogTitleForm = ({
               ))}
               <div>
                 <label htmlFor="watchedDate" className="mb-1 block text-sm font-medium">
-                  {watchedDateLabel}
+                  {droppable && dropped ? "Date dropped" : watchedDateLabel}
                 </label>
                 <input
                   id="watchedDate"
@@ -359,6 +377,28 @@ export const LogTitleForm = ({
                   className="rounded-md border border-border bg-surface px-3 py-1.5 text-foreground focus:border-accent focus:outline-none"
                 />
               </div>
+              {droppable && (
+                <div>
+                  <label className="flex w-fit cursor-pointer items-center gap-2 text-sm font-medium">
+                    {/* Uncontrolled on purpose: React 19 resets the form after a
+                        successful action, which would desync a controlled
+                        checkbox from its state. defaultChecked follows the
+                        saved status, so the reset lands on the saved value. */}
+                    <input
+                      type="checkbox"
+                      name="dropped"
+                      defaultChecked={savedDropped}
+                      onChange={(event) => setDropped(event.target.checked)}
+                      aria-describedby={`${formId}-dropped-hint`}
+                      className="size-4 cursor-pointer accent-accent"
+                    />
+                    I dropped this show
+                  </label>
+                  <p id={`${formId}-dropped-hint`} className="mt-1 text-xs text-muted-foreground">
+                    Stopped watching before the end.
+                  </p>
+                </div>
+              )}
               <div>
                 <div className="mb-1 flex items-center gap-2">
                   <label htmlFor="review" className="text-sm font-medium">
