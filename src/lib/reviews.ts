@@ -8,6 +8,8 @@ type ReviewLogRow = {
   rating: number | string | null;
   review: string | null;
   watched_date: string;
+  /** Only selected from show_logs (migration 0017). */
+  status?: string;
 };
 
 /** A log row only surfaces as a review once it has a rating or written review. */
@@ -46,6 +48,7 @@ const toReview = (
     rating: log.rating === null ? null : Number(log.rating),
     review: log.review,
     watchedDate: log.watched_date,
+    dropped: log.status === "dropped",
   };
 };
 
@@ -54,11 +57,18 @@ export const fetchReviews = async (
   table: ReviewTable,
   match: Record<string, number>,
 ): Promise<Review[]> => {
-  const { data: logs } = await supabase
+  // status exists only on show_logs. A conditional column list defeats the
+  // client's select-string type parser, so the rows are typed explicitly.
+  const columns: string =
+    table === "show_logs"
+      ? "user_id, rating, review, watched_date, status"
+      : "user_id, rating, review, watched_date";
+  const { data } = await supabase
     .from(table)
-    .select("user_id, rating, review, watched_date")
+    .select(columns)
     .match(match)
     .order("created_at", { ascending: false });
+  const logs = data as ReviewLogRow[] | null;
 
   if (!logs || logs.length === 0) {
     return [];
