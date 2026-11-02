@@ -527,6 +527,12 @@ and how they rated it. Public like the rest of the profile. No migration.
          logged per season.
      - Dropped shows still count towards **Shows** (they were watched in
        part).
+     - Under the strip, the watch time is split by type, one row each:
+       "Films — 1 day, 2 hours and 10 minutes", "Shows — 12 days, 2 hours
+       and 37 minutes". Days / hours / minutes with zero units left out; no
+       months (they vary in length) and no seconds (TMDB runtimes are whole
+       minutes). A type with no watch time is left out; the whole breakdown
+       is hidden when both are zero. Hours stays the combined total.
   2. **Activity chart:** a bar chart of entries per month (Jan–Dec) for a
      year; per year (oldest → newest) for all time. Empty months/years show
      a zero-height bar so the axis stays continuous.
@@ -554,6 +560,7 @@ and how they rated it. Public like the rest of the profile. No migration.
 - [ ] Films equals the period's movie logs; Shows equals the distinct shows with a season or show log (3 season logs + 1 show log of one show → 1).
 - [ ] Hours equals movie runtimes plus, per show, all aired regular-season episodes if it has a completed show log, otherwise (no show log, or a dropped one) only the logged seasons' episodes — rounded down, never counting a season twice.
 - [ ] A dropped show with no season logs adds 0 hours but still counts as 1 Show.
+- [ ] Under the strip, film and show watch time are shown separately as days, hours and minutes (e.g. 17,437 min → "12 days, 2 hours and 37 minutes"), zero units and zero-time types left out; Hours is their combined total.
 - [ ] The activity chart has 12 monthly bars for a year and one bar per year for all time, including zero bars.
 - [ ] The rating histogram has ten bars (0.5–5) and ignores unrated entries.
 - [ ] A period with no entries shows the empty message.

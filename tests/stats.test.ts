@@ -2,9 +2,11 @@ import { describe, it, expect } from "vitest";
 import {
   activityBars,
   computeTotals,
+  formatWatchTime,
   logsInPeriod,
   parseStatsPeriod,
   ratingDistribution,
+  statsHref,
   statsYears,
   type Runtimes,
   type StatsLog,
@@ -63,6 +65,17 @@ describe("parseStatsPeriod", () => {
   });
 });
 
+describe("statsHref", () => {
+  it("leaves the param out for the current year", () => {
+    expect(statsHref("/user/a/stats", 2026, 2026)).toBe("/user/a/stats");
+  });
+
+  it("adds year for other years and all time", () => {
+    expect(statsHref("/user/a/stats", 2024, 2026)).toBe("/user/a/stats?year=2024");
+    expect(statsHref("/user/a/stats", "all", 2026)).toBe("/user/a/stats?year=all");
+  });
+});
+
 describe("statsYears", () => {
   it("lists the current year plus every logged year, newest first, without duplicates", () => {
     const logs = [movie(1, "2023-05-01"), season(1396, 1, "2024-02-01"), movie(1, "2024-03-01")];
@@ -111,18 +124,38 @@ describe("computeTotals", () => {
 
   it("gives a dropped show with no season logs 0 hours but still 1 show", () => {
     const totals = computeTotals([show(1396, "2026-02-01", "dropped")], runtimes);
-    expect(totals).toEqual({ films: 0, shows: 1, hours: 0 });
+    expect(totals).toEqual({ films: 0, shows: 1, hours: 0, movieMinutes: 0, showMinutes: 0 });
   });
 
-  it("adds movie runtimes and rounds the total down", () => {
+  it("keeps film and show minutes apart and rounds the combined hours down", () => {
     const logs = [movie(1, "2026-01-01"), season(1396, 1, "2026-01-01")];
+    const totals = computeTotals(logs, runtimes);
     // 150 + 300 = 450 min = 7.5 h → 7
-    expect(computeTotals(logs, runtimes).hours).toBe(7);
+    expect(totals.hours).toBe(7);
+    expect(totals.movieMinutes).toBe(150);
+    expect(totals.showMinutes).toBe(300);
   });
 
   it("treats missing runtimes as 0", () => {
     const logs = [movie(999, "2026-01-01"), season(42, 1, "2026-01-01"), season(1396, 9, "2026-01-01")];
-    expect(computeTotals(logs, runtimes)).toEqual({ films: 1, shows: 2, hours: 0 });
+    expect(computeTotals(logs, runtimes)).toEqual({ films: 1, shows: 2, hours: 0, movieMinutes: 0, showMinutes: 0 });
+  });
+});
+
+describe("formatWatchTime", () => {
+  it("breaks minutes into days, hours and minutes", () => {
+    expect(formatWatchTime(13 * 1440 + 4 * 60 + 47)).toBe("13 days, 4 hours and 47 minutes");
+  });
+
+  it("uses singular units and leaves zero units out", () => {
+    expect(formatWatchTime(1440 + 1)).toBe("1 day and 1 minute");
+    expect(formatWatchTime(60)).toBe("1 hour");
+    expect(formatWatchTime(2 * 1440 + 3 * 60)).toBe("2 days and 3 hours");
+    expect(formatWatchTime(5)).toBe("5 minutes");
+  });
+
+  it("says 0 minutes for nothing", () => {
+    expect(formatWatchTime(0)).toBe("0 minutes");
   });
 });
 

@@ -28,7 +28,15 @@ export type Runtimes = {
   showSeasons: Map<number, Map<number, number>>;
 };
 
-export type StatsTotals = { films: number; shows: number; hours: number };
+export type StatsTotals = {
+  films: number;
+  shows: number;
+  /** Whole hours of films + shows, rounded down — the headline number. */
+  hours: number;
+  /** Exact watch time in minutes per type (TMDB runtimes are whole minutes). */
+  movieMinutes: number;
+  showMinutes: number;
+};
 
 export type ActivityBar = { label: string; count: number };
 
@@ -45,6 +53,14 @@ export const parseStatsPeriod = (raw: string | string[] | undefined, currentYear
   if (value === "all") return "all";
   return value !== undefined && /^\d{4}$/.test(value) ? Number(value) : currentYear;
 };
+
+/** Stats page URL for a period; the current year (the default) gets no `year` param. */
+export const statsHref = (basePath: string, period: StatsPeriod, currentYear: number): string =>
+  period === currentYear ? basePath : `${basePath}?year=${period}`;
+
+/** Human label for a period: "2024" or "all time". */
+export const periodLabel = (period: StatsPeriod): string =>
+  period === "all" ? "all time" : String(period);
 
 /** Selector years: the current year plus every year with a log, newest first. */
 export const statsYears = (logs: StatsLog[], currentYear: number): number[] =>
@@ -65,7 +81,8 @@ const sum = (values: Iterable<number>) => {
  * show log in the period) or only the logged seasons — never a season twice.
  */
 export const computeTotals = (logs: StatsLog[], runtimes: Runtimes): StatsTotals => {
-  let minutes = 0;
+  let movieMinutes = 0;
+  let showMinutes = 0;
   let films = 0;
   const showIds = new Set<number>();
   const completedShows = new Set<number>();
@@ -74,7 +91,7 @@ export const computeTotals = (logs: StatsLog[], runtimes: Runtimes): StatsTotals
   for (const log of logs) {
     if (log.kind === "movie") {
       films += 1;
-      minutes += runtimes.movies.get(log.tmdbId) ?? 0;
+      movieMinutes += runtimes.movies.get(log.tmdbId) ?? 0;
       continue;
     }
     showIds.add(log.tmdbId);
@@ -91,15 +108,43 @@ export const computeTotals = (logs: StatsLog[], runtimes: Runtimes): StatsTotals
     const seasonMinutes = runtimes.showSeasons.get(showId);
     if (!seasonMinutes) continue;
     if (completedShows.has(showId)) {
-      minutes += sum(seasonMinutes.values());
+      showMinutes += sum(seasonMinutes.values());
     } else {
       for (const season of loggedSeasons.get(showId) ?? []) {
-        minutes += seasonMinutes.get(season) ?? 0;
+        showMinutes += seasonMinutes.get(season) ?? 0;
       }
     }
   }
 
-  return { films, shows: showIds.size, hours: Math.floor(minutes / 60) };
+  return {
+    films,
+    shows: showIds.size,
+    hours: Math.floor((movieMinutes + showMinutes) / 60),
+    movieMinutes,
+    showMinutes,
+  };
+};
+
+const plural = (value: number, unit: string) => `${value} ${unit}${value === 1 ? "" : "s"}`;
+
+/**
+ * "13 days, 4 hours and 47 minutes": days / hours / minutes, zero units left
+ * out ("0 minutes" when nothing). No months (they vary in length) and no
+ * seconds (TMDB runtimes are whole minutes).
+ */
+export const formatWatchTime = (totalMinutes: number): string => {
+  const days = Math.floor(totalMinutes / (24 * 60));
+  const hours = Math.floor((totalMinutes % (24 * 60)) / 60);
+  const minutes = totalMinutes % 60;
+  const parts = [
+    days > 0 ? plural(days, "day") : null,
+    hours > 0 ? plural(hours, "hour") : null,
+    minutes > 0 ? plural(minutes, "minute") : null,
+  ].filter((part): part is string => part !== null);
+
+  if (parts.length === 0) return "0 minutes";
+  if (parts.length === 1) return parts[0];
+  return `${parts.slice(0, -1).join(", ")} and ${parts.at(-1)}`;
 };
 
 /**
