@@ -482,6 +482,84 @@ up on. It also lets the planned stats page count watch hours honestly.
 - [ ] Movie and season pages still show the unchanged Watched button.
 - [ ] `npm test` and the touched e2e specs pass with the renamed tests.
 
+### Stats page
+
+A per-user numbers page, "Year in Review"-style: how much they watched, when,
+and how they rated it. Public like the rest of the profile. No migration.
+
+- **Route:** `/user/[username]/stats`, visible to everyone (owner, other users,
+  guests); unknown username → 404. The profile links to it with a "View stats"
+  link under the stats strip.
+- **Period (URL state):** no `year` param = the current year, `?year=2024` = that
+  year, `?year=all` = all time. Any other value falls back to the current
+  year. A selector next to the title lists the current year, every other year
+  that has a log (newest first) and "All time"; the active one is marked
+  `aria-current`. A log belongs to the year of its `watched_date`.
+- **What counts:** every row in `movie_logs`, `season_logs` and `show_logs` is
+  one entry. There is one row per user and title (season), so each title
+  counts once, in the year of its `watched_date`. When rewatch support
+  (several logs per title) lands, revisit this: each watch should probably
+  count as its own entry, in its own year.
+- **Metrics:**
+  1. **Totals:** Films, Shows and Hours watched for the period.
+     - **Films** = movie logs in the period.
+     - **Shows** = number of *distinct* shows (`tmdb_show_id`) with a season
+       or show log in the period — logging 3 seasons of a show and rating
+       the show itself counts as 1. (The profile stats strip keeps its
+       current count; only this page counts distinct shows.)
+     - **Hours** = movie runtimes (TMDB `/movie/{id}`, already fetched for
+       the diary) + show runtimes, rounded down to whole hours:
+       - A **completed show log** means the whole show was watched: it adds
+         every aired episode's runtime across all regular seasons (season
+         0 / specials and episodes without an air date or airing after
+         today are excluded).
+       - A **dropped show log** (`show_logs.status = 'dropped'`, migration
+         0017) adds no hours by itself — only that show's season logs
+         count.
+       - **Season logs** add that season's episode runtimes — unless the
+         same show also has a *completed* show log in the period, which
+         already covers every season (no double counting).
+       - Episode runtimes come from TMDB season details, fetched with
+         `append_to_response=season/1,…` (up to 20 seasons per request).
+         Missing runtimes count as 0.
+       - Product rule: a completed show log means "I finished this show";
+         a show given up on is marked dropped, with the watched seasons
+         logged per season.
+     - Dropped shows still count towards **Shows** (they were watched in
+       part).
+  2. **Activity chart:** a bar chart of entries per month (Jan–Dec) for a
+     year; per year (oldest → newest) for all time. Empty months/years show
+     a zero-height bar so the axis stays continuous.
+  3. **Rating distribution:** a histogram of ratings 0.5 → 5 (ten bars) over
+     the period's rated entries; unrated entries are left out.
+- **Charts:** plain HTML/CSS bars styled with the app's tokens — no chart
+  library. Each chart also exposes its numbers to screen readers (labelled
+  bars or a visually hidden table), and the values are readable without
+  hovering.
+- **Computation:** a pure function turns the logs (+ resolved runtimes) into
+  the three metrics for a period; it is unit-tested. TMDB lookups go through
+  `tmdbFetch` (daily cache) and a failed lookup drops only that runtime, never
+  the page.
+- **Empty state:** a period with no entries shows "No entries in {period}."
+  instead of the metrics; the selector stays visible.
+- **Out of scope:** genres, decades, people (actors/directors), average
+  rating, top-rated / first-last posters, review counts, sharing
+  or images, per-day charts.
+
+#### Acceptance criteria
+
+- [ ] `/user/[username]/stats` opens for a guest, another user and the owner, showing the current year; an unknown username returns a 404.
+- [ ] The selector lists the current year, every year with a log, and All time; choosing one updates the URL (`?year=2024`, `?year=all`) and all three metrics.
+- [ ] An invalid `year` value shows the current year.
+- [ ] Films equals the period's movie logs; Shows equals the distinct shows with a season or show log (3 season logs + 1 show log of one show → 1).
+- [ ] Hours equals movie runtimes plus, per show, all aired regular-season episodes if it has a completed show log, otherwise (no show log, or a dropped one) only the logged seasons' episodes — rounded down, never counting a season twice.
+- [ ] A dropped show with no season logs adds 0 hours but still counts as 1 Show.
+- [ ] The activity chart has 12 monthly bars for a year and one bar per year for all time, including zero bars.
+- [ ] The rating histogram has ten bars (0.5–5) and ignores unrated entries.
+- [ ] A period with no entries shows the empty message.
+- [ ] Chart values are available to screen readers; selector links are keyboard-reachable with visible focus.
+- [ ] The profile's "View stats" link opens the page; the layout fits a 375px-wide screen with no horizontal scroll.
+
 ## Open Questions
 
 - Should a show status (`watching` / `dropped` / `completed`) be part of MVP, or should it be inferred purely from season logs? → To be resolved in the Plan phase.
