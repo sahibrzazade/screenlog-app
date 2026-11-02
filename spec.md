@@ -488,8 +488,10 @@ A per-user numbers page, "Year in Review"-style: how much they watched, when,
 and how they rated it. Public like the rest of the profile. No migration.
 
 - **Route:** `/user/[username]/stats`, visible to everyone (owner, other users,
-  guests); unknown username → 404. The profile links to it with a "View stats"
-  link under the stats strip.
+  guests); unknown username → 404. The profile links to it with a full-width
+  "Stats" card under the stats strip (chart icon, "Watch time, activity and
+  ratings" subtitle, chevron) — a plain text link read as a caption, not a
+  destination.
 - **Period (URL state):** no `year` param = the current year, `?year=2024` = that
   year, `?year=all` = all time. Any other value falls back to the current
   year. A selector next to the title lists the current year, every other year
@@ -568,7 +570,7 @@ and how they rated it. Public like the rest of the profile. No migration.
 - [ ] The rating histogram has ten bars (0.5–5) and ignores unrated entries.
 - [ ] A period with no entries shows the empty message.
 - [ ] Chart values are available to screen readers; selector links are keyboard-reachable with visible focus.
-- [ ] The profile's "View stats" link opens the page; the layout fits a 375px-wide screen with no horizontal scroll.
+- [ ] The profile's "Stats" card opens the page; the layout fits a 375px-wide screen with no horizontal scroll.
 
 ## Open Questions
 
