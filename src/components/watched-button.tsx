@@ -1,16 +1,24 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
-import { Eye } from "lucide-react";
+import { CircleCheck, CircleSlash, Eye } from "lucide-react";
 import { toast } from "sonner";
 import {
   toggleMovieWatched,
   type ToggleMovieWatchedState,
 } from "@/app/movie/[id]/actions";
 import { toggleShowWatched, toggleSeasonWatched } from "@/app/tv/[id]/actions";
+import type { ShowStatus } from "@/lib/validation/show-log";
 
 type WatchedButtonProps =
-  | { tmdbId: number; mediaType: "movie" | "tv"; initialIsWatched: boolean }
+  | { tmdbId: number; mediaType: "movie"; initialIsWatched: boolean }
+  | {
+      tmdbId: number;
+      mediaType: "tv";
+      initialIsWatched: boolean;
+      /** Saved show status; picks the "Completed" vs "Dropped" label. */
+      showStatus?: ShowStatus | null;
+    }
   | {
       tmdbId: number;
       mediaType: "season";
@@ -18,8 +26,20 @@ type WatchedButtonProps =
       initialIsWatched: boolean;
     };
 
+const ON_CLASS =
+  "flex cursor-pointer items-center gap-1.5 rounded-full border border-accent/40 bg-accent/10 px-3 py-1.5 text-sm text-accent transition-colors hover:border-accent hover:bg-accent/20 disabled:cursor-not-allowed disabled:opacity-50";
+// Dropped is a state, not an error or an achievement: neither red nor gold.
+// Same pressed anatomy as ON_CLASS (tinted border + fill + text), in the
+// neutral foreground colour, so it still reads as selected.
+const DROPPED_CLASS =
+  "flex cursor-pointer items-center gap-1.5 rounded-full border border-foreground/40 bg-foreground/10 px-3 py-1.5 text-sm text-foreground transition-colors hover:border-foreground hover:bg-foreground/20 disabled:cursor-not-allowed disabled:opacity-50";
+const OFF_CLASS =
+  "flex cursor-pointer items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:border-accent/60 hover:text-accent disabled:cursor-not-allowed disabled:opacity-50";
+
 export const WatchedButton = (props: WatchedButtonProps) => {
   const { tmdbId, mediaType, initialIsWatched } = props;
+  const isShow = mediaType === "tv";
+  const dropped = isShow && props.showStatus === "dropped";
   const action =
     mediaType === "movie"
       ? toggleMovieWatched
@@ -48,11 +68,29 @@ export const WatchedButton = (props: WatchedButtonProps) => {
     if (state.error) return;
     if (state.isWatched !== prevStateIsWatchedRef.current) {
       toast.success(
-        state.isWatched ? "Marked as watched" : "Removed from watched",
+        isShow
+          ? state.isWatched
+            ? "Marked as completed"
+            : "Removed"
+          : state.isWatched
+            ? "Marked as watched"
+            : "Removed from watched",
       );
       prevStateIsWatchedRef.current = state.isWatched;
     }
-  }, [state]);
+  }, [state, isShow]);
+
+  const label = isShow
+    ? isWatched
+      ? dropped
+        ? "Dropped"
+        : "Completed"
+      : "Mark as completed"
+    : isWatched
+      ? "Watched"
+      : "Mark as watched";
+  const Icon = isShow ? (isWatched && dropped ? CircleSlash : CircleCheck) : Eye;
+  const className = !isWatched ? OFF_CLASS : dropped ? DROPPED_CLASS : ON_CLASS;
 
   return (
     <form action={formAction} className="flex flex-col gap-1 self-start">
@@ -69,15 +107,11 @@ export const WatchedButton = (props: WatchedButtonProps) => {
         type="submit"
         disabled={pending}
         aria-pressed={isWatched}
-        aria-label={isWatched ? "Watched" : "Mark as watched"}
-        className={
-          isWatched
-            ? "flex cursor-pointer items-center gap-1.5 rounded-full border border-accent/40 bg-accent/10 px-3 py-1.5 text-sm text-accent transition-colors hover:border-accent hover:bg-accent/20 disabled:cursor-not-allowed disabled:opacity-50"
-            : "flex cursor-pointer items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:border-accent/60 hover:text-accent disabled:cursor-not-allowed disabled:opacity-50"
-        }
+        aria-label={label}
+        className={className}
       >
-        <Eye className="size-4" />
-        {isWatched ? "Watched" : "Mark as watched"}
+        <Icon className="size-4" aria-hidden />
+        {label}
       </button>
       {state.error && (
         <p role="alert" className="text-xs text-destructive">

@@ -423,21 +423,34 @@ up on. It also lets the planned stats page count watch hours honestly.
   'completed'` with a check constraint `status in ('completed', 'dropped')`.
   Existing rows become `completed`. Existing RLS/grants cover the new column.
   Movies and seasons are unchanged.
-- **Show page log card (and the log modal):** the show's "Watched" toggle is
-  replaced by two mutually exclusive toggle buttons — **Completed**
-  (lucide `CircleCheck`) and **Dropped** (lucide `CircleX`) — styled like the
-  current watched pill, each with `aria-pressed`.
-  - No log: either button creates the show log with that status (date
-    defaults to today, like the watched toggle today).
-  - Clicking the other status switches it, keeping rating, review and date.
-  - Clicking the active status removes the log — the same behaviour (and
-    the same "removed" toast) as un-toggling Watched today.
-  - Toasts: "Marked as completed" / "Marked as dropped" / "Removed".
-  - Movies and seasons keep their "Watched" button as is.
-  - Rating a show or saving its review when it has no log creates the log
-    as `completed` (the column default), as happens with "watched" today.
-- **Date label:** the modal's date field reads "Date finished" for a
-  completed show and "Date dropped" for a dropped one.
+- **UX principle:** Completed is the common case and stays one click away;
+  Dropped is rare and lives one step deeper (progressive disclosure). The
+  log card keeps a single pill, in the same place as movies' and seasons'
+  "Watched" pill.
+- **Log card pill (show page, card and modal):** the show's "Watched" pill
+  becomes a three-state pill, same toggle behaviour and `aria-pressed`:
+  - No log: "Mark as completed" (lucide `CircleCheck`, muted). Clicking it
+    creates a bare `completed` log dated today.
+  - Completed: "Completed" (`CircleCheck`, accent gold — today's watched
+    style).
+  - Dropped: "Dropped" (`CircleSlash`), with the same pressed anatomy as
+    Completed (tinted border + fill + text) in the neutral foreground
+    colour, so it reads as selected. Not red (it isn't an error or a
+    destructive action, and the card's Delete button is red) and not gold
+    (that reads as an achievement). Icon + text, never colour alone.
+  - Clicking a pressed pill removes the log with today's watched rules:
+    refused (inline error) while the log has a rating or review.
+  - Toasts: "Marked as completed" / "Removed".
+  - Movies and seasons keep their "Watched" pill as is.
+- **Log modal:** an "I dropped this show" checkbox under the date field,
+  with the hint "Stopped watching before the end." It is checked for a
+  dropped show and saved with the rest of the form (**Save**); unticking it
+  and saving makes the show completed again. While ticked, the date field
+  is labelled "Date dropped" (live, before saving); otherwise "Date
+  finished". To log a show as dropped straight away: Rate & review → tick →
+  Save.
+- Rating a show when it has no log creates the log as `completed` (the
+  column default), as happens with "watched" today.
 - **Where "Dropped" shows:** a small "Dropped" label next to the show's
   entry in the diary (`/diary`, grid and list), the profile's shows list
   (`/user/[username]/shows`) and its Shows preview, and in the show page's
@@ -445,11 +458,13 @@ up on. It also lets the planned stats page count watch hours honestly.
 - **Activity feed:** a show log reads "**user** completed *Show*" or
   "**user** dropped *Show*" (current status of the row). Movie and season
   logs keep "watched".
-- **Validation:** server actions accept only `completed` / `dropped`
-  (Zod enum); anything else is rejected without writing.
+- **Validation:** the show log schema accepts only `completed` / `dropped`
+  (Zod enum, default `completed`); anything else is rejected without
+  writing.
 - **Tests:** existing unit and e2e tests that refer to the show "Watched"
-  button / "watched" feed text for shows are renamed and updated to the
-  new labels; new tests cover the status switch and the feed wording.
+  pill / "watched" feed text for shows are renamed and updated to the new
+  labels; new tests cover the pill states, the checkbox and the feed
+  wording.
 - **Out of scope:** "Watching" / "On hold" statuses (the profile's Now
   watching covers watching), statuses for movies or seasons, filtering by
   status, a separate feed event when the status changes.
@@ -457,10 +472,11 @@ up on. It also lets the planned stats page count watch hours honestly.
 #### Acceptance criteria
 
 - [ ] After migration `0017`, existing show logs read as `completed`; writing any other value than `completed`/`dropped` fails.
-- [ ] On a show page with no log, clicking Completed or Dropped creates the log with that status; the pressed button reflects it after a reload.
-- [ ] Switching from Completed to Dropped (and back) keeps the rating, review and date.
-- [ ] Clicking the active status removes the log.
-- [ ] The modal's date label is "Date finished" for completed and "Date dropped" for dropped.
+- [ ] On a show page with no log, the pill reads "Mark as completed"; clicking it creates a completed log and the pill reads "Completed".
+- [ ] Ticking "I dropped this show" in the modal and saving makes the pill read "Dropped"; unticking and saving makes it "Completed" again — rating, review and date are kept.
+- [ ] A show with no log can be saved as dropped straight from the modal.
+- [ ] Clicking a pressed pill removes a bare log; with a rating or review it shows an error and keeps the log.
+- [ ] The date label reads "Date dropped" while the box is ticked (before saving) and "Date finished" otherwise.
 - [ ] A dropped show shows a "Dropped" label in the diary (grid + list), the profile shows list/preview and the review list; completed shows don't.
 - [ ] The activity feed says "completed" / "dropped" for show logs and still "watched" for movies and seasons.
 - [ ] Movie and season pages still show the unchanged Watched button.

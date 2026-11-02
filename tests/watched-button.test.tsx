@@ -7,6 +7,7 @@ import {
   waitFor,
   cleanup,
 } from "@testing-library/react";
+import { toast } from "sonner";
 import { WatchedButton } from "@/components/watched-button";
 import { toggleMovieWatched } from "@/app/movie/[id]/actions";
 import { toggleShowWatched, toggleSeasonWatched } from "@/app/tv/[id]/actions";
@@ -64,18 +65,32 @@ describe("WatchedButton", () => {
     expect(toggleShowWatched).not.toHaveBeenCalled();
   });
 
-  it("submits tmdbShowId to toggleShowWatched for a show", async () => {
+  it("submits tmdbShowId to toggleShowWatched for a show via 'Mark as completed'", async () => {
     vi.mocked(toggleShowWatched).mockResolvedValue({ isWatched: true });
     render(
       <WatchedButton tmdbId={1399} mediaType="tv" initialIsWatched={false} />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Mark as watched" }));
+    fireEvent.click(screen.getByRole("button", { name: "Mark as completed" }));
 
     await waitFor(() => expect(toggleShowWatched).toHaveBeenCalledTimes(1));
     const formData = vi.mocked(toggleShowWatched).mock.calls[0][1];
     expect(formData.get("tmdbShowId")).toBe("1399");
     expect(toggleMovieWatched).not.toHaveBeenCalled();
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Marked as completed"));
+  });
+
+  it("reads 'Completed' for a logged show and 'Dropped' for a dropped one", () => {
+    const { rerender } = render(
+      <WatchedButton tmdbId={1399} mediaType="tv" initialIsWatched showStatus="completed" />,
+    );
+    expect(screen.getByRole("button", { name: "Completed" })).toHaveAttribute("aria-pressed", "true");
+
+    rerender(
+      <WatchedButton tmdbId={1399} mediaType="tv" initialIsWatched showStatus="dropped" />,
+    );
+    expect(screen.getByRole("button", { name: "Dropped" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.queryByRole("button", { name: /watched/i })).not.toBeInTheDocument();
   });
 
   it("submits tmdbShowId and seasonNumber to toggleSeasonWatched for a season", async () => {

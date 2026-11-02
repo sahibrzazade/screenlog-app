@@ -12,7 +12,7 @@ import { CastList } from "@/components/detail/cast-list";
 import { MoreLikeThis } from "@/components/detail/more-like-this";
 import { TmdbRating } from "@/components/detail/tmdb-rating";
 import { fetchReviews } from "@/lib/reviews";
-import { fetchOwnLog, isOnWatchlist } from "@/lib/logs/queries";
+import { fetchOwnShowLog, isOnWatchlist } from "@/lib/logs/queries";
 import { backdropUrl, posterUrl } from "@/lib/tmdb/images";
 import type { TmdbShowDetails } from "@/lib/tmdb/types";
 
@@ -42,13 +42,7 @@ const ShowPage = async ({ params }: ShowPageProps) => {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const existingLog = await fetchOwnLog(
-    supabase,
-    user,
-    "show_logs",
-    "tmdb_show_id",
-    showId,
-  );
+  const existingLog = await fetchOwnShowLog(supabase, user, showId);
 
   const cast = show.credits.cast.slice(0, 10);
 

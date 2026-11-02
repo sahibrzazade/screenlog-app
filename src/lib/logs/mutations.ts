@@ -37,17 +37,21 @@ export const parseSeasonNumber = (
   return Number.isInteger(n) && n >= 0 ? n : null;
 };
 
-/** Upserts the review + watched date, leaving the rating column untouched. */
+/**
+ * Upserts the review + watched date (plus any table-specific `extra` columns,
+ * e.g. a show's `status`), leaving the rating column untouched.
+ */
 export const saveLog = async (
   target: LogTarget,
   review: string | null,
   watchedDate: string,
+  extra: Record<string, string> = {},
 ): Promise<MutationState> => {
   const { supabase, user } = await getUserContext();
   if (!user) return { error: NOT_LOGGED_IN(`log a ${target.entity}`) };
 
   const { error } = await supabase.from(target.table).upsert(
-    { user_id: user.id, ...target.match, review, watched_date: watchedDate },
+    { user_id: user.id, ...target.match, review, watched_date: watchedDate, ...extra },
     { onConflict: `user_id,${target.onConflict}` },
   );
   if (error) return { error: "Failed to save your log. Please try again." };
