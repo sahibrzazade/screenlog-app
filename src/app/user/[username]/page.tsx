@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Bookmark, Film, Play, Settings, Trophy, Tv } from "lucide-react";
+import { Bookmark, ChartColumn, ChevronRight, Film, Play, Settings, Trophy, Tv } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getPublicProfileByUsername } from "@/lib/public-profile";
 import { getWatchlistItems } from "@/lib/watchlist";
@@ -119,6 +119,20 @@ const PublicProfilePage = async ({ params }: PublicProfilePageProps) => {
         following={followCounts.following}
         viewerId={viewer?.id ?? null}
       />
+      <Link
+        href={`/user/${profile.username}/stats`}
+        className="group mt-4 flex items-center gap-3 rounded-md border border-border px-4 py-3 transition-colors hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <ChartColumn className="size-5 shrink-0 text-accent" aria-hidden />
+        <span className="min-w-0 flex-1">
+          <span className="block font-semibold text-foreground">Stats</span>
+          <span className="block text-sm text-muted-foreground">Watch time, activity and ratings</span>
+        </span>
+        <ChevronRight
+          className="size-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none"
+          aria-hidden
+        />
+      </Link>
 
       <ProfileSection
         title="Currently watching"

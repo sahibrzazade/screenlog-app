@@ -64,6 +64,8 @@ export type TmdbEpisode = {
   name: string;
   overview: string;
   air_date: string | null;
+  /** Minutes; null when TMDB doesn't know it. */
+  runtime?: number | null;
   still_path: string | null;
   vote_average: number;
   vote_count: number;
