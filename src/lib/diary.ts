@@ -139,7 +139,7 @@ export const getDiaryData = async (
         review: log.review,
         watchedDate: log.watched_date,
         createdAt: log.created_at,
-        href: `/tv/${log.tmdb_show_id}`,
+        href: `/tv/${log.tmdb_show_id}/season/${log.season_number}`,
       },
     ];
   });

@@ -1,5 +1,43 @@
-import { describe, expect, it } from "vitest";
-import { sortDiaryEntries, type DiaryEntry } from "@/lib/diary";
+import { describe, expect, it, vi } from "vitest";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { getDiaryData, sortDiaryEntries, type DiaryEntry } from "@/lib/diary";
+
+vi.mock("@/lib/tmdb/client", () => ({
+  tmdbFetch: vi.fn(async (path: string) =>
+    path.startsWith("/movie/")
+      ? { title: "Movie", poster_path: null }
+      : { name: "Breaking Bad", poster_path: null, seasons: [{ season_number: 2, name: "Season 2" }] },
+  ),
+}));
+
+/** Minimal stand-in for `from(table).select().eq().order()` returning fixed rows per table. */
+const fakeSupabase = (rowsByTable: Record<string, unknown[]>) =>
+  ({
+    from: (table: string) => ({
+      select: () => ({
+        eq: () => ({
+          order: async () => ({ data: rowsByTable[table] ?? [] }),
+        }),
+      }),
+    }),
+  }) as unknown as SupabaseClient;
+
+const logRow = { rating: 4, review: null, watched_date: "2026-01-01", created_at: "2026-01-01T00:00:00Z" };
+
+describe("getDiaryData links", () => {
+  it("links a season entry to its season page and a show entry to the show page", async () => {
+    const { shows } = await getDiaryData(
+      fakeSupabase({
+        season_logs: [{ ...logRow, id: "s", tmdb_show_id: 1396, season_number: 2 }],
+        show_logs: [{ ...logRow, id: "w", tmdb_show_id: 1396, status: "completed" }],
+      }),
+      "user",
+    );
+
+    expect(shows.find((e) => e.id === "s")?.href).toBe("/tv/1396/season/2");
+    expect(shows.find((e) => e.id === "w")?.href).toBe("/tv/1396");
+  });
+});
 
 const entry = (overrides: Partial<DiaryEntry>): DiaryEntry => ({
   id: "id",
