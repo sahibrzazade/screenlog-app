@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import type { LucideIcon } from "lucide-react";
 import { DroppedBadge } from "@/components/dropped-badge";
 import { posterUrl } from "@/lib/tmdb/images";
 
@@ -13,6 +14,8 @@ export type ProfileSectionItem = {
 
 type ProfileSectionProps = {
   title: string;
+  /** Decorative icon before the title (hidden from screen readers — the title says it all). */
+  icon?: LucideIcon;
   items: ProfileSectionItem[];
   total: number;
   seeAllHref: string;
@@ -34,6 +37,7 @@ type ProfileSectionProps = {
 
 export const ProfileSection = ({
   title,
+  icon: Icon,
   items,
   total,
   seeAllHref,
@@ -46,7 +50,10 @@ export const ProfileSection = ({
   return (
     <section className="mt-8 first:mt-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">{title}</h2>
+        <h2 className="flex items-center gap-2 text-lg font-semibold">
+          {Icon && <Icon className="size-5 shrink-0 text-accent" aria-hidden />}
+          {title}
+        </h2>
         {editHref ? (
           <Link
             href={editHref}

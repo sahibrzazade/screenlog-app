@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Settings } from "lucide-react";
+import { Bookmark, Film, Play, Settings, Trophy, Tv } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getPublicProfileByUsername } from "@/lib/public-profile";
 import { getWatchlistItems } from "@/lib/watchlist";
@@ -122,6 +122,7 @@ const PublicProfilePage = async ({ params }: PublicProfilePageProps) => {
 
       <ProfileSection
         title="Currently watching"
+        icon={Play}
         items={nowWatchingItems.map(toShowcaseSectionItem)}
         total={nowWatchingItems.length}
         seeAllHref={`/user/${profile.username}`}
@@ -131,6 +132,7 @@ const PublicProfilePage = async ({ params }: PublicProfilePageProps) => {
 
       <ProfileSection
         title="Top 4 movies"
+        icon={Trophy}
         items={profile.showcase.topMovies.map(toShowcaseSectionItem)}
         total={profile.showcase.topMovies.length}
         seeAllHref={`/user/${profile.username}`}
@@ -141,6 +143,7 @@ const PublicProfilePage = async ({ params }: PublicProfilePageProps) => {
 
       <ProfileSection
         title="Top 4 shows"
+        icon={Trophy}
         items={profile.showcase.topShows.map(toShowcaseSectionItem)}
         total={profile.showcase.topShows.length}
         seeAllHref={`/user/${profile.username}`}
@@ -151,6 +154,7 @@ const PublicProfilePage = async ({ params }: PublicProfilePageProps) => {
 
       <ProfileSection
         title="Watchlist"
+        icon={Bookmark}
         items={watchlistItems.slice(0, SECTION_PREVIEW_LIMIT).map(toShowcaseSectionItem)}
         total={watchlistItems.length}
         seeAllHref={`/user/${profile.username}/watchlist`}
@@ -159,6 +163,7 @@ const PublicProfilePage = async ({ params }: PublicProfilePageProps) => {
 
       <ProfileSection
         title="Movies"
+        icon={Film}
         items={profile.movies.slice(0, SECTION_PREVIEW_LIMIT).map(toDiarySectionItem)}
         total={profile.movies.length}
         seeAllHref={`/user/${profile.username}/films`}
@@ -167,6 +172,7 @@ const PublicProfilePage = async ({ params }: PublicProfilePageProps) => {
 
       <ProfileSection
         title="Shows"
+        icon={Tv}
         items={profile.shows.slice(0, SECTION_PREVIEW_LIMIT).map(toDiarySectionItem)}
         total={profile.shows.length}
         seeAllHref={`/user/${profile.username}/shows`}
