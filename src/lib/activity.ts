@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { resolveMediaCardItem } from "@/lib/tmdb/resolve-media-card-item";
 import type { MediaCardItem } from "@/components/media-card";
+import type { ShowStatus } from "@/lib/validation/show-log";
 
 export const ACTIVITY_PAGE_SIZE = 10;
 
@@ -23,6 +24,8 @@ export type ActivityEvent =
       rating: number | null;
       review: string | null;
       rewatch: boolean;
+      /** Show logs only (migration 0017); null for movie and season logs. */
+      showStatus: ShowStatus | null;
     })
   | (EventBase & { kind: "watchlist"; mediaType: "movie" | "tv"; tmdbId: number })
   | (EventBase & { kind: "follow" });
@@ -143,7 +146,7 @@ export const getActivityFeed = async (
 
   const [movieLogs, showLogs, seasonLogs, watchlist, followers] = await Promise.all([
     hasFollowed ? fromFollowed("movie_logs", `${logColumns}, tmdb_movie_id`) : noRows,
-    hasFollowed ? fromFollowed("show_logs", `${logColumns}, tmdb_show_id`) : noRows,
+    hasFollowed ? fromFollowed("show_logs", `${logColumns}, tmdb_show_id, status`) : noRows,
     hasFollowed
       ? fromFollowed("season_logs", `${logColumns}, tmdb_show_id, season_number`)
       : noRows,
@@ -159,6 +162,7 @@ export const getActivityFeed = async (
     mediaType: "movie" | "tv",
     tmdbId: number,
     seasonNumber: number | null,
+    showStatus: ShowStatus | null = null,
   ): ActivityEvent => ({
     kind: "log",
     key: `${source}:${row.id}`,
@@ -170,14 +174,22 @@ export const getActivityFeed = async (
     rating: toRating(row.rating),
     review: row.review,
     rewatch: row.rewatch,
+    showStatus,
   });
 
   const batches: ActivityEvent[][] = [
     rowsOf<LogRow & { tmdb_movie_id: number }>(movieLogs).map((row) =>
       toLogEvent(row, "movie_log", "movie", row.tmdb_movie_id, null),
     ),
-    rowsOf<LogRow & { tmdb_show_id: number }>(showLogs).map((row) =>
-      toLogEvent(row, "show_log", "tv", row.tmdb_show_id, null),
+    rowsOf<LogRow & { tmdb_show_id: number; status: string }>(showLogs).map((row) =>
+      toLogEvent(
+        row,
+        "show_log",
+        "tv",
+        row.tmdb_show_id,
+        null,
+        row.status === "dropped" ? "dropped" : "completed",
+      ),
     ),
     rowsOf<LogRow & { tmdb_show_id: number; season_number: number }>(seasonLogs).map((row) =>
       toLogEvent(row, "season_log", "tv", row.tmdb_show_id, row.season_number),
