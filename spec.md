@@ -413,6 +413,59 @@ migration.
 - [ ] The owner can remove items while a filter is active; switching filter afterwards shows the correct items.
 - [ ] Filter links are keyboard-reachable, have visible focus, and the active one has `aria-current`.
 
+### Show status: completed / dropped
+
+A show log currently means "I finished this show" (its date field is already
+labelled "Date finished"). This adds the one exception: a show the user gave
+up on. It also lets the planned stats page count watch hours honestly.
+
+- **Data:** migration `0017` adds `show_logs.status text not null default
+  'completed'` with a check constraint `status in ('completed', 'dropped')`.
+  Existing rows become `completed`. Existing RLS/grants cover the new column.
+  Movies and seasons are unchanged.
+- **Show page log card (and the log modal):** the show's "Watched" toggle is
+  replaced by two mutually exclusive toggle buttons — **Completed**
+  (lucide `CircleCheck`) and **Dropped** (lucide `CircleX`) — styled like the
+  current watched pill, each with `aria-pressed`.
+  - No log: either button creates the show log with that status (date
+    defaults to today, like the watched toggle today).
+  - Clicking the other status switches it, keeping rating, review and date.
+  - Clicking the active status removes the log — the same behaviour (and
+    the same "removed" toast) as un-toggling Watched today.
+  - Toasts: "Marked as completed" / "Marked as dropped" / "Removed".
+  - Movies and seasons keep their "Watched" button as is.
+  - Rating a show or saving its review when it has no log creates the log
+    as `completed` (the column default), as happens with "watched" today.
+- **Date label:** the modal's date field reads "Date finished" for a
+  completed show and "Date dropped" for a dropped one.
+- **Where "Dropped" shows:** a small "Dropped" label next to the show's
+  entry in the diary (`/diary`, grid and list), the profile's shows list
+  (`/user/[username]/shows`) and its Shows preview, and in the show page's
+  public review list. Completed shows get no label (it's the default).
+- **Activity feed:** a show log reads "**user** completed *Show*" or
+  "**user** dropped *Show*" (current status of the row). Movie and season
+  logs keep "watched".
+- **Validation:** server actions accept only `completed` / `dropped`
+  (Zod enum); anything else is rejected without writing.
+- **Tests:** existing unit and e2e tests that refer to the show "Watched"
+  button / "watched" feed text for shows are renamed and updated to the
+  new labels; new tests cover the status switch and the feed wording.
+- **Out of scope:** "Watching" / "On hold" statuses (the profile's Now
+  watching covers watching), statuses for movies or seasons, filtering by
+  status, a separate feed event when the status changes.
+
+#### Acceptance criteria
+
+- [ ] After migration `0017`, existing show logs read as `completed`; writing any other value than `completed`/`dropped` fails.
+- [ ] On a show page with no log, clicking Completed or Dropped creates the log with that status; the pressed button reflects it after a reload.
+- [ ] Switching from Completed to Dropped (and back) keeps the rating, review and date.
+- [ ] Clicking the active status removes the log.
+- [ ] The modal's date label is "Date finished" for completed and "Date dropped" for dropped.
+- [ ] A dropped show shows a "Dropped" label in the diary (grid + list), the profile shows list/preview and the review list; completed shows don't.
+- [ ] The activity feed says "completed" / "dropped" for show logs and still "watched" for movies and seasons.
+- [ ] Movie and season pages still show the unchanged Watched button.
+- [ ] `npm test` and the touched e2e specs pass with the renamed tests.
+
 ## Open Questions
 
 - Should a show status (`watching` / `dropped` / `completed`) be part of MVP, or should it be inferred purely from season logs? → To be resolved in the Plan phase.
