@@ -541,7 +541,10 @@ and how they rated it. Public like the rest of the profile. No migration.
 - **Charts:** plain HTML/CSS bars styled with the app's tokens — no chart
   library. Each chart also exposes its numbers to screen readers (labelled
   bars or a visually hidden table), and the values are readable without
-  hovering.
+  hovering. Hover, keyboard focus or a tap on a bar shows a tooltip above
+  that bar with its full name and the films / TV split ("March 2026 · 7
+  entries · 4 films · 3 TV" — TV counts season and show logs). Each chart is
+  one tab stop; arrow keys / Home / End move between bars.
 - **Computation:** a pure function turns the logs (+ resolved runtimes) into
   the three metrics for a period; it is unit-tested. TMDB lookups go through
   `tmdbFetch` (daily cache) and a failed lookup drops only that runtime, never

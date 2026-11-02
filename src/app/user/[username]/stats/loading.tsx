@@ -14,6 +14,12 @@ const StatsLoading = () => (
           </div>
         ))}
       </div>
+      {Array.from({ length: 2 }, (_, index) => (
+        <div key={index} className="mt-8">
+          <div className="h-6 w-28 animate-pulse rounded bg-surface" />
+          <div className="mt-3 h-40 animate-pulse rounded bg-surface" />
+        </div>
+      ))}
     </div>
   </main>
 );

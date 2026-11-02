@@ -1,10 +1,91 @@
 import "@testing-library/jest-dom/vitest";
 import { describe, it, expect, afterEach } from "vitest";
-import { render, screen, cleanup, within } from "@testing-library/react";
+import { render, screen, cleanup, within, fireEvent } from "@testing-library/react";
 import { StatsPeriodLinks } from "@/components/stats-period-links";
 import { StatsTotals } from "@/components/stats-totals";
+import { StatsBarChart } from "@/components/stats-bar-chart";
+import { ChartColumn } from "lucide-react";
 
 afterEach(cleanup);
+
+describe("StatsBarChart", () => {
+  const bars = [
+    { label: "Jan", title: "January 2026", count: 4, films: 1, tv: 3 },
+    { label: "Feb", title: "February 2026", count: 0, films: 0, tv: 0 },
+    { label: "Mar", title: "March 2026", count: 1200, films: 1199, tv: 1 },
+  ];
+  const renderChart = () =>
+    render(<StatsBarChart title="Activity" icon={ChartColumn} bars={bars} caption="Entries per month in 2026" />);
+
+  it("names every bar with its full title and films / TV split, zeros included", () => {
+    renderChart();
+    expect(screen.getByRole("region", { name: "Activity" })).toBeInTheDocument();
+    const group = screen.getByRole("group", { name: "Entries per month in 2026" });
+    expect(within(group).getAllByRole("button").map((button) => button.getAttribute("aria-label"))).toEqual([
+      "January 2026: 4 entries, 1 film, 3 TV",
+      "February 2026: 0 entries",
+      "March 2026: 1,200 entries, 1,199 films, 1 TV",
+    ]);
+  });
+
+  it("prints non-zero counts above the bars without hovering", () => {
+    renderChart();
+    expect(screen.getByText("4")).toBeInTheDocument();
+    expect(screen.getByText("1,200")).toBeInTheDocument();
+    expect(screen.queryByText("0")).not.toBeInTheDocument();
+  });
+
+  it("shows the films / TV split on hover and hides it on leave", () => {
+    renderChart();
+    const group = screen.getByRole("group", { name: "Entries per month in 2026" });
+    fireEvent.mouseEnter(screen.getByRole("button", { name: /^January/ }));
+    expect(screen.getByText("1 film · 3 TV")).toBeInTheDocument();
+    fireEvent.mouseLeave(group);
+    expect(screen.queryByText("1 film · 3 TV")).not.toBeInTheDocument();
+  });
+
+  it("is one tab stop and moves between bars with the arrow keys", () => {
+    renderChart();
+    const [jan, feb, mar] = screen.getAllByRole("button");
+    expect([jan, feb, mar].map((button) => button.tabIndex)).toEqual([0, -1, -1]);
+
+    jan.focus();
+    fireEvent.keyDown(jan, { key: "ArrowRight" });
+    expect(feb).toHaveFocus();
+    expect(screen.getByText("February 2026")).toBeInTheDocument();
+    fireEvent.keyDown(feb, { key: "End" });
+    expect(mar).toHaveFocus();
+    expect(mar.tabIndex).toBe(0);
+    expect(screen.getByText("1,199 films · 1 TV")).toBeInTheDocument();
+  });
+
+  it("uses the short axis label but keeps the full title for screen readers", () => {
+    render(
+      <StatsBarChart
+        title="Activity"
+        icon={ChartColumn}
+        bars={[{ label: "2023", shortLabel: "'23", title: "2023", count: 1, films: 1, tv: 0 }]}
+        caption="Entries per year"
+      />,
+    );
+    expect(screen.getByText("'23")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "2023: 1 entry, 1 film, 0 TV" })).toBeInTheDocument();
+  });
+
+  it("shows the empty message instead of bars when every count is zero", () => {
+    render(
+      <StatsBarChart
+        title="Ratings"
+        icon={ChartColumn}
+        bars={[{ label: "0.5", title: "0.5 stars", count: 0, films: 0, tv: 0 }]}
+        caption="c"
+        emptyMessage="No rated entries in 2026."
+      />,
+    );
+    expect(screen.getByText("No rated entries in 2026.")).toBeInTheDocument();
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+  });
+});
 
 describe("StatsPeriodLinks", () => {
   it("links every year and All time, marking the active period", () => {

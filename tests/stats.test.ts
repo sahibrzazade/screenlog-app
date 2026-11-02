@@ -163,18 +163,18 @@ describe("activityBars", () => {
   it("returns 12 monthly bars for a year, keeping empty months", () => {
     const bars = activityBars([movie(1, "2026-01-15"), season(1396, 1, "2026-01-20"), show(1396, "2026-03-01")], 2026);
     expect(bars).toHaveLength(12);
-    expect(bars[0]).toEqual({ label: "Jan", count: 2 });
-    expect(bars[1]).toEqual({ label: "Feb", count: 0 });
-    expect(bars[2]).toEqual({ label: "Mar", count: 1 });
+    expect(bars[0]).toEqual({ label: "Jan", count: 2, films: 1, tv: 1 });
+    expect(bars[1]).toEqual({ label: "Feb", count: 0, films: 0, tv: 0 });
+    expect(bars[2]).toEqual({ label: "Mar", count: 1, films: 0, tv: 1 });
   });
 
   it("returns one bar per year for all time, oldest first, filling gaps with zero", () => {
-    const bars = activityBars([movie(1, "2026-01-01"), movie(2, "2023-05-01"), movie(3, "2023-06-01")], "all");
+    const bars = activityBars([movie(1, "2026-01-01"), movie(2, "2023-05-01"), season(3, 1, "2023-06-01")], "all");
     expect(bars).toEqual([
-      { label: "2023", count: 2 },
-      { label: "2024", count: 0 },
-      { label: "2025", count: 0 },
-      { label: "2026", count: 1 },
+      { label: "2023", count: 2, films: 1, tv: 1 },
+      { label: "2024", count: 0, films: 0, tv: 0 },
+      { label: "2025", count: 0, films: 0, tv: 0 },
+      { label: "2026", count: 1, films: 1, tv: 0 },
     ]);
   });
 
@@ -192,8 +192,8 @@ describe("ratingDistribution", () => {
       movie(2, "2026-01-01", null),
     ]);
     expect(dist).toHaveLength(10);
-    expect(dist[0]).toEqual({ rating: 0.5, count: 1 });
-    expect(dist[8]).toEqual({ rating: 4.5, count: 2 });
+    expect(dist[0]).toEqual({ rating: 0.5, count: 1, films: 0, tv: 1 });
+    expect(dist[8]).toEqual({ rating: 4.5, count: 2, films: 1, tv: 1 });
     expect(dist.reduce((total, bar) => total + bar.count, 0)).toBe(3);
   });
 });

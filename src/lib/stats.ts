@@ -38,7 +38,10 @@ export type StatsTotals = {
   showMinutes: number;
 };
 
-export type ActivityBar = { label: string; count: number };
+/** Entry counts for one bar: all entries, split into movie logs and TV (season + show) logs. */
+export type EntryTally = { count: number; films: number; tv: number };
+
+export type ActivityBar = { label: string } & EntryTally;
 
 /** Ratings 0.5 → 5 in half-star steps, in histogram order. */
 export const RATING_STEPS = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5] as const;
@@ -153,9 +156,10 @@ export const formatWatchTime = (totalMinutes: number): string => {
  */
 export const activityBars = (logs: StatsLog[], period: StatsPeriod): ActivityBar[] => {
   if (period !== "all") {
-    const counts = new Array<number>(12).fill(0);
-    for (const log of logs) counts[Number(log.watchedDate.slice(5, 7)) - 1] += 1;
-    return MONTHS.map((label, index) => ({ label, count: counts[index] }));
+    return MONTHS.map((label, index) => ({
+      label,
+      ...tally(logs.filter((log) => Number(log.watchedDate.slice(5, 7)) === index + 1)),
+    }));
   }
 
   if (logs.length === 0) return [];
@@ -164,13 +168,18 @@ export const activityBars = (logs: StatsLog[], period: StatsPeriod): ActivityBar
   const last = Math.max(...years);
   return Array.from({ length: last - first + 1 }, (_, index) => {
     const year = first + index;
-    return { label: String(year), count: years.filter((y) => y === year).length };
+    return { label: String(year), ...tally(logs.filter((log) => yearOf(log) === year)) };
   });
 };
 
-/** Count of rated entries per half-star step (ten bars); unrated entries are left out. */
-export const ratingDistribution = (logs: StatsLog[]): { rating: number; count: number }[] =>
+const tally = (logs: StatsLog[]): EntryTally => {
+  const films = logs.filter((log) => log.kind === "movie").length;
+  return { count: logs.length, films, tv: logs.length - films };
+};
+
+/** Rated entries per half-star step (ten bars); unrated entries are left out. */
+export const ratingDistribution = (logs: StatsLog[]): ({ rating: number } & EntryTally)[] =>
   RATING_STEPS.map((rating) => ({
     rating,
-    count: logs.filter((log) => log.rating === rating).length,
+    ...tally(logs.filter((log) => log.rating === rating)),
   }));
