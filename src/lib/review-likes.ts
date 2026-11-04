@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { resolveUserList, type FollowListUser } from "@/lib/follows";
 import type { ReviewKind } from "@/lib/validation/review-like";
 
 /** The log table and the `review_likes` FK column for each review kind (0018). */
@@ -31,7 +32,33 @@ export const summarizeLikes = (
   return summary;
 };
 
-export const likeSummaryOf = (summary: Map<string, LikeSummary>, logId: string): LikeSummary =>
+/**
+ * Who liked a review, newest like first, each flagged with whether the
+ * viewer follows them (for the likers modal's Follow buttons).
+ */
+export const getReviewLikers = async (
+  supabase: SupabaseClient,
+  kind: ReviewKind,
+  logId: string,
+  viewerId: string | null,
+): Promise<FollowListUser[]> => {
+  const { likeColumn } = REVIEW_KIND_TABLE[kind];
+  const { data, error } = await supabase
+    .from("review_likes")
+    .select("user_id")
+    .eq(likeColumn, logId)
+    .order("created_at", { ascending: false });
+
+  // Unlike the counts, the modal shows an error state, so surface failures.
+  if (error) throw error;
+  return resolveUserList(
+    supabase,
+    (data ?? []).map((row) => row.user_id as string),
+    viewerId,
+  );
+};
+
+export const likeSummaryOf =(summary: Map<string, LikeSummary>, logId: string): LikeSummary =>
   summary.get(logId) ?? NO_LIKES;
 
 /**

@@ -11,6 +11,8 @@ vi.mock("next/image", () => ({
 }));
 
 vi.mock("@/app/review-like-actions", () => ({ toggleReviewLike: vi.fn() }));
+vi.mock("@/app/user/[username]/actions", () => ({ toggleFollow: vi.fn() }));
+vi.mock("@/lib/supabase/client", () => ({ createClient: vi.fn(() => ({})) }));
 
 afterEach(() => {
   cleanup();
@@ -106,21 +108,21 @@ describe("ReviewList", () => {
     it("gives a signed-in viewer a like toggle on someone else's written review", () => {
       render(<ReviewList reviews={[written]} viewerId="user-9" />);
       expect(screen.getByRole("button", { name: "Like alice's review" })).toHaveAttribute("aria-pressed", "false");
-      expect(screen.getByText("2")).toHaveTextContent("2 likes");
+      expect(screen.getByRole("button", { name: "2 likes" })).toHaveTextContent("2");
     });
 
     it("sends guests to log in, keeping the count visible", () => {
       render(<ReviewList reviews={[written]} viewerId={null} />);
       expect(screen.getByRole("link", { name: "Log in to like alice's review" })).toHaveAttribute("href", "/login");
-      expect(screen.queryByRole("button")).not.toBeInTheDocument();
-      expect(screen.getByText("2")).toHaveTextContent("2 likes");
+      expect(screen.queryByRole("button", { name: /^Like/ })).not.toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "2 likes" })).toBeInTheDocument();
     });
 
     it("shows only the count on the viewer's own review", () => {
       render(<ReviewList reviews={[written]} viewerId="user-1" />);
-      expect(screen.queryByRole("button")).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /^Like/ })).not.toBeInTheDocument();
       expect(screen.queryByRole("link", { name: /like/i })).not.toBeInTheDocument();
-      expect(screen.getByText("2")).toHaveTextContent("2 likes");
+      expect(screen.getByRole("button", { name: "2 likes" })).toBeInTheDocument();
     });
 
     it("has no likes row for rating-only entries", () => {

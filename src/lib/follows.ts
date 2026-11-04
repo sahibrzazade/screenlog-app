@@ -52,6 +52,19 @@ export const getFollowList = async (
     .order("created_at", { ascending: false });
 
   const ids = (rows ?? []).map((row) => (row as Record<string, string>)[otherColumn]);
+  return resolveUserList(supabase, ids, viewerId);
+};
+
+/**
+ * User ids (in display order) → list rows with username, avatar and whether
+ * the viewer follows each one. Shared by the follow lists and the review
+ * likers list. Users without a username are dropped (no profile to link to).
+ */
+export const resolveUserList = async (
+  supabase: SupabaseClient,
+  ids: string[],
+  viewerId: string | null,
+): Promise<FollowListUser[]> => {
   if (ids.length === 0) return [];
 
   const [{ data: profiles }, { data: viewerFollowRows }] = await Promise.all([
@@ -68,7 +81,7 @@ export const getFollowList = async (
   const profileById = new Map((profiles ?? []).map((profile) => [profile.id, profile]));
   const viewerFollowIds = new Set((viewerFollowRows ?? []).map((row) => row.following_id));
 
-  // Keep the follow order; drop users without a username (no profile page to link to).
+  // Keep the given order; drop users without a username (no profile page to link to).
   return ids.flatMap((id) => {
     const profile = profileById.get(id);
     if (!profile?.username) return [];

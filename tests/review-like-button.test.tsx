@@ -6,6 +6,8 @@ import { ReviewLikeButton } from "@/components/review-like-button";
 import { toggleReviewLike } from "@/app/review-like-actions";
 
 vi.mock("@/app/review-like-actions", () => ({ toggleReviewLike: vi.fn() }));
+vi.mock("@/app/user/[username]/actions", () => ({ toggleFollow: vi.fn() }));
+vi.mock("@/lib/supabase/client", () => ({ createClient: vi.fn(() => ({})) }));
 vi.mock("sonner", () => ({ toast: { error: vi.fn() } }));
 
 afterEach(cleanup);
@@ -20,10 +22,12 @@ const renderButton = (initialLiked: boolean, initialCount: number) =>
       initialLiked={initialLiked}
       initialCount={initialCount}
       reviewerName="alice"
+      viewerId="viewer"
     />,
   );
 
 const heart = () => screen.getByRole("button", { name: "Like alice's review" });
+const countButton = (name: string) => screen.getByRole("button", { name });
 
 describe("ReviewLikeButton", () => {
   beforeEach(() => {
@@ -31,10 +35,10 @@ describe("ReviewLikeButton", () => {
     vi.mocked(toast.error).mockReset();
   });
 
-  it("shows the pressed state and the count with a screen-reader unit", () => {
+  it("shows the pressed state and the count with a spoken unit", () => {
     renderButton(true, 3);
     expect(heart()).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByText("3")).toHaveTextContent("3 likes");
+    expect(countButton("3 likes")).toHaveTextContent("3");
   });
 
   it("shows no count at zero", () => {
@@ -55,7 +59,7 @@ describe("ReviewLikeButton", () => {
     expect(formData.get("logId")).toBe(LOG_ID);
     expect(formData.get("liked")).toBe("false");
     await waitFor(() => expect(heart()).toHaveAttribute("aria-pressed", "true"));
-    expect(screen.getByText("2")).toHaveTextContent("2 likes");
+    expect(countButton("2 likes")).toBeInTheDocument();
   });
 
   it("flips immediately, before the action resolves", async () => {
@@ -66,7 +70,7 @@ describe("ReviewLikeButton", () => {
     fireEvent.click(heart());
 
     await waitFor(() => expect(heart()).toHaveAttribute("aria-pressed", "false"));
-    expect(screen.queryByText("1")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "1 like" })).not.toBeInTheDocument();
     resolve({ liked: false });
   });
 
@@ -78,6 +82,6 @@ describe("ReviewLikeButton", () => {
 
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Failed to like. Please try again."));
     expect(heart()).toHaveAttribute("aria-pressed", "false");
-    expect(screen.getByText("4")).toBeInTheDocument();
+    expect(countButton("4 likes")).toBeInTheDocument();
   });
 });

@@ -3,7 +3,8 @@ import Link from "next/link";
 import { RatingStars } from "@/components/rating-stars";
 import { DroppedBadge } from "@/components/dropped-badge";
 import { Heart } from "lucide-react";
-import { LikeCount, ReviewLikeButton } from "@/components/review-like-button";
+import { ReviewLikeButton } from "@/components/review-like-button";
+import { ReviewLikeCount } from "@/components/review-like-count";
 import { isLikeable } from "@/lib/review-likes";
 import type { ReviewKind } from "@/lib/validation/review-like";
 
@@ -96,7 +97,7 @@ const ReviewLikes = ({ review, viewerId }: { review: Review; viewerId: string | 
         <span className="inline-flex size-8 items-center justify-center">
           <Heart className="size-4" aria-hidden />
         </span>
-        <LikeCount count={review.likeCount} />
+        <ReviewLikeCount count={review.likeCount} logKind={review.logKind} logId={review.logId} viewerId={viewerId} />
       </div>
     ) : null;
   }
@@ -111,7 +112,7 @@ const ReviewLikes = ({ review, viewerId }: { review: Review; viewerId: string | 
         >
           <Heart className="size-4" aria-hidden />
         </Link>
-        <LikeCount count={review.likeCount} />
+        <ReviewLikeCount count={review.likeCount} logKind={review.logKind} logId={review.logId} viewerId={null} />
       </div>
     );
   }
@@ -124,6 +125,7 @@ const ReviewLikes = ({ review, viewerId }: { review: Review; viewerId: string | 
         initialLiked={review.viewerLiked}
         initialCount={review.likeCount}
         reviewerName={reviewerName}
+        viewerId={viewerId}
       />
     </div>
   );

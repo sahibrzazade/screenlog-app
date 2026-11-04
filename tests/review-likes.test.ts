@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   fetchLikeSummaries,
+  getReviewLikers,
   isLikeable,
   likeSummaryOf,
   summarizeLikes,
@@ -49,6 +50,44 @@ describe("summarizeLikes", () => {
     const summary = summarizeLikes([{ logId: "a", userId: "u1" }], null);
     expect(likeSummaryOf(summary, "a")).toEqual({ likeCount: 1, viewerLiked: false });
     expect(likeSummaryOf(summary, "missing")).toEqual({ likeCount: 0, viewerLiked: false });
+  });
+});
+
+describe("getReviewLikers", () => {
+  /** review_likes: select → eq → order; profiles_public: select → in. */
+  const fakeClient = (likeRows: unknown[] | null, error: unknown = null) => {
+    const calls: Record<string, unknown[]> = {};
+    const client = {
+      from: (table: string) => {
+        const chain = {
+          select: (...args: unknown[]) => ((calls[`${table}.select`] = args), chain),
+          eq: (...args: unknown[]) => ((calls[`${table}.eq`] = args), chain),
+          order: () => Promise.resolve({ data: likeRows, error }),
+          in: () =>
+            Promise.resolve({
+              data: [
+                { id: "u1", username: "alice", avatar_url: null },
+                { id: "u2", username: "bob", avatar_url: null },
+              ],
+            }),
+        };
+        return chain;
+      },
+    } as unknown as SupabaseClient;
+    return { client, calls };
+  };
+
+  it("returns the likers of that review, newest like first", async () => {
+    const { client, calls } = fakeClient([{ user_id: "u2" }, { user_id: "u1" }]);
+    const likers = await getReviewLikers(client, "season", "log-1", null);
+
+    expect(calls["review_likes.eq"]).toEqual(["season_log_id", "log-1"]);
+    expect(likers.map((user) => user.username)).toEqual(["bob", "alice"]);
+  });
+
+  it("throws when the read fails, so the modal can show its error state", async () => {
+    const { client } = fakeClient(null, { message: "boom" });
+    await expect(getReviewLikers(client, "movie", "log-1", null)).rejects.toBeTruthy();
   });
 });
 
