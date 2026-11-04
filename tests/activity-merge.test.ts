@@ -78,6 +78,23 @@ describe("mergeActivity", () => {
     expect(third.nextCursor).toBeNull();
   });
 
+  it("keeps an event that two sources returned only once", () => {
+    const like: ActivityEvent = {
+      kind: "like",
+      key: "review_like:x",
+      createdAt: at(20),
+      userId: "u2",
+      mediaType: "movie",
+      tmdbId: 550,
+      seasonNumber: null,
+      reviewerId: "viewer",
+      review: "Great.",
+    };
+    // A followed user liking the viewer's review is both "liked by followed" and "liked yours".
+    const { events } = mergeActivity([[like], [like], [log("a", 10)]], null);
+    expect(keys(events)).toEqual(["review_like:x", "movie_log:a"]);
+  });
+
   it("returns an empty page when there is nothing", () => {
     expect(mergeActivity([[], [], []], null)).toEqual({ events: [], nextCursor: null });
   });

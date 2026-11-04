@@ -83,21 +83,22 @@ export const ActivityFeed = ({ initialItems, initialCursor }: ActivityFeedProps)
   );
 };
 
+/** Season logs and likes of season reviews point at a season; everything else at the title. */
+const seasonOf = (item: ActivityItem) =>
+  (item.kind === "log" || item.kind === "like") && item.seasonNumber !== null ? item.seasonNumber : null;
+
 const titleHref = (item: ActivityItem) => {
   if (item.kind === "follow" || !item.title) return `/user/${item.username}`;
-  if (item.kind === "log" && item.seasonNumber !== null) {
-    return `/tv/${item.tmdbId}/season/${item.seasonNumber}`;
-  }
+  const season = seasonOf(item);
+  if (season !== null) return `/tv/${item.tmdbId}/season/${season}`;
   return item.mediaType === "movie" ? `/movie/${item.tmdbId}` : `/tv/${item.tmdbId}`;
 };
 
 const ActivityRow = ({ item }: { item: ActivityItem }) => {
   const href = titleHref(item);
   const poster = posterUrl(item.title?.posterPath);
-  const titleText =
-    item.kind === "log" && item.seasonNumber !== null
-      ? `${item.title?.title} — Season ${item.seasonNumber}`
-      : item.title?.title;
+  const season = seasonOf(item);
+  const titleText = season !== null ? `${item.title?.title} — Season ${season}` : item.title?.title;
 
   const user = (
     <Link href={`/user/${item.username}`} className="font-medium text-foreground hover:underline">
@@ -160,6 +161,25 @@ const ActivityRow = ({ item }: { item: ActivityItem }) => {
                   {user} {logVerb(item)} {title}
                 </>
               )}
+              {item.kind === "like" && (
+                <>
+                  {user} liked{" "}
+                  {item.reviewerUsername ? (
+                    <>
+                      <Link
+                        href={`/user/${item.reviewerUsername}`}
+                        className="font-medium text-foreground hover:underline"
+                      >
+                        {item.reviewerUsername}
+                      </Link>
+                      &apos;s
+                    </>
+                  ) : (
+                    "your"
+                  )}{" "}
+                  review of {title}
+                </>
+              )}
             </span>
           </p>
           <time
@@ -175,7 +195,7 @@ const ActivityRow = ({ item }: { item: ActivityItem }) => {
         {item.kind === "log" && item.rating !== null && (
           <RatingStars value={item.rating} readOnly />
         )}
-        {item.kind === "log" && item.review && (
+        {(item.kind === "log" || item.kind === "like") && item.review && (
           <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground">
             {item.review}
           </p>

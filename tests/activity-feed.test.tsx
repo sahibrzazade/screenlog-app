@@ -119,6 +119,51 @@ describe("ActivityFeed", () => {
     expect(second).toHaveTextContent("carol followed you");
   });
 
+  describe("review likes", () => {
+    const like: ActivityItem = {
+      kind: "like",
+      key: "review_like:6",
+      createdAt: CREATED_AT,
+      userId: "u1",
+      username: "alice",
+      avatarUrl: null,
+      title: dune,
+      mediaType: "movie",
+      tmdbId: 438631,
+      seasonNumber: null,
+      reviewerId: "u2",
+      review: "A towering achievement.",
+      reviewerUsername: "bob",
+    };
+
+    it("names the reviewer, links them and quotes the liked review", () => {
+      render(<ActivityFeed initialItems={[like]} initialCursor={null} />);
+      expect(screen.getByRole("listitem")).toHaveTextContent("alice liked bob's review of Dune");
+      expect(screen.getByRole("link", { name: "bob" })).toHaveAttribute("href", "/user/bob");
+      expect(screen.getByRole("link", { name: "Dune" })).toHaveAttribute("href", "/movie/438631");
+      expect(screen.getByText("A towering achievement.")).toBeInTheDocument();
+    });
+
+    it("says 'your review' for the viewer's own review", () => {
+      render(<ActivityFeed initialItems={[{ ...like, reviewerUsername: null }]} initialCursor={null} />);
+      expect(screen.getByRole("listitem")).toHaveTextContent("alice liked your review of Dune");
+    });
+
+    it("links a liked season review to the season page", () => {
+      render(
+        <ActivityFeed
+          initialItems={[{ ...like, title: got, mediaType: "tv", tmdbId: 1399, seasonNumber: 3 }]}
+          initialCursor={null}
+        />,
+      );
+      expect(screen.getByRole("listitem")).toHaveTextContent("alice liked bob's review of Game of Thrones — Season 3");
+      expect(screen.getByRole("link", { name: "Game of Thrones — Season 3" })).toHaveAttribute(
+        "href",
+        "/tv/1399/season/3",
+      );
+    });
+  });
+
   it("shows the empty state with a link to people search", () => {
     render(<ActivityFeed initialItems={[]} initialCursor={null} />);
     expect(screen.getByRole("link", { name: "Find people to follow" })).toHaveAttribute(
