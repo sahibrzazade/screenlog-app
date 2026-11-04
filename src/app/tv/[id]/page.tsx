@@ -66,9 +66,12 @@ const ShowPage = async ({ params }: ShowPageProps) => {
       ]),
     );
 
-  const showReviews = await fetchReviews(supabase, "show_logs", {
-    tmdb_show_id: showId,
-  });
+  const showReviews = await fetchReviews(
+    supabase,
+    "show_logs",
+    { tmdb_show_id: showId },
+    user?.id ?? null,
+  );
 
   const inWatchlist = await isOnWatchlist(supabase, user, showId, "tv");
 

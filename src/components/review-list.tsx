@@ -2,8 +2,15 @@ import Image from "next/image";
 import Link from "next/link";
 import { RatingStars } from "@/components/rating-stars";
 import { DroppedBadge } from "@/components/dropped-badge";
+import type { ReviewKind } from "@/lib/validation/review-like";
 
 export type Review = {
+  /** The log row this review is (likes point at it, migration 0018). */
+  logId: string;
+  logKind: ReviewKind;
+  likeCount: number;
+  /** Whether the signed-in viewer liked it; always false for guests. */
+  viewerLiked: boolean;
   userId: string;
   username: string | null;
   avatarUrl: string | null;

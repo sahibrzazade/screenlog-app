@@ -63,10 +63,12 @@ const SeasonPage = async ({ params }: SeasonPageProps) => {
       }
     : null;
 
-  const reviews = await fetchReviews(supabase, "season_logs", {
-    tmdb_show_id: showId,
-    season_number: seasonNumber,
-  });
+  const reviews = await fetchReviews(
+    supabase,
+    "season_logs",
+    { tmdb_show_id: showId, season_number: seasonNumber },
+    user?.id ?? null,
+  );
 
   const poster = posterUrl(season.poster_path);
 

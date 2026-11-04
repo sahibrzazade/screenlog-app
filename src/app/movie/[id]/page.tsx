@@ -49,9 +49,12 @@ const MoviePage = async ({ params }: MoviePageProps) => {
     movieId,
   );
 
-  const reviews = await fetchReviews(supabase, "movie_logs", {
-    tmdb_movie_id: movieId,
-  });
+  const reviews = await fetchReviews(
+    supabase,
+    "movie_logs",
+    { tmdb_movie_id: movieId },
+    user?.id ?? null,
+  );
 
   const inWatchlist = await isOnWatchlist(supabase, user, movieId, "movie");
 
