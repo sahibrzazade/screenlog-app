@@ -627,8 +627,10 @@ and how they rated it. Public like the rest of the profile. No migration.
   decided in subtask 8** with a ui-ux-pro-max evaluation (a card like
   "Stats" is one candidate) and the user's approval.
 - **Editing / clearing:** editing a review keeps its likes. Clearing the
-  review text (keeping only a rating) keeps the rows but hides
-  the heart; deleting the log cascades.
+  review text (keeping only a rating) keeps the rows but hides the heart;
+  deleting the log cascades. Known gap, accepted for now (2026-11-04): those
+  kept rows could still surface in the feed, the liked reviews page and the
+  popular sort — a trigger deleting them was considered and deferred.
 - **Out of scope:** notifications (no notification system yet — its own
   task later), liking comments, like counts on profile cards, liking
   rating-only entries.
