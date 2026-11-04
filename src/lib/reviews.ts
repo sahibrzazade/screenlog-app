@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Review } from "@/components/review-list";
-import { fetchLikeSummaries, likeSummaryOf, type LikeSummary } from "@/lib/review-likes";
+import { fetchLikeSummaries, isLikeable, likeSummaryOf, type LikeSummary } from "@/lib/review-likes";
 import type { ReviewKind } from "@/lib/validation/review-like";
 
 type ReviewTable = "movie_logs" | "show_logs" | "season_logs";
@@ -20,10 +20,6 @@ type ReviewLogRow = {
   /** Only selected from show_logs (migration 0017). */
   status?: string;
 };
-
-/** A log row only surfaces as a review once it has a rating or written review. */
-const hasReviewContent = (log: ReviewLogRow) =>
-  log.rating !== null || log.review !== null;
 
 type ReviewerProfile = { username: string | null; avatarUrl: string | null };
 
@@ -67,7 +63,7 @@ const toReview = (
 };
 
 /**
- * A title's (or season's) reviews, newest first, each with its like count
+ * A title's (or season's) written reviews, newest first, each with its like count
  * and whether `viewerId` liked it (null for guests).
  */
 export const fetchReviews = async (
@@ -93,7 +89,10 @@ export const fetchReviews = async (
     return [];
   }
 
-  const reviewLogs = logs.filter(hasReviewContent);
+  // Only written reviews are listed (spec "Review likes"): rating-only logs
+  // have nothing to read and can't be liked. Followed users' ratings are
+  // meant to surface in "friends who watched this" instead.
+  const reviewLogs = logs.filter((log) => isLikeable(log.review));
   const kind = KIND_BY_TABLE[table];
 
   const [profileById, likes] = await Promise.all([

@@ -599,7 +599,17 @@ and how they rated it. Public like the rest of the profile. No migration.
   a user can insert and delete only rows with `user_id = auth.uid()`.
   Liking your own review is blocked — in the action and in the
   insert policy (the policy checks the referenced log's `user_id`).
-- **What can be liked:** only log rows with written review text. Rating-only entries show no heart.
+- **What can be liked:** only log rows with written review text.
+- **Reviews list = written reviews only** (decided 2026-11-04): title and
+  season pages' Reviews section no longer lists rating-only logs — nothing
+  to read, nothing to like, and it keeps the popular sort meaningful. The
+  viewer's own rating stays on their log card; followed users' ratings are
+  meant to show in the upcoming "friends who watched this" feature. No
+  written reviews → "No reviews yet."
+- **Like button placement:** a fixed-width column to the right of the
+  review (heart over count), top-aligned with the reviewer line, so every
+  heart sits in the same place. Liked = filled accent (gold) heart — red is
+  kept for destructive actions.
 - **Like button:** heart + count on every likeable review in `ReviewList`
   (movie, show and season pages). Toggling is optimistic and rolls back
   with an error toast on failure. `aria-pressed`, accessible name "Like
@@ -649,7 +659,8 @@ and how they rated it. Public like the rest of the profile. No migration.
 - [ ] Migration 0018 creates `review_likes` with exactly-one-FK check, per-FK unique indexes, cascade delete and RLS (public read, own insert/delete).
 - [ ] A signed-in user can like and unlike someone else's review on movie, show and season pages; the count updates immediately and survives a reload.
 - [ ] Liking twice is impossible (unique index) and a failed toggle rolls back with an error toast.
-- [ ] Own reviews can't be liked (count only); rating-only entries show no heart; guests see the count and the heart links to `/login`.
+- [ ] Own reviews can't be liked (count only); guests see the count and the heart links to `/login`.
+- [ ] Rating-only logs don't appear in a title's or season's Reviews section.
 - [ ] The feed shows "X liked your review of Title" from anyone, followed or not.
 - [ ] Clicking a non-zero count opens the likers modal (newest first, profile links, Follow buttons) with loading/error/empty states, closable with Esc and the close button.
 - [ ] The activity feed shows likes by followed users with correct wording and links, paginates with the existing "Show more", and an unliked review disappears from it.
