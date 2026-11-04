@@ -6,17 +6,20 @@ import { LogSeasonForm } from "@/components/log-season-form";
 import { SignInPrompt } from "@/components/sign-in-prompt";
 import { EpisodeList } from "@/components/detail/episode-list";
 import { DetailPoster } from "@/components/detail/detail-poster";
-import { ReviewList } from "@/components/review-list";
+import { ReviewsSection } from "@/components/reviews-section";
 import { fetchReviews } from "@/lib/reviews";
+import { parseReviewSort } from "@/lib/review-sort";
 import { posterUrl } from "@/lib/tmdb/images";
 import type { TmdbSeasonDetails } from "@/lib/tmdb/types";
 
 type SeasonPageProps = {
   params: Promise<{ id: string; seasonNumber: string }>;
+  searchParams: Promise<{ reviews?: string | string[] }>;
 };
 
-const SeasonPage = async ({ params }: SeasonPageProps) => {
+const SeasonPage = async ({ params, searchParams }: SeasonPageProps) => {
   const { id, seasonNumber: seasonNumberParam } = await params;
+  const reviewSort = parseReviewSort((await searchParams).reviews);
   const showId = Number(id);
   const seasonNumber = Number(seasonNumberParam);
 
@@ -63,10 +66,12 @@ const SeasonPage = async ({ params }: SeasonPageProps) => {
       }
     : null;
 
-  const reviews = await fetchReviews(supabase, "season_logs", {
-    tmdb_show_id: showId,
-    season_number: seasonNumber,
-  });
+  const reviews = await fetchReviews(
+    supabase,
+    "season_logs",
+    { tmdb_show_id: showId, season_number: seasonNumber },
+    user?.id ?? null,
+  );
 
   const poster = posterUrl(season.poster_path);
 
@@ -104,10 +109,12 @@ const SeasonPage = async ({ params }: SeasonPageProps) => {
             <EpisodeList episodes={season.episodes} />
           </section>
 
-          <section className="mt-6">
-            <h2 className="text-lg font-semibold">Reviews</h2>
-            <ReviewList reviews={reviews} viewerId={user?.id ?? null} />
-          </section>
+          <ReviewsSection
+            reviews={reviews}
+            viewerId={user?.id ?? null}
+            sort={reviewSort}
+            basePath={`/tv/${showId}/season/${seasonNumber}`}
+          />
         </div>
       </div>
     </main>

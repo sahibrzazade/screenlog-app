@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { LogShowForm } from "@/components/log-show-form";
 import { SignInPrompt } from "@/components/sign-in-prompt";
 import { SeasonList, type SeasonLogSummary } from "@/components/season-list";
-import { ReviewList } from "@/components/review-list";
+import { ReviewsSection } from "@/components/reviews-section";
 import { DetailBackdrop } from "@/components/detail/detail-backdrop";
 import { DetailPoster } from "@/components/detail/detail-poster";
 import { GenreBadges } from "@/components/detail/genre-badges";
@@ -12,16 +12,19 @@ import { CastList } from "@/components/detail/cast-list";
 import { MoreLikeThis } from "@/components/detail/more-like-this";
 import { TmdbRating } from "@/components/detail/tmdb-rating";
 import { fetchReviews } from "@/lib/reviews";
+import { parseReviewSort } from "@/lib/review-sort";
 import { fetchOwnShowLog, isOnWatchlist } from "@/lib/logs/queries";
 import { backdropUrl, posterUrl } from "@/lib/tmdb/images";
 import type { TmdbShowDetails } from "@/lib/tmdb/types";
 
 type ShowPageProps = {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ reviews?: string | string[] }>;
 };
 
-const ShowPage = async ({ params }: ShowPageProps) => {
+const ShowPage = async ({ params, searchParams }: ShowPageProps) => {
   const { id } = await params;
+  const reviewSort = parseReviewSort((await searchParams).reviews);
   const showId = Number(id);
 
   if (!Number.isInteger(showId) || showId <= 0) {
@@ -66,9 +69,12 @@ const ShowPage = async ({ params }: ShowPageProps) => {
       ]),
     );
 
-  const showReviews = await fetchReviews(supabase, "show_logs", {
-    tmdb_show_id: showId,
-  });
+  const showReviews = await fetchReviews(
+    supabase,
+    "show_logs",
+    { tmdb_show_id: showId },
+    user?.id ?? null,
+  );
 
   const inWatchlist = await isOnWatchlist(supabase, user, showId, "tv");
 
@@ -139,10 +145,12 @@ const ShowPage = async ({ params }: ShowPageProps) => {
             </section>
           )}
 
-          <section className="mt-6">
-            <h2 className="text-lg font-semibold">Reviews</h2>
-            <ReviewList reviews={showReviews} viewerId={user?.id ?? null} />
-          </section>
+          <ReviewsSection
+            reviews={showReviews}
+            viewerId={user?.id ?? null}
+            sort={reviewSort}
+            basePath={`/tv/${showId}`}
+          />
 
           <MoreLikeThis items={similar} mediaType="tv" />
         </div>

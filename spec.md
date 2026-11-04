@@ -572,6 +572,103 @@ and how they rated it. Public like the rest of the profile. No migration.
 - [ ] Chart values are available to screen readers; selector links are keyboard-reachable with visible focus.
 - [ ] The profile's "Stats" card opens the page; the layout fits a 375px-wide screen with no horizontal scroll.
 
+### Review likes
+
+> **Status: agreed (2026-11-03)** — open questions settled (see "Decisions"
+> below); only the profile entry point for liked reviews is left to subtask 8.
+
+- **Goal:** let people like each other's reviews, see who liked one, surface
+  likes in the activity feed, sort a title's reviews by popularity, and list
+  a user's liked reviews.
+- **Data model (decided):** reviews stay where they are — the `rating` /
+  `review` columns of `movie_logs`, `show_logs` and `season_logs` (one log
+  row = one review; matches Letterboxd's log-entry model and future rewatch
+  support). Likes go in **one** new table, migration
+  `0018_review_likes.sql`:
+  - `review_likes (id, user_id → auth.users, movie_log_id → movie_logs,
+    show_log_id → show_logs, season_log_id → season_logs, created_at)`;
+    the three log FKs are nullable with a check that **exactly one** is set
+    (`num_nonnulls(...) = 1`) and `on delete cascade`, so deleting a log
+    deletes its likes.
+  - One like per user per review: a unique index per FK column
+    (`(user_id, movie_log_id)` etc.).
+  - Rejected: a polymorphic `(log_type, log_id)` pair — no real FK, likes
+    of deleted logs would be orphaned. Rejected: moving reviews to their own
+    table — touches every log form/action/feed for no gain.
+- **RLS:** likes are publicly readable (anon + authenticated, like logs);
+  a user can insert and delete only rows with `user_id = auth.uid()`.
+  Liking your own review is blocked — in the action and in the
+  insert policy (the policy checks the referenced log's `user_id`).
+- **What can be liked:** only log rows with written review text.
+- **Reviews list = written reviews only** (decided 2026-11-04): title and
+  season pages' Reviews section no longer lists rating-only logs — nothing
+  to read, nothing to like, and it keeps the popular sort meaningful. The
+  viewer's own rating stays on their log card; followed users' ratings are
+  meant to show in the upcoming "friends who watched this" feature. No
+  written reviews → "No reviews yet."
+- **Like button placement:** a fixed-width column to the right of the
+  review (heart over count), top-aligned with the reviewer line, so every
+  heart sits in the same place. Liked = filled accent (gold) heart — red is
+  kept for destructive actions.
+- **Like button:** heart + count on every likeable review in `ReviewList`
+  (movie, show and season pages). Toggling is optimistic and rolls back
+  with an error toast on failure. `aria-pressed`, accessible name "Like
+  {username}'s review" / "Unlike …". On your own review: count only, no
+  button. Guests see the count; the heart links to `/login`.
+- **Likers modal:** clicking the count (when > 0) opens a dialog listing
+  who liked it — newest first, avatar + username + Follow button, the same
+  look and behaviour as the followers/following modal on the profile
+  (`profile-stats.tsx`; extract a shared user-list dialog if it keeps the
+  code simpler).
+- **Activity feed:** a new event source — likes by people the viewer
+  follows: "**user** liked **reviewer**'s review of *Title*" (season reviews:
+  "*Show* — Season N"), linking to the title page; ordered by
+  `review_likes.created_at` with the existing keyset cursor (`key`
+  `review_like:<id>`). Also "**user** liked your review of *Title*" from
+  anyone (followed or not), like "followed you". Unliking removes the event.
+- **Popular sort:** title/season pages get a **Recent | Popular** switch
+  above the reviews; Recent is the current order and the default, Popular
+  orders by like count (ties → newest). State in the URL
+  (`?reviews=popular`) so it's linkable and works without JS.
+- **Liked reviews page:** `/user/[username]/likes`, public, the reviews
+  that user liked, newest like first: poster, title, reviewer, stars,
+  review excerpt, link to the title page; same pagination/empty-state
+  pattern as the other profile list pages. **How the profile links to it is
+  decided in subtask 8** with a ui-ux-pro-max evaluation (a card like
+  "Stats" is one candidate) and the user's approval.
+- **Editing / clearing:** editing a review keeps its likes. Clearing the
+  review text (keeping only a rating) keeps the rows but hides the heart;
+  deleting the log cascades. Known gap, accepted for now (2026-11-04): those
+  kept rows could still surface in the feed, the liked reviews page and the
+  popular sort — a trigger deleting them was considered and deferred.
+- **Out of scope:** notifications (no notification system yet — its own
+  task later), liking comments, like counts on profile cards, liking
+  rating-only entries.
+
+#### Decisions (settled 2026-11-03)
+
+1. A user can't like their own review.
+2. Only entries with written review text are likeable.
+3. Guests see the count; the heart links to `/login`.
+4. The feed also shows "X liked your review" from people you don't follow.
+5. The profile's entry point to liked reviews is designed in subtask 8 with
+   ui-ux-pro-max, then approved by the user.
+
+#### Acceptance criteria
+
+- [ ] Migration 0018 creates `review_likes` with exactly-one-FK check, per-FK unique indexes, cascade delete and RLS (public read, own insert/delete).
+- [ ] A signed-in user can like and unlike someone else's review on movie, show and season pages; the count updates immediately and survives a reload.
+- [ ] Liking twice is impossible (unique index) and a failed toggle rolls back with an error toast.
+- [ ] Own reviews can't be liked (count only); guests see the count and the heart links to `/login`.
+- [ ] Rating-only logs don't appear in a title's or season's Reviews section.
+- [ ] The feed shows "X liked your review of Title" from anyone, followed or not.
+- [ ] Clicking a non-zero count opens the likers modal (newest first, profile links, Follow buttons) with loading/error/empty states, closable with Esc and the close button.
+- [ ] The activity feed shows likes by followed users with correct wording and links, paginates with the existing "Show more", and an unliked review disappears from it.
+- [ ] Recent / Popular reorders a title's reviews (likes desc, ties newest), is reflected in `?reviews=`, and Recent stays the default.
+- [ ] `/user/[username]/likes` lists that user's liked reviews newest-first for guests and users; unknown username → 404; empty state when none.
+- [ ] Deleting a log removes its likes everywhere (counts, modal, feed, liked page).
+- [ ] Heart button is keyboard reachable with visible focus, `aria-pressed`, ≥24px target; everything fits 375px with no horizontal scroll.
+
 ## Open Questions
 
 - Should a show status (`watching` / `dropped` / `completed`) be part of MVP, or should it be inferred purely from season logs? → To be resolved in the Plan phase.

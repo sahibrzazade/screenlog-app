@@ -10,12 +10,21 @@ vi.mock("next/image", () => ({
   ),
 }));
 
+vi.mock("@/app/review-like-actions", () => ({ toggleReviewLike: vi.fn() }));
+vi.mock("@/app/user/[username]/actions", () => ({ toggleFollow: vi.fn() }));
+vi.mock("@/lib/supabase/client", () => ({ createClient: vi.fn(() => ({})) }));
+
 afterEach(() => {
   cleanup();
 });
 
+// Like fields (subtask 3) — not what these tests are about.
+const likeFields = { logKind: "movie" as const, likeCount: 0, viewerLiked: false };
+
 const reviews = [
   {
+    logId: "log-1",
+    ...likeFields,
     userId: "user-1",
     username: "alice",
     avatarUrl: null,
@@ -24,6 +33,8 @@ const reviews = [
     watchedDate: "2026-01-01",
   },
   {
+    logId: "log-2",
+    ...likeFields,
     userId: "user-2",
     username: "bob",
     avatarUrl: "https://example.com/bob.jpg",
@@ -53,7 +64,7 @@ describe("ReviewList", () => {
   it("falls back to Anonymous when username is null", () => {
     render(
       <ReviewList
-        reviews={[{ userId: "user-3", username: null, avatarUrl: null, rating: 5, review: null, watchedDate: "2026-01-03" }]}
+        reviews={[{ logId: "log-3", ...likeFields, userId: "user-3", username: null, avatarUrl: null, rating: 5, review: null, watchedDate: "2026-01-03" }]}
         viewerId={null}
       />,
     );
@@ -68,7 +79,7 @@ describe("ReviewList", () => {
   it("does not render review text when review is null", () => {
     render(
       <ReviewList
-        reviews={[{ userId: "user-2", username: "bob", avatarUrl: null, rating: 3, review: null, watchedDate: "2026-01-02" }]}
+        reviews={[{ logId: "log-2", ...likeFields, userId: "user-2", username: "bob", avatarUrl: null, rating: 3, review: null, watchedDate: "2026-01-02" }]}
         viewerId={null}
       />,
     );
@@ -91,10 +102,39 @@ describe("ReviewList", () => {
     );
   });
 
+  describe("likes", () => {
+    const written = { ...reviews[0], likeCount: 2 };
+
+    it("gives a signed-in viewer a like toggle on someone else's written review", () => {
+      render(<ReviewList reviews={[written]} viewerId="user-9" />);
+      expect(screen.getByRole("button", { name: "Like alice's review" })).toHaveAttribute("aria-pressed", "false");
+      expect(screen.getByRole("button", { name: "2 likes" })).toHaveTextContent("2");
+    });
+
+    it("sends guests to log in, keeping the count visible", () => {
+      render(<ReviewList reviews={[written]} viewerId={null} />);
+      expect(screen.getByRole("link", { name: "Log in to like alice's review" })).toHaveAttribute("href", "/login");
+      expect(screen.queryByRole("button", { name: /^Like/ })).not.toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "2 likes" })).toBeInTheDocument();
+    });
+
+    it("shows only the count on the viewer's own review", () => {
+      render(<ReviewList reviews={[written]} viewerId="user-1" />);
+      expect(screen.queryByRole("button", { name: /^Like/ })).not.toBeInTheDocument();
+      expect(screen.queryByRole("link", { name: /like/i })).not.toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "2 likes" })).toBeInTheDocument();
+    });
+
+    it("has no likes row for rating-only entries", () => {
+      render(<ReviewList reviews={[reviews[1]]} viewerId="user-9" />);
+      expect(screen.queryByRole("button")).not.toBeInTheDocument();
+    });
+  });
+
   it("does not link an Anonymous (usernameless) row", () => {
     render(
       <ReviewList
-        reviews={[{ userId: "user-3", username: null, avatarUrl: null, rating: 5, review: null, watchedDate: "2026-01-03" }]}
+        reviews={[{ logId: "log-3", ...likeFields, userId: "user-3", username: null, avatarUrl: null, rating: 5, review: null, watchedDate: "2026-01-03" }]}
         viewerId={null}
       />,
     );

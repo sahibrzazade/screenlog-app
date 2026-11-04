@@ -3,7 +3,7 @@ import { tmdbFetch } from "@/lib/tmdb/client";
 import { createClient } from "@/lib/supabase/server";
 import { LogMovieForm } from "@/components/log-movie-form";
 import { SignInPrompt } from "@/components/sign-in-prompt";
-import { ReviewList } from "@/components/review-list";
+import { ReviewsSection } from "@/components/reviews-section";
 import { DetailBackdrop } from "@/components/detail/detail-backdrop";
 import { DetailPoster } from "@/components/detail/detail-poster";
 import { GenreBadges } from "@/components/detail/genre-badges";
@@ -11,16 +11,19 @@ import { CastList } from "@/components/detail/cast-list";
 import { MoreLikeThis } from "@/components/detail/more-like-this";
 import { TmdbRating } from "@/components/detail/tmdb-rating";
 import { fetchReviews } from "@/lib/reviews";
+import { parseReviewSort } from "@/lib/review-sort";
 import { fetchOwnLog, isOnWatchlist } from "@/lib/logs/queries";
 import { backdropUrl, posterUrl } from "@/lib/tmdb/images";
 import type { TmdbMovieDetails } from "@/lib/tmdb/types";
 
 type MoviePageProps = {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ reviews?: string | string[] }>;
 };
 
-const MoviePage = async ({ params }: MoviePageProps) => {
+const MoviePage = async ({ params, searchParams }: MoviePageProps) => {
   const { id } = await params;
+  const reviewSort = parseReviewSort((await searchParams).reviews);
   const movieId = Number(id);
 
   if (!Number.isInteger(movieId) || movieId <= 0) {
@@ -49,9 +52,12 @@ const MoviePage = async ({ params }: MoviePageProps) => {
     movieId,
   );
 
-  const reviews = await fetchReviews(supabase, "movie_logs", {
-    tmdb_movie_id: movieId,
-  });
+  const reviews = await fetchReviews(
+    supabase,
+    "movie_logs",
+    { tmdb_movie_id: movieId },
+    user?.id ?? null,
+  );
 
   const inWatchlist = await isOnWatchlist(supabase, user, movieId, "movie");
 
@@ -115,10 +121,12 @@ const MoviePage = async ({ params }: MoviePageProps) => {
 
           <CastList cast={cast} />
 
-          <section className="mt-6">
-            <h2 className="text-lg font-semibold">Reviews</h2>
-            <ReviewList reviews={reviews} viewerId={user?.id ?? null} />
-          </section>
+          <ReviewsSection
+            reviews={reviews}
+            viewerId={user?.id ?? null}
+            sort={reviewSort}
+            basePath={`/movie/${movieId}`}
+          />
 
           <MoreLikeThis items={similar} mediaType="movie" />
         </div>

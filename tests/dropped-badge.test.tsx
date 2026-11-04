@@ -56,8 +56,8 @@ describe("Dropped label", () => {
       <ReviewList
         viewerId={null}
         reviews={[
-          { userId: "u1", username: "ann", avatarUrl: null, rating: 2, review: null, watchedDate: "2026-01-01", dropped: true },
-          { userId: "u2", username: "bob", avatarUrl: null, rating: 5, review: null, watchedDate: "2026-01-01" },
+          { logId: "l1", logKind: "show", likeCount: 0, viewerLiked: false, userId: "u1", username: "ann", avatarUrl: null, rating: 2, review: null, watchedDate: "2026-01-01", dropped: true },
+          { logId: "l2", logKind: "show", likeCount: 0, viewerLiked: false, userId: "u2", username: "bob", avatarUrl: null, rating: 5, review: null, watchedDate: "2026-01-01" },
         ]}
       />,
     );

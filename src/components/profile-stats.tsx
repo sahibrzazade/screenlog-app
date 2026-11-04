@@ -1,12 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
-import Image from "next/image";
+import { useCallback, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { getFollowList, type FollowListKind, type FollowListUser } from "@/lib/follows";
-import { FollowButton } from "@/components/follow-button";
+import { getFollowList, type FollowListKind } from "@/lib/follows";
+import { UserListDialog } from "@/components/user-list-dialog";
 
 type ProfileStatsProps = {
   profileId: string;
@@ -31,8 +29,6 @@ const EMPTY_MESSAGES: Record<FollowListKind, string> = {
   following: "Not following anyone yet.",
 };
 
-const SKELETON_ROWS = 3;
-
 /**
  * Letterboxd-style stat strip for a profile header: films, shows, watchlist,
  * followers, following. The film/show/watchlist counts link to the user's
@@ -50,48 +46,12 @@ export const ProfileStats = ({
   following,
   viewerId,
 }: ProfileStatsProps) => {
-  const dialogRef = useRef<HTMLDialogElement>(null);
   const [openKind, setOpenKind] = useState<FollowListKind | null>(null);
-  const [loadedKind, setLoadedKind] = useState<FollowListKind | null>(null);
-  const [users, setUsers] = useState<FollowListUser[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  // Guards against a slow response for a list the user already switched away from.
-  const requestedKindRef = useRef<FollowListKind | null>(null);
-
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-    if (openKind && !dialog.open) {
-      dialog.showModal();
-    } else if (!openKind && dialog.open) {
-      dialog.close();
-    }
-  }, [openKind]);
-
-  const open = async (kind: FollowListKind) => {
-    setOpenKind(kind);
-    setLoadedKind(null);
-    setError(null);
-    requestedKindRef.current = kind;
-
-    try {
-      const list = await getFollowList(createClient(), profileId, kind, viewerId);
-      if (requestedKindRef.current !== kind) return;
-      setUsers(list);
-    } catch {
-      if (requestedKindRef.current !== kind) return;
-      setUsers([]);
-      setError("Couldn't load this list. Please try again.");
-    }
-    setLoadedKind(kind);
-  };
-
-  const close = () => {
-    requestedKindRef.current = null;
-    setOpenKind(null);
-  };
-
-  const isLoading = openKind !== null && loadedKind !== openKind;
+  const open = (kind: FollowListKind) => setOpenKind(kind);
+  const loadList = useCallback(
+    (kind: string) => getFollowList(createClient(), profileId, kind as FollowListKind, viewerId),
+    [profileId, viewerId],
+  );
 
   return (
     <>
@@ -115,84 +75,14 @@ export const ProfileStats = ({
         <Stat value={following} label="Following" onClick={() => open("following")} />
       </div>
 
-      <dialog
-        ref={dialogRef}
-        aria-labelledby="follow-list-title"
-        onClose={close}
-        onClick={(event) => {
-          if (event.target === dialogRef.current) close();
-        }}
-        className="m-auto rounded-md border border-border bg-surface-elevated p-0 text-foreground backdrop:bg-black/60"
-      >
-        <div className="flex w-96 max-w-[calc(100vw-2rem)] flex-col">
-          <div className="flex items-center justify-between border-b border-border px-5 py-3">
-            <h2 id="follow-list-title" className="text-base font-semibold">
-              {openKind ? TITLES[openKind] : ""}
-            </h2>
-            <button
-              type="button"
-              onClick={close}
-              aria-label="Close"
-              className="cursor-pointer rounded-md p-1.5 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <X aria-hidden="true" className="size-5" />
-            </button>
-          </div>
-
-          <div aria-busy={isLoading} className="max-h-[60vh] overflow-y-auto p-2">
-            {isLoading && (
-              <ul aria-hidden="true" className="flex flex-col gap-1">
-                {Array.from({ length: SKELETON_ROWS }, (_, index) => (
-                  <li key={index} className="flex items-center gap-3 p-2">
-                    <div className="size-10 shrink-0 animate-pulse rounded-full bg-surface" />
-                    <div className="h-4 w-32 animate-pulse rounded bg-surface" />
-                  </li>
-                ))}
-              </ul>
-            )}
-
-            {!isLoading && error && (
-              <p role="alert" className="p-3 text-sm text-destructive">
-                {error}
-              </p>
-            )}
-
-            {!isLoading && !error && openKind && users.length === 0 && (
-              <p className="p-3 text-sm text-muted-foreground">{EMPTY_MESSAGES[openKind]}</p>
-            )}
-
-            {!isLoading && !error && users.length > 0 && (
-              <ul className="flex flex-col gap-1">
-                {users.map((user) => (
-                  <li key={user.id} className="flex items-center gap-3">
-                    <Link
-                      href={`/user/${user.username}`}
-                      onClick={close}
-                      className="flex min-w-0 flex-1 items-center gap-3 rounded-md p-2 transition-colors hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    >
-                      <div className="relative size-10 shrink-0 overflow-hidden rounded-full bg-surface">
-                        <Image
-                          src={user.avatarUrl || "/default-avatar.png"}
-                          alt=""
-                          fill
-                          sizes="40px"
-                          className="object-cover"
-                        />
-                      </div>
-                      <span className="truncate font-medium">{user.username}</span>
-                    </Link>
-                    {viewerId && user.id !== viewerId && (
-                      <div className="pr-2">
-                        <FollowButton targetUserId={user.id} initialFollowing={user.viewerFollows} />
-                      </div>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
-      </dialog>
+      <UserListDialog
+        openKey={openKind}
+        title={openKind ? TITLES[openKind] : ""}
+        emptyMessage={openKind ? EMPTY_MESSAGES[openKind] : ""}
+        load={loadList}
+        viewerId={viewerId}
+        onClose={() => setOpenKind(null)}
+      />
     </>
   );
 };

@@ -1,7 +1,18 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Bookmark, ChartColumn, ChevronRight, Film, Play, Settings, Trophy, Tv } from "lucide-react";
+import {
+  Bookmark,
+  ChartColumn,
+  ChevronRight,
+  Film,
+  Heart,
+  Play,
+  Settings,
+  Trophy,
+  Tv,
+  type LucideIcon,
+} from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getPublicProfileByUsername } from "@/lib/public-profile";
 import { getWatchlistItems } from "@/lib/watchlist";
@@ -27,6 +38,34 @@ const toDiarySectionItem = (entry: DiaryEntry): ProfileSectionItem => ({
   href: entry.href,
   dropped: entry.dropped,
 });
+
+/** Full-width card linking to one of the profile's sub-pages (Stats, Liked reviews). */
+const ProfileLinkCard = ({
+  href,
+  icon: Icon,
+  title,
+  description,
+}: {
+  href: string;
+  icon: LucideIcon;
+  title: string;
+  description: string;
+}) => (
+  <Link
+    href={href}
+    className="group flex items-center gap-3 rounded-md border border-border px-4 py-3 transition-colors hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+  >
+    <Icon className="size-5 shrink-0 text-accent" aria-hidden />
+    <span className="min-w-0 flex-1">
+      <span className="block font-semibold text-foreground">{title}</span>
+      <span className="block text-sm text-muted-foreground">{description}</span>
+    </span>
+    <ChevronRight
+      className="size-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none"
+      aria-hidden
+    />
+  </Link>
+);
 
 /** How many items a preview section (Watchlist/Movies/Shows) shows before "See all". */
 const SECTION_PREVIEW_LIMIT = 4;
@@ -58,7 +97,7 @@ const PublicProfilePage = async ({ params }: PublicProfilePageProps) => {
 
   const viewer = authResult.data.user;
   const isOwner = viewer?.id === profile.id;
-  const [watchlistItems, isFollowing, followCounts] = await Promise.all([
+  const [watchlistItems, isFollowing, followCounts, likedReviewCount] = await Promise.all([
     getWatchlistItems(supabase, profile.id),
     viewer && !isOwner
       ? supabase
@@ -70,6 +109,11 @@ const PublicProfilePage = async ({ params }: PublicProfilePageProps) => {
           .then(({ data }) => data !== null)
       : Promise.resolve(false),
     getFollowCounts(supabase, profile.id),
+    supabase
+      .from("review_likes")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", profile.id)
+      .then(({ count }) => count ?? 0),
   ]);
 
   const nowWatchingItems = profile.showcase.nowWatching ? [profile.showcase.nowWatching] : [];
@@ -119,20 +163,21 @@ const PublicProfilePage = async ({ params }: PublicProfilePageProps) => {
         following={followCounts.following}
         viewerId={viewer?.id ?? null}
       />
-      <Link
-        href={`/user/${profile.username}/stats`}
-        className="group mt-4 flex items-center gap-3 rounded-md border border-border px-4 py-3 transition-colors hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      >
-        <ChartColumn className="size-5 shrink-0 text-accent" aria-hidden />
-        <span className="min-w-0 flex-1">
-          <span className="block font-semibold text-foreground">Stats</span>
-          <span className="block text-sm text-muted-foreground">Watch time, activity and ratings</span>
-        </span>
-        <ChevronRight
-          className="size-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none"
-          aria-hidden
+      {/* Stacked on phones, side by side from sm up. */}
+      <div className="mt-4 grid gap-2 sm:grid-cols-2">
+        <ProfileLinkCard
+          href={`/user/${profile.username}/stats`}
+          icon={ChartColumn}
+          title="Stats"
+          description="Watch time, activity and ratings"
         />
-      </Link>
+        <ProfileLinkCard
+          href={`/user/${profile.username}/likes`}
+          icon={Heart}
+          title="Liked reviews"
+          description={`${likedReviewCount} ${likedReviewCount === 1 ? "review" : "reviews"}`}
+        />
+      </div>
 
       <ProfileSection
         title="Currently watching"
