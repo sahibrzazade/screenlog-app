@@ -88,7 +88,7 @@ const LIKES_COLUMN_CLASS = "flex w-8 shrink-0 flex-col items-center";
  * log in for guests, and just the count on your own review (you can't like
  * it — spec "Review likes").
  */
-const ReviewLikes = ({ review, viewerId }: { review: Review; viewerId: string | null }) => {
+export const ReviewLikes = ({ review, viewerId }: { review: Review; viewerId: string | null }) => {
   const reviewerName = review.username ?? "Anonymous";
 
   if (review.userId === viewerId) {

@@ -83,5 +83,6 @@ export const toggleReviewLike = async (
   }
 
   revalidatePath(REVIEW_PAGE[logKind], "page");
+  revalidatePath("/user/[username]/likes", "page");
   return { liked: !liked };
 };

@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { DiaryEntry } from "@/components/diary-entry";
+import { PaginationLinks } from "@/components/pagination-links";
+import { parsePage } from "@/lib/pagination";
 import { DiaryGrid } from "@/components/diary-grid";
 import { DiaryViewToggle } from "@/components/diary-view-toggle";
 import type { DiaryEntry as DiaryEntryData } from "@/lib/diary";
@@ -34,10 +35,7 @@ export const PaginatedDiaryList = ({
 }: PaginatedDiaryListProps) => {
   const view = parseDiaryView(rawView);
   const totalPages = Math.max(1, Math.ceil(entries.length / PAGE_SIZE));
-  const requestedPage = Number(Array.isArray(page) ? page[0] : page);
-  const currentPage = Number.isInteger(requestedPage)
-    ? Math.min(Math.max(1, requestedPage), totalPages)
-    : 1;
+  const currentPage = parsePage(page, totalPages);
 
   const start = (currentPage - 1) * PAGE_SIZE;
   const pageEntries = entries.slice(start, start + PAGE_SIZE);
@@ -70,37 +68,11 @@ export const PaginatedDiaryList = ({
             </ul>
           )}
 
-          {totalPages > 1 && (
-            <div className="mt-6 flex items-center justify-between">
-              {currentPage > 1 ? (
-                <Link
-                  href={diaryHref(basePath, { view, page: currentPage - 1 })}
-                  className="flex items-center gap-1 text-sm text-accent hover:text-accent-hover"
-                >
-                  <ChevronLeft className="size-4" aria-hidden /> Previous
-                </Link>
-              ) : (
-                <span className="flex items-center gap-1 text-sm text-subtle-foreground">
-                  <ChevronLeft className="size-4" aria-hidden /> Previous
-                </span>
-              )}
-              <span className="text-sm text-muted-foreground">
-                Page {currentPage} of {totalPages}
-              </span>
-              {currentPage < totalPages ? (
-                <Link
-                  href={diaryHref(basePath, { view, page: currentPage + 1 })}
-                  className="flex items-center gap-1 text-sm text-accent hover:text-accent-hover"
-                >
-                  Next <ChevronRight className="size-4" aria-hidden />
-                </Link>
-              ) : (
-                <span className="flex items-center gap-1 text-sm text-subtle-foreground">
-                  Next <ChevronRight className="size-4" aria-hidden />
-                </span>
-              )}
-            </div>
-          )}
+          <PaginationLinks
+            currentPage={currentPage}
+            totalPages={totalPages}
+            hrefFor={(target) => diaryHref(basePath, { view, page: target })}
+          />
         </>
       )}
     </main>
