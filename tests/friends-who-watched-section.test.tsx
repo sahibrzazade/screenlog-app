@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
-import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, screen, cleanup, within } from "@testing-library/react";
+import { describe, it, expect, vi, afterEach, beforeAll } from "vitest";
+import { render, screen, cleanup, fireEvent, within } from "@testing-library/react";
 import { FriendsWhoWatched } from "@/components/detail/friends-who-watched";
 import type { FriendWhoWatched } from "@/lib/friends-who-watched";
 
@@ -62,5 +62,53 @@ describe("FriendsWhoWatched", () => {
     expect(screen.getAllByRole("link")).toHaveLength(7);
     expect(screen.getByText("+5")).toBeInTheDocument();
     expect(screen.getByText("12 friends")).toBeInTheDocument();
+  });
+
+  describe("full list dialog", () => {
+    beforeAll(() => {
+      // jsdom doesn't implement the modal dialog methods.
+      HTMLDialogElement.prototype.showModal = function () {
+        this.setAttribute("open", "");
+      };
+      HTMLDialogElement.prototype.close = function () {
+        this.removeAttribute("open");
+      };
+    });
+
+    it("opens from the count, even with one friend, and lists the friend", () => {
+      render(<FriendsWhoWatched friends={[friend("bob", { dropped: true })]} />);
+      fireEvent.click(screen.getByRole("button", { name: "1 friend" }));
+
+      const dialog = screen.getByRole("dialog", { name: "Friends who watched" });
+      const row = within(dialog).getByRole("link", { name: "bob, rated 4 out of 5, dropped" });
+      expect(row).toHaveAttribute("href", "/user/bob");
+      expect(within(row).getByText("bob")).toBeInTheDocument();
+      expect(within(row).getByText("Dropped")).toBeInTheDocument();
+    });
+
+    it("opens from +N and lists every friend in order, with no Follow buttons", () => {
+      render(<FriendsWhoWatched friends={friends(12)} />);
+      fireEvent.click(screen.getByRole("button", { name: "+5 more friends" }));
+
+      const dialog = screen.getByRole("dialog", { name: "Friends who watched" });
+      const rows = within(dialog).getAllByRole("link");
+      expect(rows).toHaveLength(12);
+      expect(rows[0]).toHaveAttribute("href", "/user/user0");
+      expect(rows[11]).toHaveAttribute("href", "/user/user11");
+      expect(within(dialog).queryByRole("button", { name: /follow/i })).not.toBeInTheDocument();
+    });
+
+    it("closes with the close button, and on Esc through the dialog's close event", () => {
+      render(<FriendsWhoWatched friends={friends(2)} />);
+
+      fireEvent.click(screen.getByRole("button", { name: "2 friends" }));
+      fireEvent.click(screen.getByRole("button", { name: "Close" }));
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole("button", { name: "2 friends" }));
+      const dialog = screen.getByRole("dialog");
+      fireEvent(dialog, new Event("close"));
+      expect(within(dialog).queryByRole("link")).not.toBeInTheDocument();
+    });
   });
 });
