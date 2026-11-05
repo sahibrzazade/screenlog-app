@@ -11,6 +11,8 @@ import { GenreBadges } from "@/components/detail/genre-badges";
 import { CastList } from "@/components/detail/cast-list";
 import { MoreLikeThis } from "@/components/detail/more-like-this";
 import { TmdbRating } from "@/components/detail/tmdb-rating";
+import { FriendsWhoWatched } from "@/components/detail/friends-who-watched";
+import { getFriendsWhoWatched } from "@/lib/friends-who-watched";
 import { fetchReviews } from "@/lib/reviews";
 import { parseReviewSort } from "@/lib/review-sort";
 import { fetchOwnShowLog, isOnWatchlist } from "@/lib/logs/queries";
@@ -70,6 +72,13 @@ const ShowPage = async ({ params, searchParams }: ShowPageProps) => {
     );
 
   const showReviews = await fetchReviews(
+    supabase,
+    "show_logs",
+    { tmdb_show_id: showId },
+    user?.id ?? null,
+  );
+
+  const friends = await getFriendsWhoWatched(
     supabase,
     "show_logs",
     { tmdb_show_id: showId },
@@ -144,6 +153,8 @@ const ShowPage = async ({ params, searchParams }: ShowPageProps) => {
               />
             </section>
           )}
+
+          <FriendsWhoWatched friends={friends} />
 
           <ReviewsSection
             reviews={showReviews}

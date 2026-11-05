@@ -669,6 +669,63 @@ and how they rated it. Public like the rest of the profile. No migration.
 - [ ] Deleting a log removes its likes everywhere (counts, modal, feed, liked page).
 - [ ] Heart button is keyboard reachable with visible focus, `aria-pressed`, ≥24px target; everything fits 375px with no horizontal scroll.
 
+### Friends who watched
+
+Title pages show which people the viewer follows have logged that title, with
+their ratings. Since the Reviews section lists written reviews only, this is
+where a followed user's rating-only log becomes visible. No migration: logs
+and follows are already publicly readable.
+
+- **Where:** movie, show and season pages, in the main column below Cast and
+  above Reviews. Heading "Friends who watched", styled like "Reviews".
+- **Who appears:** people the viewer follows who have a log row for exactly
+  this title:
+  - Movie page: `movie_logs` for that movie.
+  - Show page: `show_logs` for that show. A friend who only logged seasons
+    doesn't appear here, matching how the Reviews section separates them.
+  - Season page: `season_logs` for that season.
+  - Watchlist entries don't count.
+- **Hidden entirely** (no heading, no empty message) for guests and when no
+  followed user has logged the title.
+- **Order:** newest `watched_date` first.
+- **Tile:** avatar, username on one line (truncated when long), then read-only
+  small `RatingStars`. No rating → muted "Watched" text instead of empty stars,
+  which would read as a zero rating. Dropped shows also show `DroppedBadge`.
+  The whole tile links to `/user/[username]`, and its accessible name includes
+  the full username and rating.
+- **Layout:** tiles wrap with no horizontal scroll: 4 per row on a phone (two
+  rows at most), up to 8 in a row on a wide screen.
+- **Overflow:** 8 slots. Up to 8 friends → all shown as tiles. More than 8 → 7
+  tiles plus a "+N" button in the last slot, N being the friends not shown.
+- **Modal:** a friend count button at the right of the heading ("12 friends",
+  "1 friend"; always shown, since counts open modals elsewhere in the app) and
+  "+N" both open a "Friends who watched" dialog listing every friend, same
+  order: avatar, full username
+  (profile link), stars or "Watched", dropped
+  badge. Same look as the likers modal, but no Follow button (the viewer
+  already follows everyone listed), so `UserListDialog` isn't reused as is. The
+  server passes the full list as props, so opening it needs no extra request
+  and no loading state. Closes with Esc and the close button.
+- **Query:** a helper takes the log table, title match and viewer id, reads the
+  viewer's followed ids, then those users' log rows for the title, and resolves
+  usernames and avatars from `profiles_public`. A failed query hides the
+  section and never breaks the title page.
+- **Out of scope:** friends' reviews or like counts in the section, an average
+  friends' rating, a separate page, watchlist entries, season logs on the show
+  page.
+
+#### Acceptance criteria
+
+- [ ] A signed-in viewer sees followed users who logged the title on movie, show and season pages, below Cast and above Reviews, newest `watched_date` first.
+- [ ] Users the viewer doesn't follow, and the viewer's own log, never appear.
+- [ ] A friend's rating-only log appears with stars; a log with no rating shows "Watched".
+- [ ] A friend's dropped show log appears with the Dropped badge.
+- [ ] A friend who only has the title on their watchlist doesn't appear.
+- [ ] The section isn't rendered for guests or when no friend logged the title.
+- [ ] With exactly 8 friends, 8 tiles show and no "+N"; with 12, 7 tiles and "+5".
+- [ ] The friend count ("1 friend", "12 friends") is shown whenever the section is; it and "+N" open a dialog listing every friend with full usernames and profile links, closable with Esc and the close button, with no Follow buttons.
+- [ ] Tiles, the friend count and "+N" are keyboard reachable with visible focus and accessible names; everything fits 375px with no horizontal scroll.
+
 ## Open Questions
 
 - Should a show status (`watching` / `dropped` / `completed`) be part of MVP, or should it be inferred purely from season logs? → To be resolved in the Plan phase.

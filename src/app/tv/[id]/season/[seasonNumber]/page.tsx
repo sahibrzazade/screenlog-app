@@ -7,6 +7,8 @@ import { SignInPrompt } from "@/components/sign-in-prompt";
 import { EpisodeList } from "@/components/detail/episode-list";
 import { DetailPoster } from "@/components/detail/detail-poster";
 import { ReviewsSection } from "@/components/reviews-section";
+import { FriendsWhoWatched } from "@/components/detail/friends-who-watched";
+import { getFriendsWhoWatched } from "@/lib/friends-who-watched";
 import { fetchReviews } from "@/lib/reviews";
 import { parseReviewSort } from "@/lib/review-sort";
 import { posterUrl } from "@/lib/tmdb/images";
@@ -73,6 +75,13 @@ const SeasonPage = async ({ params, searchParams }: SeasonPageProps) => {
     user?.id ?? null,
   );
 
+  const friends = await getFriendsWhoWatched(
+    supabase,
+    "season_logs",
+    { tmdb_show_id: showId, season_number: seasonNumber },
+    user?.id ?? null,
+  );
+
   const poster = posterUrl(season.poster_path);
 
   return (
@@ -108,6 +117,8 @@ const SeasonPage = async ({ params, searchParams }: SeasonPageProps) => {
             <h2 className="text-lg font-semibold">Episodes</h2>
             <EpisodeList episodes={season.episodes} />
           </section>
+
+          <FriendsWhoWatched friends={friends} />
 
           <ReviewsSection
             reviews={reviews}

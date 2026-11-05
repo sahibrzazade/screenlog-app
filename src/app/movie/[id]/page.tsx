@@ -10,6 +10,8 @@ import { GenreBadges } from "@/components/detail/genre-badges";
 import { CastList } from "@/components/detail/cast-list";
 import { MoreLikeThis } from "@/components/detail/more-like-this";
 import { TmdbRating } from "@/components/detail/tmdb-rating";
+import { FriendsWhoWatched } from "@/components/detail/friends-who-watched";
+import { getFriendsWhoWatched } from "@/lib/friends-who-watched";
 import { fetchReviews } from "@/lib/reviews";
 import { parseReviewSort } from "@/lib/review-sort";
 import { fetchOwnLog, isOnWatchlist } from "@/lib/logs/queries";
@@ -53,6 +55,13 @@ const MoviePage = async ({ params, searchParams }: MoviePageProps) => {
   );
 
   const reviews = await fetchReviews(
+    supabase,
+    "movie_logs",
+    { tmdb_movie_id: movieId },
+    user?.id ?? null,
+  );
+
+  const friends = await getFriendsWhoWatched(
     supabase,
     "movie_logs",
     { tmdb_movie_id: movieId },
@@ -120,6 +129,8 @@ const MoviePage = async ({ params, searchParams }: MoviePageProps) => {
           <p className="mt-3 max-w-2xl">{movie.overview}</p>
 
           <CastList cast={cast} />
+
+          <FriendsWhoWatched friends={friends} />
 
           <ReviewsSection
             reviews={reviews}
