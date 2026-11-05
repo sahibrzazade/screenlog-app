@@ -3,7 +3,7 @@ import type { Review } from "@/components/review-list";
 import { fetchLikeSummaries, isLikeable, likeSummaryOf, type LikeSummary } from "@/lib/review-likes";
 import type { ReviewKind } from "@/lib/validation/review-like";
 
-type ReviewTable = "movie_logs" | "show_logs" | "season_logs";
+export type ReviewTable = "movie_logs" | "show_logs" | "season_logs";
 
 const KIND_BY_TABLE: Record<ReviewTable, ReviewKind> = {
   movie_logs: "movie",
@@ -24,7 +24,7 @@ type ReviewLogRow = {
 type ReviewerProfile = { username: string | null; avatarUrl: string | null };
 
 /** username/avatar-by-id for the given user ids, read from the public profiles view. */
-const fetchProfileMap = async (
+export const fetchProfileMap = async (
   supabase: SupabaseClient,
   userIds: string[],
 ): Promise<Map<string, ReviewerProfile>> => {
