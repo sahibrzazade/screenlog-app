@@ -770,11 +770,13 @@ or "Top 10 of 2024", and anyone can browse them.
   reviews cards, with the list count; three columns from `sm` up, stacked on
   phones.
 - **Add to list:** an "Add to list" button on movie and show pages for signed-in
-  users opens a modal listing the viewer's lists with checkboxes. Ticking adds
-  the title to the end of that list and unticking removes it, each saved at
-  once with an error toast on failure. A list can be created from the same
-  modal, and the title is added to it. Guests don't see the button; season pages
-  don't have it.
+  users opens a modal listing the viewer's 100 most recently updated lists with
+  checkboxes, loaded on open. Ticking adds the title to the end of that list and
+  unticking removes it, each saved at once with a rollback and error toast on
+  failure. A full list's box is disabled and reads "Full", unless the title is
+  already on it. A list can be created from the same modal with just a title; the
+  title is added to it and the modal stays open. Guests don't see the button;
+  season pages don't have it.
 - **Reordering:** the owner drags items on the list page with `@dnd-kit`, with
   a keyboard alternative. The new order persists on drop; a failed save restores
   the previous order and shows an error toast.

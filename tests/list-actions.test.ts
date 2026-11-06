@@ -1,6 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { revalidatePath } from "next/cache";
-import { createList, deleteList, removeListItem, restoreListItem, updateList } from "@/app/list-actions";
+import {
+  addListItem,
+  createList,
+  deleteList,
+  removeListItem,
+  removeTitleFromList,
+  restoreListItem,
+  updateList,
+} from "@/app/list-actions";
 import { getUserContext } from "@/lib/supabase/auth";
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
@@ -145,6 +153,130 @@ describe("removeListItem", () => {
 
     const loggedOut = useClient({ data: null, error: null }, null);
     expect((await removeListItem(LIST_ID, ITEM_ID)).error).toMatch(/logged in/);
+    expect(loggedOut.deleted).toBe(false);
+  });
+});
+
+describe("addListItem", () => {
+  const title = { tmdbId: 550, mediaType: "movie" as const };
+
+  /** lists → maybeSingle; list_items → count, last position, insert. */
+  const useTables = ({
+    list = { id: LIST_ID } as unknown,
+    count = 2,
+    last = { position: 4 } as unknown,
+    insertError = null as unknown,
+    user = { id: "owner" } as { id: string } | null,
+  }) => {
+    const calls = { insert: null as unknown, touched: false };
+    const chain = (table: string) => {
+      const self = {
+        select: () => self,
+        eq: () => self,
+        order: () => self,
+        limit: () => self,
+        maybeSingle: () => Promise.resolve({ data: table === "lists" ? list : last }),
+        insert: (row: unknown) => {
+          calls.insert = row;
+          return Promise.resolve({ error: insertError });
+        },
+        update: () => {
+          calls.touched = true;
+          return self;
+        },
+        then: (resolve: (value: unknown) => void) => resolve({ count, error: null }),
+      };
+      return self;
+    };
+    vi.mocked(getUserContext).mockResolvedValue({
+      supabase: { from: chain },
+      user,
+    } as unknown as Awaited<ReturnType<typeof getUserContext>>);
+    return calls;
+  };
+
+  it("adds the title after the last position and bumps updated_at", async () => {
+    const calls = useTables({});
+    expect(await addListItem(LIST_ID, title)).toEqual({ listId: LIST_ID });
+    expect(calls.insert).toEqual({ list_id: LIST_ID, tmdb_id: 550, media_type: "movie", position: 5 });
+    expect(calls.touched).toBe(true);
+  });
+
+  it("starts an empty list at position 0", async () => {
+    const calls = useTables({ count: 0, last: null });
+    await addListItem(LIST_ID, title);
+    expect(calls.insert).toMatchObject({ position: 0 });
+  });
+
+  it("rejects a list that isn't the user's without writing", async () => {
+    const calls = useTables({ list: null });
+    expect(await addListItem(LIST_ID, title)).toEqual({ error: "This list no longer exists." });
+    expect(calls.insert).toBeNull();
+  });
+
+  it("rejects a full list without writing", async () => {
+    const calls = useTables({ count: 100 });
+    expect(await addListItem(LIST_ID, title)).toEqual({ error: "This list is full (100 titles)." });
+    expect(calls.insert).toBeNull();
+  });
+
+  it("reads the trigger's rejection as a full list", async () => {
+    useTables({ insertError: { code: "P0001" } });
+    expect(await addListItem(LIST_ID, title)).toEqual({ error: "This list is full (100 titles)." });
+    expect(revalidatePath).not.toHaveBeenCalled();
+  });
+
+  it("treats a title already on the list as success", async () => {
+    useTables({ insertError: { code: "23505" } });
+    expect(await addListItem(LIST_ID, title)).toEqual({ listId: LIST_ID });
+  });
+
+  it("reports other insert failures", async () => {
+    useTables({ insertError: { code: "500" } });
+    expect((await addListItem(LIST_ID, title)).error).toMatch(/Failed to add/);
+  });
+
+  it("rejects invalid input and logged-out users without writing", async () => {
+    const invalid = useTables({});
+    expect(await addListItem("nope", title)).toEqual({ error: "Invalid input" });
+    expect(await addListItem(LIST_ID, { tmdbId: -1, mediaType: "movie" })).toEqual({ error: "Invalid input" });
+    expect(invalid.insert).toBeNull();
+
+    const loggedOut = useTables({ user: null });
+    expect((await addListItem(LIST_ID, title)).error).toMatch(/logged in/);
+    expect(loggedOut.insert).toBeNull();
+  });
+});
+
+describe("removeTitleFromList", () => {
+  const title = { tmdbId: 550, mediaType: "movie" as const };
+
+  it("deletes that title from that list and bumps updated_at", async () => {
+    const calls = useClient({ data: null, error: null });
+
+    expect(await removeTitleFromList(LIST_ID, title)).toEqual({ listId: LIST_ID });
+    expect(calls.deleted).toBe(true);
+    expect(calls.filters.slice(0, 3)).toEqual([
+      ["list_id", LIST_ID],
+      ["tmdb_id", 550],
+      ["media_type", "movie"],
+    ]);
+    expect(calls.update).toMatchObject({ updated_at: expect.any(String) });
+  });
+
+  it("reports a failed delete", async () => {
+    useClient({ data: null, error: { code: "500" } });
+    expect((await removeTitleFromList(LIST_ID, title)).error).toMatch(/Failed to remove/);
+    expect(revalidatePath).not.toHaveBeenCalled();
+  });
+
+  it("rejects invalid input and logged-out users without writing", async () => {
+    const invalid = useClient({ data: null, error: null });
+    expect(await removeTitleFromList("nope", title)).toEqual({ error: "Invalid input" });
+    expect(invalid.deleted).toBe(false);
+
+    const loggedOut = useClient({ data: null, error: null }, null);
+    expect((await removeTitleFromList(LIST_ID, title)).error).toMatch(/logged in/);
     expect(loggedOut.deleted).toBe(false);
   });
 });

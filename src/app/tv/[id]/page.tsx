@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { tmdbFetch } from "@/lib/tmdb/client";
 import { createClient } from "@/lib/supabase/server";
+import { AddToListButton } from "@/components/add-to-list-button";
 import { LogShowForm } from "@/components/log-show-form";
 import { SignInPrompt } from "@/components/sign-in-prompt";
 import { SeasonList, type SeasonLogSummary } from "@/components/season-list";
@@ -112,6 +113,9 @@ const ShowPage = async ({ params, searchParams }: ShowPageProps) => {
             />
           ) : (
             <SignInPrompt />
+          )}
+          {user && (
+            <AddToListButton tmdbId={showId} mediaType="tv" title={show.name} viewerId={user.id} />
           )}
           <GenreBadges genres={show.genres} />
         </div>

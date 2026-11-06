@@ -15,7 +15,8 @@ export type ListCardData = {
   posters: MediaCardItem[];
 };
 
-type ListItemRow = { list_id: string; tmdb_id: number; media_type: "movie" | "tv" };
+type ListRow = { id: string; title: string; description: string | null; list_items: { count: number }[] };
+type ListItemRow = { tmdb_id: number; media_type: "movie" | "tv" };
 
 export type ListDetails = { id: string; title: string; description: string | null };
 
@@ -77,9 +78,9 @@ export const getListCount = async (supabase: SupabaseClient, userId: string): Pr
 
 /**
  * One page of a user's lists, most recently updated first. Paginates in the
- * query because the number of lists is unlimited. Item rows are read whole:
- * the 0019 trigger caps them at 100 per list, so a page stays bounded, and
- * TMDB is only asked about the few titles a card shows.
+ * query because the number of lists is unlimited. The database counts the
+ * items, and each card reads only the rows it shows, so a page of full lists
+ * can't hit the API's row limit and TMDB is only asked about those few titles.
  */
 export const getUserLists = async (
   supabase: SupabaseClient,
@@ -91,41 +92,34 @@ export const getUserLists = async (
   const currentPage = parsePage(rawPage, totalPages);
   const from = (currentPage - 1) * LISTS_PAGE_SIZE;
 
-  const { data: lists } = await supabase
+  const { data } = await supabase
     .from("lists")
-    .select("id, title, description")
+    .select("id, title, description, list_items(count)")
     .eq("user_id", userId)
     .order("updated_at", { ascending: false })
     .range(from, from + LISTS_PAGE_SIZE - 1);
+  const lists = data as unknown as ListRow[] | null;
 
   if (!lists || lists.length === 0) {
     return { lists: [], currentPage, totalPages };
   }
 
-  const { data: items } = await supabase
-    .from("list_items")
-    .select("list_id, tmdb_id, media_type")
-    .in(
-      "list_id",
-      lists.map((list) => list.id),
-    )
-    .order("position", { ascending: true });
-
-  const itemsByList = Map.groupBy((items ?? []) as ListItemRow[], (item) => item.list_id);
-
   const cards = await Promise.all(
     lists.map(async (list) => {
-      const listItems = itemsByList.get(list.id) ?? [];
+      const { data: items } = await supabase
+        .from("list_items")
+        .select("tmdb_id, media_type")
+        .eq("list_id", list.id)
+        .order("position", { ascending: true })
+        .limit(LIST_CARD_POSTERS);
       const posters = await Promise.all(
-        listItems
-          .slice(0, LIST_CARD_POSTERS)
-          .map((item) => resolveMediaCardItem(item.tmdb_id, item.media_type)),
+        ((items ?? []) as ListItemRow[]).map((item) => resolveMediaCardItem(item.tmdb_id, item.media_type)),
       );
       return {
         id: list.id,
         title: list.title,
         description: list.description,
-        itemCount: listItems.length,
+        itemCount: list.list_items[0]?.count ?? 0,
         posters: posters.filter((poster): poster is MediaCardItem => poster !== null),
       };
     }),

@@ -2,13 +2,16 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect, RedirectType } from "next/navigation";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ZodError } from "zod";
 import { getUserContext } from "@/lib/supabase/auth";
 import {
+  LIST_ITEM_MAX,
   listFieldsSchema,
   listIdSchema,
   listItemIdSchema,
   listItemRestoreSchema,
+  listItemTitleSchema,
   listUpdateSchema,
 } from "@/lib/validation/list";
 
@@ -20,7 +23,18 @@ export type ListActionState = { error?: string; field?: "title" | "description";
 
 const NOT_FOUND = "This list no longer exists.";
 const LOGGED_OUT = "You must be logged in to manage lists.";
+const LIST_FULL = `This list is full (${LIST_ITEM_MAX} titles).`;
 const UNIQUE_VIOLATION = "23505";
+const RAISED_EXCEPTION = "P0001";
+
+/** Item changes count as activity, so the list moves up on the lists page. */
+const touchList = async (supabase: SupabaseClient, listId: string, userId: string) => {
+  await supabase
+    .from("lists")
+    .update({ updated_at: new Date().toISOString() })
+    .eq("id", listId)
+    .eq("user_id", userId);
+};
 
 const invalidInput = (error: ZodError): ListActionState => {
   const [issue] = error.issues;
@@ -185,11 +199,108 @@ export const removeListItem = async (listId: string, itemId: string): Promise<Li
     return { error: "This title is no longer on the list." };
   }
 
-  await supabase
+  await touchList(supabase, listId, user.id);
+
+  revalidateListPages();
+  return { listId };
+};
+
+/** Adds a title to the end of the user's list (add-to-list modal). */
+export const addListItem = async (
+  listId: string,
+  title: { tmdbId: number; mediaType: "movie" | "tv" },
+): Promise<ListActionState> => {
+  const parsed = listItemTitleSchema.safeParse({ listId, ...title });
+
+  if (!parsed.success) {
+    return { error: "Invalid input" };
+  }
+
+  const { supabase, user } = await getUserContext();
+
+  if (!user) {
+    return { error: LOGGED_OUT };
+  }
+
+  const { data: list } = await supabase
     .from("lists")
-    .update({ updated_at: new Date().toISOString() })
+    .select("id")
     .eq("id", listId)
-    .eq("user_id", user.id);
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (!list) {
+    return { error: NOT_FOUND };
+  }
+
+  const { count } = await supabase
+    .from("list_items")
+    .select("id", { count: "exact", head: true })
+    .eq("list_id", listId);
+
+  if ((count ?? 0) >= LIST_ITEM_MAX) {
+    return { error: LIST_FULL };
+  }
+
+  const { data: last } = await supabase
+    .from("list_items")
+    .select("position")
+    .eq("list_id", listId)
+    .order("position", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const { error } = await supabase.from("list_items").insert({
+    list_id: listId,
+    tmdb_id: parsed.data.tmdbId,
+    media_type: parsed.data.mediaType,
+    position: (last?.position ?? -1) + 1,
+  });
+
+  if (error?.code === RAISED_EXCEPTION) {
+    // The 0019 trigger: another request filled the list after the check above.
+    return { error: LIST_FULL };
+  }
+  // Already on the list (e.g. another tab): the desired end state holds.
+  if (error && error.code !== UNIQUE_VIOLATION) {
+    return { error: "Failed to add the title. Please try again." };
+  }
+
+  await touchList(supabase, listId, user.id);
+
+  revalidateListPages();
+  return { listId };
+};
+
+/** Removes a title from a list by its TMDB id (add-to-list modal). RLS limits this to the owner. */
+export const removeTitleFromList = async (
+  listId: string,
+  title: { tmdbId: number; mediaType: "movie" | "tv" },
+): Promise<ListActionState> => {
+  const parsed = listItemTitleSchema.safeParse({ listId, ...title });
+
+  if (!parsed.success) {
+    return { error: "Invalid input" };
+  }
+
+  const { supabase, user } = await getUserContext();
+
+  if (!user) {
+    return { error: LOGGED_OUT };
+  }
+
+  const { error } = await supabase
+    .from("list_items")
+    .delete()
+    .eq("list_id", listId)
+    .eq("tmdb_id", parsed.data.tmdbId)
+    .eq("media_type", parsed.data.mediaType);
+
+  if (error) {
+    return { error: "Failed to remove the title. Please try again." };
+  }
+
+  await touchList(supabase, listId, user.id);
 
   revalidateListPages();
   return { listId };
@@ -227,11 +338,7 @@ export const restoreListItem = async (
     return { error: "Couldn't put the title back. Please try again." };
   }
 
-  await supabase
-    .from("lists")
-    .update({ updated_at: new Date().toISOString() })
-    .eq("id", listId)
-    .eq("user_id", user.id);
+  await touchList(supabase, listId, user.id);
 
   revalidateListPages();
   return { listId };

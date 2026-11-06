@@ -2,6 +2,8 @@ import { z } from "zod";
 
 export const LIST_TITLE_MAX = 100;
 export const LIST_DESCRIPTION_MAX = 1000;
+/** Also enforced by a trigger (0019). */
+export const LIST_ITEM_MAX = 100;
 
 const titleRequired = "Give your list a title.";
 
@@ -16,7 +18,7 @@ export const listFieldsSchema = z.object({
     .string()
     .trim()
     .max(LIST_DESCRIPTION_MAX, `Description can be at most ${LIST_DESCRIPTION_MAX} characters.`)
-    .nullable()
+    .nullish()
     .transform((value) => value || null),
 });
 
@@ -26,9 +28,13 @@ export const listIdSchema = z.uuid();
 
 export const listItemIdSchema = z.uuid();
 
-export const listItemRestoreSchema = z.object({
+/** A movie or show on a list. */
+export const listItemTitleSchema = z.object({
   listId: z.uuid(),
   tmdbId: z.number().int().positive(),
   mediaType: z.enum(["movie", "tv"]),
+});
+
+export const listItemRestoreSchema = listItemTitleSchema.extend({
   position: z.number().int().nonnegative(),
 });

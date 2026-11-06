@@ -24,9 +24,9 @@ beforeAll(() => {
   };
 });
 
-/** lists: count (select → eq) and page (select → eq → order → range); list_items: select → in → order. */
-const fakeClient = (count: number | null, lists: unknown[] | null, items: unknown[] = []) => {
-  const calls = { range: [] as number[], itemListIds: [] as unknown };
+/** lists: count (select → eq) and page (select → eq → order → range); list_items: select → eq → order → limit. */
+const fakeClient = (count: number | null, lists: unknown[] | null, itemsByList: Record<string, unknown[]> = {}) => {
+  const calls = { range: [] as number[], limits: [] as number[] };
   const client = {
     from: (table: string) =>
       table === "lists"
@@ -45,10 +45,14 @@ const fakeClient = (count: number | null, lists: unknown[] | null, items: unknow
           }
         : {
             select: () => ({
-              in: (_column: string, ids: unknown) => {
-                calls.itemListIds = ids;
-                return { order: () => Promise.resolve({ data: items }) };
-              },
+              eq: (_column: string, listId: string) => ({
+                order: () => ({
+                  limit: (limit: number) => {
+                    calls.limits.push(limit);
+                    return Promise.resolve({ data: (itemsByList[listId] ?? []).slice(0, limit) });
+                  },
+                }),
+              }),
             }),
           },
   } as unknown as SupabaseClient;
@@ -56,42 +60,45 @@ const fakeClient = (count: number | null, lists: unknown[] | null, items: unknow
 };
 
 const media = (id: number) => ({ id, mediaType: "movie" as const, title: `Title ${id}`, year: "2021", posterPath: `/${id}.jpg` });
-const item = (listId: string, id: number) => ({ list_id: listId, tmdb_id: id, media_type: "movie" });
+const item = (id: number) => ({ tmdb_id: id, media_type: "movie" });
+const listRow = (id: string, count: number, description: string | null = null) => ({
+  id,
+  title: id.toUpperCase(),
+  description,
+  list_items: [{ count }],
+});
 
 describe("getUserLists", () => {
-  it("counts every item but resolves only the first four posters", async () => {
+  it("takes the count from the database and reads only the first four posters", async () => {
     vi.mocked(resolveMediaCardItem).mockClear();
     vi.mocked(resolveMediaCardItem).mockImplementation(async (id) => media(id));
-    const { client } = fakeClient(1, [{ id: "a", title: "A", description: null }], [1, 2, 3, 4, 5, 6].map((id) => item("a", id)));
+    const { client, calls } = fakeClient(1, [listRow("a", 100)], { a: [1, 2, 3, 4, 5, 6].map(item) });
 
     const { lists } = await getUserLists(client, "user", undefined);
 
-    expect(lists[0].itemCount).toBe(6);
+    expect(lists[0].itemCount).toBe(100);
+    expect(calls.limits).toEqual([4]);
     expect(lists[0].posters.map((poster) => poster.id)).toEqual([1, 2, 3, 4]);
     expect(resolveMediaCardItem).toHaveBeenCalledTimes(4);
   });
 
   it("keeps each list's own items and leaves out unresolvable posters", async () => {
     vi.mocked(resolveMediaCardItem).mockImplementation(async (id) => (id === 2 ? null : media(id)));
-    const { client, calls } = fakeClient(
-      2,
-      [
-        { id: "a", title: "A", description: "About" },
-        { id: "b", title: "B", description: null },
-      ],
-      [item("a", 1), item("a", 2), item("b", 3)],
-    );
+    const { client } = fakeClient(2, [listRow("a", 2, "About"), listRow("b", 1)], {
+      a: [item(1), item(2)],
+      b: [item(3)],
+    });
 
     const { lists } = await getUserLists(client, "user", undefined);
 
-    expect(calls.itemListIds).toEqual(["a", "b"]);
     expect(lists[0]).toMatchObject({ id: "a", description: "About", itemCount: 2 });
     expect(lists[0].posters.map((poster) => poster.id)).toEqual([1]);
     expect(lists[1]).toMatchObject({ id: "b", itemCount: 1 });
+    expect(lists[1].posters.map((poster) => poster.id)).toEqual([3]);
   });
 
   it("asks the database for one page and clamps an out-of-range page", async () => {
-    const { client, calls } = fakeClient(LISTS_PAGE_SIZE + 1, [{ id: "a", title: "A", description: null }]);
+    const { client, calls } = fakeClient(LISTS_PAGE_SIZE + 1, [listRow("a", 0)]);
 
     const result = await getUserLists(client, "user", "9");
 
