@@ -745,8 +745,10 @@ or "Top 10 of 2024", and anyone can browse them.
 - **RLS:** both tables are publicly readable. Only the list's owner can insert,
   update or delete a list or its items; item policies check the parent list's
   `user_id`.
-- **Limits:** up to 100 items per list, enforced in the server action, so a
-  list needs no pagination and drag reordering always sees the whole list.
+- **Limits:** up to 100 items per list, so a list needs no pagination and drag
+  reordering always sees the whole list. A database trigger enforces this,
+  since a signed-in user can reach the table directly through the API; the
+  server action also checks first to give a clear message.
 - **Create, edit, delete (owner only):** a "New list" button on the lists page
   and "Edit" on the list page open a form with title and description. Deleting
   asks for confirmation and returns to the lists page. Input is validated with
@@ -757,8 +759,9 @@ or "Top 10 of 2024", and anyone can browse them.
   belong to that username returns a 404. A title TMDB can't resolve is left out
   of the grid without breaking the page.
 - **Lists page:** `/user/[username]/lists`, every list by that user, most
-  recently updated first. Each card shows the title, item count and the first
-  few posters. No cover images. Empty state: "You haven't / X hasn't created any
+  recently updated first, paginated in the database query (20 per page) because
+  the number of lists is unlimited. Each card shows the title, item count and
+  the first few posters. No cover images. Empty state: "You haven't / X hasn't created any
   lists yet."
 - **Profile entry point:** a "Lists" card with the existing Stats and Liked
   reviews cards, with the list count.
@@ -779,7 +782,8 @@ or "Top 10 of 2024", and anyone can browse them.
 
 #### Acceptance criteria
 
-- [ ] Migration 0019 creates `lists` and `list_items` with constraints, cascade deletes and RLS (public read, owner-only writes).
+- [ ] Migration 0019 creates `lists` and `list_items` with constraints, cascade deletes, RLS (public read, owner-only writes) and a trigger rejecting a 101st item, even through a direct API call.
+- [ ] The lists page shows 20 lists per page, fetched per page from the database.
 - [ ] A signed-in user can create, edit and delete their own lists; an invalid title or description is rejected with a clear error.
 - [ ] RLS blocks writing another user's list or its items.
 - [ ] A guest, another user and the owner can all open `/user/[username]/lists` and `/user/[username]/lists/[listId]`; only the owner sees edit, delete, remove and reorder controls.
