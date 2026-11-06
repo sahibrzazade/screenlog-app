@@ -17,6 +17,55 @@ export type ListCardData = {
 
 type ListItemRow = { list_id: string; tmdb_id: number; media_type: "movie" | "tv" };
 
+export type ListDetails = { id: string; title: string; description: string | null };
+
+/** A title on a list; `itemId` and `position` come from its `list_items` row. */
+export type ListItem = MediaCardItem & { itemId: string; position: number };
+
+/**
+ * A list, only if it belongs to this owner, so a list id under the wrong
+ * username reads as missing. A malformed id fails the query and is missing too.
+ */
+export const getList = async (
+  supabase: SupabaseClient,
+  listId: string,
+  ownerId: string,
+): Promise<ListDetails | null> => {
+  const { data } = await supabase
+    .from("lists")
+    .select("id, title, description")
+    .eq("id", listId)
+    .eq("user_id", ownerId)
+    .maybeSingle();
+  return data;
+};
+
+/**
+ * A list's titles in order. `total` counts every row, including titles TMDB
+ * can't resolve, which are left out of `items`. Resolves them all: the 0019
+ * trigger caps a list at 100.
+ */
+export const getListItems = async (
+  supabase: SupabaseClient,
+  listId: string,
+): Promise<{ items: ListItem[]; total: number }> => {
+  const { data } = await supabase
+    .from("list_items")
+    .select("id, tmdb_id, media_type, position")
+    .eq("list_id", listId)
+    .order("position", { ascending: true });
+  const rows = (data ?? []) as { id: string; tmdb_id: number; media_type: "movie" | "tv"; position: number }[];
+
+  const resolved = await Promise.all(
+    rows.map(async (row) => {
+      const item = await resolveMediaCardItem(row.tmdb_id, row.media_type);
+      return item ? { ...item, itemId: row.id, position: row.position } : null;
+    }),
+  );
+
+  return { items: resolved.filter((item): item is ListItem => item !== null), total: rows.length };
+};
+
 /** How many lists a user has. Lists are publicly readable (0019). */
 export const getListCount = async (supabase: SupabaseClient, userId: string): Promise<number> => {
   const { count } = await supabase

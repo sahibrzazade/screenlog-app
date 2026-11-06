@@ -16,16 +16,19 @@ type ListFormDialogProps = {
 };
 
 const FIELD_CLASS =
-  "w-full rounded-md border border-border bg-surface px-3 py-1.5 text-foreground focus:border-accent focus:outline-none";
+  "w-full rounded-md border border-border bg-surface px-3 py-1.5 text-foreground focus:border-accent focus:outline-none aria-invalid:border-destructive";
 
 /**
  * Create or edit a list's title and description. The parent mounts it to open
  * and unmounts it to close, so reopening starts from fresh values. The fields
  * are controlled because React resets a form when its action finishes, which
- * would wipe what the user typed on a server error.
+ * would wipe what the user typed on a server error. A click outside doesn't
+ * close it, for the same reason: it would lose what was typed.
  */
 export const ListFormDialog = ({ dialogTitle, submitLabel, action, list, onSuccess, onClose }: ListFormDialogProps) => {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const titleRef = useRef<HTMLInputElement>(null);
+  const descriptionRef = useRef<HTMLTextAreaElement>(null);
   const baseId = useId();
   const [title, setTitle] = useState(list?.title ?? "");
   const [description, setDescription] = useState(list?.description ?? "");
@@ -41,14 +44,22 @@ export const ListFormDialog = ({ dialogTitle, submitLabel, action, list, onSucce
     if (dialog && !dialog.open) dialog.showModal();
   }, []);
 
+  useEffect(() => {
+    if (state.field === "title") titleRef.current?.focus();
+    if (state.field === "description") descriptionRef.current?.focus();
+  }, [state]);
+
+  const titleError = state.field === "title" ? state.error : undefined;
+  const descriptionError = state.field === "description" ? state.error : undefined;
+  const formError = state.field ? undefined : state.error;
+  const titleErrorId = `${baseId}-name-error`;
+  const descriptionErrorId = `${baseId}-description-error`;
+
   return (
     <dialog
       ref={dialogRef}
       aria-labelledby={`${baseId}-title`}
       onClose={onClose}
-      onClick={(event) => {
-        if (event.target === dialogRef.current) onClose();
-      }}
       className="m-auto w-[min(92vw,28rem)] rounded-md border border-border bg-surface-elevated p-0 text-foreground backdrop:bg-black/60"
     >
       <div className="flex items-center justify-between border-b border-border px-5 py-3">
@@ -72,32 +83,48 @@ export const ListFormDialog = ({ dialogTitle, submitLabel, action, list, onSucce
             Title
           </label>
           <input
+            ref={titleRef}
             id={`${baseId}-name`}
             name="title"
             required
             maxLength={LIST_TITLE_MAX}
             value={title}
             onChange={(event) => setTitle(event.target.value)}
+            aria-invalid={titleError ? true : undefined}
+            aria-describedby={titleError ? titleErrorId : undefined}
             className={FIELD_CLASS}
           />
+          {titleError && (
+            <p id={titleErrorId} role="alert" className="mt-1 text-sm text-destructive">
+              {titleError}
+            </p>
+          )}
         </div>
         <div>
           <label htmlFor={`${baseId}-description`} className="mb-1 block text-sm font-medium">
             Description (optional)
           </label>
           <textarea
+            ref={descriptionRef}
             id={`${baseId}-description`}
             name="description"
             rows={4}
             maxLength={LIST_DESCRIPTION_MAX}
             value={description}
             onChange={(event) => setDescription(event.target.value)}
+            aria-invalid={descriptionError ? true : undefined}
+            aria-describedby={descriptionError ? descriptionErrorId : undefined}
             className={FIELD_CLASS}
           />
+          {descriptionError && (
+            <p id={descriptionErrorId} role="alert" className="mt-1 text-sm text-destructive">
+              {descriptionError}
+            </p>
+          )}
         </div>
-        {state.error && (
+        {formError && (
           <p role="alert" className="text-sm text-destructive">
-            {state.error}
+            {formError}
           </p>
         )}
         <button

@@ -749,13 +749,16 @@ or "Top 10 of 2024", and anyone can browse them.
   since a signed-in user can reach the table directly through the API; the
   server action also checks first to give a clear message.
 - **Create, edit, delete (owner only):** a "New list" button on the lists page
-  and "Edit" on the list page open a form with title and description. Deleting
-  asks for confirmation and returns to the lists page. Input is validated with
+  and "Edit" on the list page open a form with title and description; clicking
+  outside doesn't close it, so typed text isn't lost. Deleting asks for
+  confirmation, then replaces the history entry with the lists page and shows a
+  toast, so Back doesn't return to the deleted list. Input is validated with
   Zod; the owner is decided server-side from the verified session.
 - **List page:** `/user/[username]/lists/[listId]`, showing title, description,
   owner, item count and a poster grid in list order, each poster linking to its
   title page and showing its position number (1, 2, 3…). The owner can remove
-  items without confirmation, since a title is easy to add back. A list that doesn't exist or doesn't
+  items without confirmation; the toast offers Undo, which restores the title
+  to its old position. A list that doesn't exist or doesn't
   belong to that username returns a 404. A title TMDB can't resolve is left out
   of the grid without breaking the page.
 - **Lists page:** `/user/[username]/lists`, every list by that user, most

@@ -174,6 +174,27 @@ describe("ListFormDialog", () => {
     expect(onSuccess).not.toHaveBeenCalled();
   });
 
+  it("shows a field error at that field, linked to it and focused", async () => {
+    renderDialog(vi.fn().mockResolvedValue({ error: "Give your list a title.", field: "title" }));
+
+    fireEvent.change(screen.getByLabelText("Title"), { target: { value: "   " } });
+    fireEvent.click(screen.getByRole("button", { name: "Create list" }));
+
+    const alert = await screen.findByRole("alert");
+    const input = screen.getByLabelText("Title");
+    expect(alert).toHaveTextContent("Give your list a title.");
+    expect(input).toHaveAttribute("aria-invalid", "true");
+    expect(input).toHaveAttribute("aria-describedby", alert.id);
+    await waitFor(() => expect(input).toHaveFocus());
+    expect(screen.getByLabelText("Description (optional)")).not.toHaveAttribute("aria-invalid");
+  });
+
+  it("stays open on a click outside, keeping what was typed", () => {
+    const { onClose } = renderDialog();
+    fireEvent.click(screen.getByRole("dialog"));
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
   it("prefills an existing list and submits its id", async () => {
     const action = vi.fn().mockResolvedValue({ listId: "a" });
     render(

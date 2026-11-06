@@ -23,3 +23,12 @@ export const listFieldsSchema = z.object({
 export const listUpdateSchema = listFieldsSchema.extend({ listId: z.uuid() });
 
 export const listIdSchema = z.uuid();
+
+export const listItemIdSchema = z.uuid();
+
+export const listItemRestoreSchema = z.object({
+  listId: z.uuid(),
+  tmdbId: z.number().int().positive(),
+  mediaType: z.enum(["movie", "tv"]),
+  position: z.number().int().nonnegative(),
+});

@@ -3,12 +3,13 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getUserLists } from "@/lib/lists";
 import { ListCards } from "@/components/list-cards";
+import { ListDeletedToast } from "@/components/list-deleted-toast";
 import { NewListButton } from "@/components/new-list-button";
 import { PaginationLinks } from "@/components/pagination-links";
 
 type UserListsPageProps = {
   params: Promise<{ username: string }>;
-  searchParams: Promise<{ page?: string | string[] }>;
+  searchParams: Promise<{ page?: string | string[]; deleted?: string | string[] }>;
 };
 
 /**
@@ -17,7 +18,7 @@ type UserListsPageProps = {
  */
 const UserListsPage = async ({ params, searchParams }: UserListsPageProps) => {
   const { username } = await params;
-  const { page } = await searchParams;
+  const { page, deleted } = await searchParams;
   const supabase = await createClient();
 
   const [{ data: profile }, authResult] = await Promise.all([
@@ -35,6 +36,7 @@ const UserListsPage = async ({ params, searchParams }: UserListsPageProps) => {
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-6">
+      {deleted === "1" && <ListDeletedToast listsPath={basePath} />}
       <Link href={`/user/${profile.username}`} className="text-sm text-accent hover:text-accent-hover">
         ← Back to profile
       </Link>
