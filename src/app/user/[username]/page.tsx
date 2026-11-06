@@ -48,16 +48,22 @@ const ProfileLinkCard = ({
   title,
   description,
   className = "",
+  highlighted = false,
 }: {
   href: string;
   icon: LucideIcon;
   title: string;
   description: string;
   className?: string;
+  highlighted?: boolean;
 }) => (
   <Link
     href={href}
-    className={`group flex items-center gap-3 rounded-md border border-border px-4 py-3 transition-colors hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${className}`}
+    className={`group flex items-center gap-3 rounded-md border px-4 py-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+      highlighted
+        ? "border-accent/40 bg-accent/10 hover:bg-accent/15"
+        : "border-border hover:bg-surface"
+    } ${className}`}
   >
     <Icon className="size-5 shrink-0 text-accent" aria-hidden />
     <span className="min-w-0 flex-1">
@@ -176,6 +182,7 @@ const PublicProfilePage = async ({ params }: PublicProfilePageProps) => {
           title="Stats"
           description="Watch time and ratings"
           className="sm:col-span-2"
+          highlighted
         />
         <ProfileLinkCard
           href={`/user/${profile.username}/likes`}

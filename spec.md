@@ -768,7 +768,8 @@ or "Top 10 of 2024", and anyone can browse them.
   lists yet."
 - **Profile entry point:** a "Lists" card with the existing Stats and Liked
   reviews cards, with the list count. From `sm` up, Stats takes a full row with
-  Liked reviews and Lists sharing the row below; stacked on phones.
+  Liked reviews and Lists sharing the row below; stacked on phones. The Stats
+  card is highlighted with an accent tint.
 - **Add to list:** an "Add to list" button on movie and show pages for signed-in
   users opens a modal listing the viewer's 100 most recently updated lists with
   checkboxes, loaded on open. Ticking adds the title to the end of that list and
