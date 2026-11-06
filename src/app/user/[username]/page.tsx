@@ -41,21 +41,23 @@ const toDiarySectionItem = (entry: DiaryEntry): ProfileSectionItem => ({
   dropped: entry.dropped,
 });
 
-/** Full-width card linking to one of the profile's sub-pages (Stats, Liked reviews). */
+/** Card linking to one of the profile's sub-pages (Stats, Liked reviews, Lists). */
 const ProfileLinkCard = ({
   href,
   icon: Icon,
   title,
   description,
+  className = "",
 }: {
   href: string;
   icon: LucideIcon;
   title: string;
   description: string;
+  className?: string;
 }) => (
   <Link
     href={href}
-    className="group flex items-center gap-3 rounded-md border border-border px-4 py-3 transition-colors hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    className={`group flex items-center gap-3 rounded-md border border-border px-4 py-3 transition-colors hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${className}`}
   >
     <Icon className="size-5 shrink-0 text-accent" aria-hidden />
     <span className="min-w-0 flex-1">
@@ -166,13 +168,14 @@ const PublicProfilePage = async ({ params }: PublicProfilePageProps) => {
         following={followCounts.following}
         viewerId={viewer?.id ?? null}
       />
-      {/* Stacked on phones, side by side from sm up. */}
-      <div className="mt-4 grid gap-2 sm:grid-cols-3">
+      {/* Stacked on phones; from sm up, Stats spans a row above the other two. */}
+      <div className="mt-4 grid gap-2 sm:grid-cols-2">
         <ProfileLinkCard
           href={`/user/${profile.username}/stats`}
           icon={ChartColumn}
           title="Stats"
           description="Watch time and ratings"
+          className="sm:col-span-2"
         />
         <ProfileLinkCard
           href={`/user/${profile.username}/likes`}

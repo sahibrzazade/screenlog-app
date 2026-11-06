@@ -767,8 +767,8 @@ or "Top 10 of 2024", and anyone can browse them.
   the first few posters. No cover images. Empty state: "You haven't / X hasn't created any
   lists yet."
 - **Profile entry point:** a "Lists" card with the existing Stats and Liked
-  reviews cards, with the list count; three columns from `sm` up, stacked on
-  phones.
+  reviews cards, with the list count. From `sm` up, Stats takes a full row with
+  Liked reviews and Lists sharing the row below; stacked on phones.
 - **Add to list:** an "Add to list" button on movie and show pages for signed-in
   users opens a modal listing the viewer's 100 most recently updated lists with
   checkboxes, loaded on open. Ticking adds the title to the end of that list and
