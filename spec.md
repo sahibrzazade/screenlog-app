@@ -726,6 +726,71 @@ and follows are already publicly readable.
 - [ ] The friend count ("1 friend", "12 friends") is shown whenever the section is; it and "+N" open a dialog listing every friend with full usernames and profile links, closable with Esc and the close button, with no Follow buttons.
 - [ ] Tiles, the friend count and "+N" are keyboard reachable with visible focus and accessible names; everything fits 375px with no horizontal scroll.
 
+### Custom lists
+
+Users create their own ordered lists of movies and shows, such as "Best sci-fi"
+or "Top 10 of 2024", and anyone can browse them.
+
+- **Visibility:** every list is public, guests included, like watchlists and
+  logs. There is no private option.
+- **Data:** migration `0019_lists.sql`:
+  - `lists (id, user_id → profiles, title, description, created_at,
+    updated_at)`, deleted with the profile. `title` is required, 1–100
+    characters after trimming; `description` is optional, up to 1,000.
+  - `list_items (id, list_id → lists, tmdb_id, media_type, position,
+    added_at)`, deleted with the list. `media_type` is `movie` or `tv`; a title
+    appears once per list (unique `(list_id, tmdb_id, media_type)`). TMDB ids
+    are stored like the watchlist's, with no local title data.
+  - Seasons can't be added.
+- **RLS:** both tables are publicly readable. Only the list's owner can insert,
+  update or delete a list or its items; item policies check the parent list's
+  `user_id`.
+- **Limits:** up to 100 items per list, enforced in the server action, so a
+  list needs no pagination and drag reordering always sees the whole list.
+- **Create, edit, delete (owner only):** a "New list" button on the lists page
+  and "Edit" on the list page open a form with title and description. Deleting
+  asks for confirmation and returns to the lists page. Input is validated with
+  Zod; the owner is decided server-side from the verified session.
+- **List page:** `/user/[username]/lists/[listId]`, showing title, description,
+  owner, item count and a poster grid in list order, each poster linking to its
+  title page. The owner can remove items. A list that doesn't exist or doesn't
+  belong to that username returns a 404. A title TMDB can't resolve is left out
+  of the grid without breaking the page.
+- **Lists page:** `/user/[username]/lists`, every list by that user, most
+  recently updated first. Each card shows the title, item count and the first
+  few posters. No cover images. Empty state: "You haven't / X hasn't created any
+  lists yet."
+- **Profile entry point:** a "Lists" card with the existing Stats and Liked
+  reviews cards, with the list count.
+- **Add to list:** an "Add to list" button on movie and show pages for signed-in
+  users opens a modal listing the viewer's lists with checkboxes. Ticking adds
+  the title to the end of that list and unticking removes it, each saved at
+  once with an error toast on failure. A list can be created from the same
+  modal, and the title is added to it. Guests don't see the button; season pages
+  don't have it.
+- **Reordering:** the owner drags items on the list page with `@dnd-kit`, with
+  a keyboard alternative. The new order persists on drop; a failed save restores
+  the previous order and shows an error toast.
+- **Design:** the list card, list page and add-to-list modal are designed with
+  ui-ux-pro-max and approved by the user in their subtasks.
+- **Out of scope:** private lists, seasons or episodes as items, activity feed
+  events, list likes and comments, cover images, adding from inside a list by
+  search, notes per item, list search or discovery, copying lists.
+
+#### Acceptance criteria
+
+- [ ] Migration 0019 creates `lists` and `list_items` with constraints, cascade deletes and RLS (public read, owner-only writes).
+- [ ] A signed-in user can create, edit and delete their own lists; an invalid title or description is rejected with a clear error.
+- [ ] RLS blocks writing another user's list or its items.
+- [ ] A guest, another user and the owner can all open `/user/[username]/lists` and `/user/[username]/lists/[listId]`; only the owner sees edit, delete, remove and reorder controls.
+- [ ] An unknown username, an unknown list id, or a list id under the wrong username returns a 404.
+- [ ] The profile's "Lists" card shows the list count and opens the lists page.
+- [ ] On a movie or show page, a signed-in user can add and remove the title from their lists, and create a list, from the modal; guests don't see the button.
+- [ ] A title can't appear twice in a list, and a list can't exceed 100 items.
+- [ ] Deleting a list removes its items.
+- [ ] Dragging an item changes the order and survives a reload; the same can be done by keyboard; a failed save restores the previous order with an error toast.
+- [ ] Controls are keyboard reachable with visible focus and accessible names; everything fits 375px with no horizontal scroll.
+
 ## Open Questions
 
 - Should a show status (`watching` / `dropped` / `completed`) be part of MVP, or should it be inferred purely from season logs? → To be resolved in the Plan phase.
