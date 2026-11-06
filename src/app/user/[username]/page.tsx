@@ -7,6 +7,7 @@ import {
   ChevronRight,
   Film,
   Heart,
+  List as ListIcon,
   Play,
   Settings,
   Trophy,
@@ -21,6 +22,7 @@ import { FollowButton } from "@/components/follow-button";
 import { CopyProfileLinkButton } from "@/components/copy-profile-link-button";
 import { ProfileStats } from "@/components/profile-stats";
 import { getFollowCounts } from "@/lib/follows";
+import { getListCount } from "@/lib/lists";
 import type { MediaCardItem } from "@/components/media-card";
 import type { DiaryEntry } from "@/lib/diary";
 
@@ -97,7 +99,7 @@ const PublicProfilePage = async ({ params }: PublicProfilePageProps) => {
 
   const viewer = authResult.data.user;
   const isOwner = viewer?.id === profile.id;
-  const [watchlistItems, isFollowing, followCounts, likedReviewCount] = await Promise.all([
+  const [watchlistItems, isFollowing, followCounts, likedReviewCount, listCount] = await Promise.all([
     getWatchlistItems(supabase, profile.id),
     viewer && !isOwner
       ? supabase
@@ -114,6 +116,7 @@ const PublicProfilePage = async ({ params }: PublicProfilePageProps) => {
       .select("id", { count: "exact", head: true })
       .eq("user_id", profile.id)
       .then(({ count }) => count ?? 0),
+    getListCount(supabase, profile.id),
   ]);
 
   const nowWatchingItems = profile.showcase.nowWatching ? [profile.showcase.nowWatching] : [];
@@ -164,18 +167,24 @@ const PublicProfilePage = async ({ params }: PublicProfilePageProps) => {
         viewerId={viewer?.id ?? null}
       />
       {/* Stacked on phones, side by side from sm up. */}
-      <div className="mt-4 grid gap-2 sm:grid-cols-2">
+      <div className="mt-4 grid gap-2 sm:grid-cols-3">
         <ProfileLinkCard
           href={`/user/${profile.username}/stats`}
           icon={ChartColumn}
           title="Stats"
-          description="Watch time, activity and ratings"
+          description="Watch time and ratings"
         />
         <ProfileLinkCard
           href={`/user/${profile.username}/likes`}
           icon={Heart}
           title="Liked reviews"
           description={`${likedReviewCount} ${likedReviewCount === 1 ? "review" : "reviews"}`}
+        />
+        <ProfileLinkCard
+          href={`/user/${profile.username}/lists`}
+          icon={ListIcon}
+          title="Lists"
+          description={`${listCount} ${listCount === 1 ? "list" : "lists"}`}
         />
       </div>
 

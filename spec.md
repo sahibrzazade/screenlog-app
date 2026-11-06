@@ -488,10 +488,9 @@ A per-user numbers page, "Year in Review"-style: how much they watched, when,
 and how they rated it. Public like the rest of the profile. No migration.
 
 - **Route:** `/user/[username]/stats`, visible to everyone (owner, other users,
-  guests); unknown username → 404. The profile links to it with a full-width
-  "Stats" card under the stats strip (chart icon, "Watch time, activity and
-  ratings" subtitle, chevron) — a plain text link read as a caption, not a
-  destination.
+  guests); unknown username → 404. The profile links to it with a "Stats" card
+  under the stats strip (chart icon, "Watch time and ratings" subtitle, chevron)
+  — a plain text link read as a caption, not a destination.
 - **Period (URL state):** no `year` param = the current year, `?year=2024` = that
   year, `?year=all` = all time. Any other value falls back to the current
   year. A selector next to the title lists the current year, every other year
@@ -755,7 +754,8 @@ or "Top 10 of 2024", and anyone can browse them.
   Zod; the owner is decided server-side from the verified session.
 - **List page:** `/user/[username]/lists/[listId]`, showing title, description,
   owner, item count and a poster grid in list order, each poster linking to its
-  title page. The owner can remove items. A list that doesn't exist or doesn't
+  title page and showing its position number (1, 2, 3…). The owner can remove
+  items without confirmation, since a title is easy to add back. A list that doesn't exist or doesn't
   belong to that username returns a 404. A title TMDB can't resolve is left out
   of the grid without breaking the page.
 - **Lists page:** `/user/[username]/lists`, every list by that user, most
@@ -764,7 +764,8 @@ or "Top 10 of 2024", and anyone can browse them.
   the first few posters. No cover images. Empty state: "You haven't / X hasn't created any
   lists yet."
 - **Profile entry point:** a "Lists" card with the existing Stats and Liked
-  reviews cards, with the list count.
+  reviews cards, with the list count; three columns from `sm` up, stacked on
+  phones.
 - **Add to list:** an "Add to list" button on movie and show pages for signed-in
   users opens a modal listing the viewer's lists with checkboxes. Ticking adds
   the title to the end of that list and unticking removes it, each saved at
