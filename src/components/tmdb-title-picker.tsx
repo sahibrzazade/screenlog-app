@@ -30,6 +30,8 @@ export const TmdbTitlePicker = forwardRef<HTMLInputElement, TmdbTitlePickerProps
     const [results, setResults] = useState<MediaCardItem[]>([]);
     const [isSearching, setIsSearching] = useState(false);
     const trimmedQuery = query.trim();
+    // Right after the media type changes, results still hold the previous type's titles.
+    const currentResults = results.filter((item) => item.mediaType === mediaType);
 
     useEffect(() => {
       if (!trimmedQuery) return;
@@ -64,9 +66,9 @@ export const TmdbTitlePicker = forwardRef<HTMLInputElement, TmdbTitlePickerProps
       <div className="flex flex-col gap-2">
         <SearchBar ref={ref} value={query} onChange={setQuery} placeholder={placeholder} />
         {isSearching && <p className="text-sm text-muted-foreground">Searching…</p>}
-        {!isSearching && trimmedQuery && results.length > 0 && (
+        {!isSearching && trimmedQuery && currentResults.length > 0 && (
           <ul className="flex flex-col gap-1 rounded-md border border-border bg-surface p-1">
-            {results.map((item) => {
+            {currentResults.map((item) => {
               const alreadyPicked = excludeIds.includes(item.id);
               const poster = posterUrl(item.posterPath, "w154");
 

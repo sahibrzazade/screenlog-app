@@ -4,7 +4,7 @@ import { act, render, screen, cleanup, fireEvent, waitFor, within } from "@testi
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { toast } from "sonner";
 import type { DragEndEvent } from "@dnd-kit/core";
-import { deleteList, removeListItem, reorderListItems, restoreListItem, updateList } from "@/app/list-actions";
+import { addListItem, deleteList, removeListItem, reorderListItems, restoreListItem, updateList } from "@/app/list-actions";
 import { ListItemsGrid } from "@/components/list-items-grid";
 import { ListOwnerActions } from "@/components/list-owner-actions";
 import { getList, getListItems, type ListItem } from "@/lib/lists";
@@ -16,6 +16,7 @@ vi.mock("@/app/list-actions", () => ({
   createList: vi.fn(),
   updateList: vi.fn(),
   deleteList: vi.fn(),
+  addListItem: vi.fn(),
   removeListItem: vi.fn(),
   reorderListItems: vi.fn(),
   restoreListItem: vi.fn(),
@@ -164,6 +165,103 @@ describe("ListItemsGrid", () => {
 
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Failed to remove the title."));
     await waitFor(() => expect(screen.getByRole("link")).toBeInTheDocument());
+  });
+
+  describe("adding", () => {
+    const openSlot = () => screen.getByRole("button", { name: "Add a title to this list" });
+
+    /** Answers every search with a movie and a show that share TMDB id 1. */
+    const mockSearch = () =>
+      vi.spyOn(global, "fetch").mockImplementation(async (input) => {
+        const results = String(input).includes("type=tv")
+          ? [{ id: 1, name: "Show One", poster_path: null, first_air_date: "2020-01-01" }]
+          : [
+              { id: 1, title: "Title 1", poster_path: null, release_date: "2020-01-01" },
+              { id: 9, title: "Movie Nine", poster_path: null, release_date: "2021-01-01" },
+            ];
+        return new Response(JSON.stringify({ page: 1, results, total_pages: 1, total_results: results.length }), {
+          status: 200,
+        });
+      });
+
+    const search = async (text: string) => {
+      fireEvent.click(openSlot());
+      fireEvent.change(screen.getByRole("searchbox"), { target: { value: text } });
+    };
+
+    beforeEach(() => vi.mocked(addListItem).mockReset());
+    afterEach(() => vi.restoreAllMocks());
+
+    it("shows the owner a slot, and no one else or a full list", () => {
+      const { unmount } = render(<ListItemsGrid listId="list" items={[item(1)]} editable />);
+      expect(openSlot()).toBeInTheDocument();
+      unmount();
+
+      const full = render(<ListItemsGrid listId="list" items={[item(1)]} editable isFull />);
+      expect(screen.queryByRole("button", { name: "Add a title to this list" })).not.toBeInTheDocument();
+      full.unmount();
+
+      render(<ListItemsGrid listId="list" items={[item(1)]} editable={false} />);
+      expect(screen.queryByRole("button", { name: "Add a title to this list" })).not.toBeInTheDocument();
+    });
+
+    it("focuses the search on opening", () => {
+      render(<ListItemsGrid listId="list" items={[]} editable />);
+      fireEvent.click(openSlot());
+      expect(screen.getByRole("searchbox")).toHaveFocus();
+    });
+
+    it("adds the picked title, closes the panel and returns focus to the slot", async () => {
+      mockSearch();
+      vi.mocked(addListItem).mockResolvedValue({ listId: "list" });
+      render(<ListItemsGrid listId="list" items={[]} editable />);
+
+      await search("movie");
+      fireEvent.click(await screen.findByRole("button", { name: /Movie Nine/ }));
+
+      expect(screen.queryByRole("searchbox")).not.toBeInTheDocument();
+      expect(openSlot()).toHaveFocus();
+      await waitFor(() => expect(addListItem).toHaveBeenCalledWith("list", { tmdbId: 9, mediaType: "movie" }));
+    });
+
+    it("shows the title dimmed while it saves", async () => {
+      mockSearch();
+      let finishAdd: (result: { listId: string }) => void = () => {};
+      vi.mocked(addListItem).mockReturnValue(new Promise((resolve) => (finishAdd = resolve)));
+      render(<ListItemsGrid listId="list" items={[]} editable />);
+
+      await search("movie");
+      fireEvent.click(await screen.findByRole("button", { name: /Movie Nine/ }));
+
+      await waitFor(() => expect(screen.getByRole("link", { name: /Movie Nine/ }).closest("li")).toHaveAttribute("aria-busy"));
+
+      // React entangles async transitions: one left pending would hold up later tests.
+      await act(async () => finishAdd({ listId: "list" }));
+    });
+
+    it("removes the title and shows the error when adding fails", async () => {
+      mockSearch();
+      vi.mocked(addListItem).mockResolvedValue({ error: "This list is full (100 titles)." });
+      render(<ListItemsGrid listId="list" items={[]} editable />);
+
+      await search("movie");
+      fireEvent.click(await screen.findByRole("button", { name: /Movie Nine/ }));
+
+      await waitFor(() => expect(toast.error).toHaveBeenCalledWith("This list is full (100 titles)."));
+      await waitFor(() => expect(screen.queryByRole("link", { name: /Movie Nine/ })).not.toBeInTheDocument());
+    });
+
+    it("blocks titles on the list by media type, not id alone", async () => {
+      mockSearch();
+      render(<ListItemsGrid listId="list" items={[item(1)]} editable />);
+
+      await search("one");
+      expect(await screen.findByRole("button", { name: /Title 1.*Already picked/ })).toBeDisabled();
+
+      fireEvent.click(screen.getByRole("button", { name: "Shows" }));
+
+      expect(await screen.findByRole("button", { name: /Show One/ })).toBeEnabled();
+    });
   });
 
   describe("reordering", () => {

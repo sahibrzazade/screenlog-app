@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getList, getListItems } from "@/lib/lists";
+import { LIST_ITEM_MAX } from "@/lib/validation/list";
 import { ListItemsGrid } from "@/components/list-items-grid";
 import { ListOwnerActions } from "@/components/list-owner-actions";
 
@@ -61,12 +62,9 @@ const ListPage = async ({ params }: ListPageProps) => {
         <p className="mt-3 max-w-2xl whitespace-pre-line [overflow-wrap:anywhere]">{list.description}</p>
       )}
 
-      {items.length === 0 ? (
-        <p className="mt-4 text-muted-foreground">
-          {isOwner ? "This list is empty. Add titles from any movie or show page." : "This list is empty."}
-        </p>
-      ) : (
-        <ListItemsGrid listId={list.id} items={items} editable={isOwner} />
+      {items.length === 0 && <p className="mt-4 text-muted-foreground">This list is empty.</p>}
+      {(items.length > 0 || isOwner) && (
+        <ListItemsGrid listId={list.id} items={items} editable={isOwner} isFull={total >= LIST_ITEM_MAX} />
       )}
     </main>
   );
