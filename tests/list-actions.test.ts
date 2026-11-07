@@ -6,6 +6,7 @@ import {
   deleteList,
   removeListItem,
   removeTitleFromList,
+  reorderListItems,
   restoreListItem,
   updateList,
 } from "@/app/list-actions";
@@ -154,6 +155,112 @@ describe("removeListItem", () => {
     const loggedOut = useClient({ data: null, error: null }, null);
     expect((await removeListItem(LIST_ID, ITEM_ID)).error).toMatch(/logged in/);
     expect(loggedOut.deleted).toBe(false);
+  });
+});
+
+describe("reorderListItems", () => {
+  const id = (n: number) => `00000000-0000-4000-8000-00000000000${n}`;
+
+  /** lists → maybeSingle; list_items → current rows in order; rpc → the save. */
+  const useTables = ({
+    list = { id: LIST_ID } as unknown,
+    rows = [{ id: id(1) }, { id: id(2) }, { id: id(3) }] as unknown,
+    readError = null as unknown,
+    rpcError = null as unknown,
+    user = { id: "owner" } as { id: string } | null,
+  }) => {
+    const calls = { rpc: null as unknown, touched: false, inserted: false };
+    const chain = (table: string) => {
+      const self = {
+        select: () => self,
+        eq: () => self,
+        order: () => Promise.resolve({ data: rows, error: readError }),
+        maybeSingle: () => Promise.resolve({ data: table === "lists" ? list : null }),
+        insert: () => {
+          calls.inserted = true;
+          return self;
+        },
+        update: () => {
+          calls.touched = true;
+          return self;
+        },
+        then: (resolve: (value: { error: null }) => void) => resolve({ error: null }),
+      };
+      return self;
+    };
+    vi.mocked(getUserContext).mockResolvedValue({
+      supabase: {
+        from: chain,
+        rpc: (name: string, args: unknown) => {
+          calls.rpc = [name, args];
+          return Promise.resolve({ error: rpcError });
+        },
+      },
+      user,
+    } as unknown as Awaited<ReturnType<typeof getUserContext>>);
+    return calls;
+  };
+
+  it("saves the new order, touches the list and refreshes its pages", async () => {
+    const calls = useTables({});
+
+    expect(await reorderListItems(LIST_ID, [id(3), id(1), id(2)])).toEqual({ listId: LIST_ID });
+
+    expect(calls.rpc).toEqual(["reorder_list_items", { p_list_id: LIST_ID, p_item_ids: [id(3), id(1), id(2)] }]);
+    expect(calls.touched).toBe(true);
+    expect(revalidatePath).toHaveBeenCalledWith("/user/[username]/lists/[listId]", "page");
+  });
+
+  it("keeps rows the page didn't show in their places", async () => {
+    const calls = useTables({ rows: [{ id: id(1) }, { id: id(2) }, { id: id(3) }, { id: id(4) }] });
+
+    await reorderListItems(LIST_ID, [id(3), id(1), id(4)]);
+
+    expect(calls.rpc).toEqual(["reorder_list_items", { p_list_id: LIST_ID, p_item_ids: [id(3), id(2), id(1), id(4)] }]);
+  });
+
+  it("drops titles removed since the page loaded", async () => {
+    const calls = useTables({ rows: [{ id: id(1) }, { id: id(2) }] });
+
+    await reorderListItems(LIST_ID, [id(2), id(3), id(1)]);
+
+    expect(calls.rpc).toEqual(["reorder_list_items", { p_list_id: LIST_ID, p_item_ids: [id(2), id(1)] }]);
+  });
+
+  it("reports a failed save without touching the list", async () => {
+    const calls = useTables({ rpcError: { code: "XX000" } });
+
+    expect((await reorderListItems(LIST_ID, [id(2), id(1)])).error).toMatch(/new order/);
+    expect(calls.touched).toBe(false);
+    expect(revalidatePath).not.toHaveBeenCalled();
+  });
+
+  it("reports a failed read without saving", async () => {
+    const calls = useTables({ readError: { code: "XX000" }, rows: null });
+
+    expect((await reorderListItems(LIST_ID, [id(2), id(1)])).error).toMatch(/new order/);
+    expect(calls.rpc).toBeNull();
+  });
+
+  it("treats someone else's list as not found", async () => {
+    const calls = useTables({ list: null });
+
+    expect((await reorderListItems(LIST_ID, [id(1)])).error).toMatch(/no longer exists/);
+    expect(calls.rpc).toBeNull();
+  });
+
+  it("rejects bad input and logged-out users without saving", async () => {
+    const invalid = useTables({});
+    expect(await reorderListItems("nope", [id(1)])).toEqual({ error: "Invalid input" });
+    expect(await reorderListItems(LIST_ID, [])).toEqual({ error: "Invalid input" });
+    expect(await reorderListItems(LIST_ID, ["nope"])).toEqual({ error: "Invalid input" });
+    expect(await reorderListItems(LIST_ID, [id(1), id(1)])).toEqual({ error: "Invalid input" });
+    expect(await reorderListItems(LIST_ID, Array.from({ length: 101 }, () => id(1)))).toEqual({ error: "Invalid input" });
+    expect(invalid.rpc).toBeNull();
+
+    const loggedOut = useTables({ user: null });
+    expect((await reorderListItems(LIST_ID, [id(1)])).error).toMatch(/logged in/);
+    expect(loggedOut.rpc).toBeNull();
   });
 });
 

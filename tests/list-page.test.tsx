@@ -1,9 +1,10 @@
 import "@testing-library/jest-dom/vitest";
 import { describe, it, expect, vi, afterEach, beforeAll, beforeEach } from "vitest";
-import { render, screen, cleanup, fireEvent, waitFor, within } from "@testing-library/react";
+import { act, render, screen, cleanup, fireEvent, waitFor, within } from "@testing-library/react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { toast } from "sonner";
-import { deleteList, removeListItem, restoreListItem, updateList } from "@/app/list-actions";
+import type { DragEndEvent } from "@dnd-kit/core";
+import { deleteList, removeListItem, reorderListItems, restoreListItem, updateList } from "@/app/list-actions";
 import { ListItemsGrid } from "@/components/list-items-grid";
 import { ListOwnerActions } from "@/components/list-owner-actions";
 import { getList, getListItems, type ListItem } from "@/lib/lists";
@@ -16,9 +17,22 @@ vi.mock("@/app/list-actions", () => ({
   updateList: vi.fn(),
   deleteList: vi.fn(),
   removeListItem: vi.fn(),
+  reorderListItems: vi.fn(),
   restoreListItem: vi.fn(),
 }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+// jsdom has no layout to drag across, so tests finish a drag through DndContext's handler.
+const dnd = vi.hoisted(() => ({ onDragEnd: undefined as undefined | ((event: DragEndEvent) => void) }));
+vi.mock("@dnd-kit/core", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@dnd-kit/core")>();
+  return {
+    ...actual,
+    DndContext: (props: React.ComponentProps<typeof actual.DndContext>) => {
+      dnd.onDragEnd = props.onDragEnd;
+      return <actual.DndContext {...props} />;
+    },
+  };
+});
 vi.mock("next/image", () => ({
   default: (props: React.ComponentProps<"img">) => (
     // eslint-disable-next-line @next/next/no-img-element
@@ -150,6 +164,63 @@ describe("ListItemsGrid", () => {
 
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Failed to remove the title."));
     await waitFor(() => expect(screen.getByRole("link")).toBeInTheDocument());
+  });
+
+  describe("reordering", () => {
+    const drag = (activeId: string, overId: string | null) =>
+      act(() =>
+        dnd.onDragEnd?.({
+          active: { id: activeId },
+          over: overId ? { id: overId } : null,
+        } as unknown as DragEndEvent),
+      );
+    const linkOrder = () => screen.getAllByRole("link").map((link) => link.getAttribute("href"));
+
+    beforeEach(() => vi.mocked(reorderListItems).mockReset());
+
+    it("gives the owner a named drag handle showing the position, and visitors none", () => {
+      const { unmount } = render(<ListItemsGrid listId="list" items={[item(1), item(2)]} editable />);
+      expect(screen.getByRole("button", { name: "Reorder Title 2, position 2" })).toHaveTextContent("2");
+      unmount();
+
+      render(<ListItemsGrid listId="list" items={[item(1)]} editable={false} />);
+      expect(screen.queryByRole("button", { name: /Reorder/ })).not.toBeInTheDocument();
+    });
+
+    it("moves the title at once and saves the new order", async () => {
+      let finishSave: (result: { listId: string }) => void = () => {};
+      vi.mocked(reorderListItems).mockReturnValue(new Promise((resolve) => (finishSave = resolve)));
+      render(<ListItemsGrid listId="list" items={[item(1), item(2), item(3)]} editable />);
+
+      drag("item-3", "item-1");
+
+      await waitFor(() => expect(linkOrder()).toEqual(["/movie/3", "/movie/1", "/movie/2"]));
+      expect(reorderListItems).toHaveBeenCalledWith("list", ["item-3", "item-1", "item-2"]);
+
+      // React entangles async transitions: one left pending would hold up later tests.
+      await act(async () => finishSave({ listId: "list" }));
+    });
+
+    it("restores the old order and shows the error when the save fails", async () => {
+      vi.mocked(reorderListItems).mockResolvedValue({ error: "Couldn't save the new order." });
+      render(<ListItemsGrid listId="list" items={[item(1), item(2)]} editable />);
+
+      drag("item-2", "item-1");
+
+      await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Couldn't save the new order."));
+      await waitFor(() => expect(linkOrder()).toEqual(["/movie/1", "/movie/2"]));
+    });
+
+    it.each([
+      ["onto itself", "item-1"],
+      ["outside the grid", null],
+    ])("saves nothing when a title is dropped %s", (_case, overId) => {
+      render(<ListItemsGrid listId="list" items={[item(1), item(2)]} editable />);
+
+      drag("item-1", overId);
+
+      expect(reorderListItems).not.toHaveBeenCalled();
+    });
   });
 });
 

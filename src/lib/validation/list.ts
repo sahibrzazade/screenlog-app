@@ -38,3 +38,13 @@ export const listItemTitleSchema = z.object({
 export const listItemRestoreSchema = listItemTitleSchema.extend({
   position: z.number().int().nonnegative(),
 });
+
+/** A list's item ids in their new order. */
+export const listItemOrderSchema = z.object({
+  listId: z.uuid(),
+  itemIds: z
+    .array(z.uuid())
+    .min(1)
+    .max(LIST_ITEM_MAX)
+    .refine((ids) => new Set(ids).size === ids.length),
+});

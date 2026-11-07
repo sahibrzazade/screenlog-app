@@ -10,6 +10,7 @@ import {
   listFieldsSchema,
   listIdSchema,
   listItemIdSchema,
+  listItemOrderSchema,
   listItemRestoreSchema,
   listItemTitleSchema,
   listUpdateSchema,
@@ -24,6 +25,7 @@ export type ListActionState = { error?: string; field?: "title" | "description";
 const NOT_FOUND = "This list no longer exists.";
 const LOGGED_OUT = "You must be logged in to manage lists.";
 const LIST_FULL = `This list is full (${LIST_ITEM_MAX} titles).`;
+const REORDER_FAILED = "Couldn't save the new order. Please try again.";
 const UNIQUE_VIOLATION = "23505";
 const RAISED_EXCEPTION = "P0001";
 
@@ -336,6 +338,72 @@ export const restoreListItem = async (
   // Already back (e.g. a double click): the desired end state holds.
   if (error && error.code !== UNIQUE_VIOLATION) {
     return { error: "Couldn't put the title back. Please try again." };
+  }
+
+  await touchList(supabase, listId, user.id);
+
+  revalidateListPages();
+  return { listId };
+};
+
+/**
+ * Applies a new order to the rows it names; every other row keeps its place.
+ * The page can't show titles TMDB can't resolve or ones added since it loaded,
+ * and ids of titles removed since are dropped.
+ */
+const mergeItemOrder = (currentIds: string[], reorderedIds: string[]) => {
+  const existing = new Set(currentIds);
+  const moved = reorderedIds.filter((id) => existing.has(id));
+  const movedSet = new Set(moved);
+  let next = 0;
+  return currentIds.map((id) => (movedSet.has(id) ? moved[next++] : id));
+};
+
+/** Saves the order the owner dragged a list's titles into. */
+export const reorderListItems = async (listId: string, itemIds: string[]): Promise<ListActionState> => {
+  const parsed = listItemOrderSchema.safeParse({ listId, itemIds });
+
+  if (!parsed.success) {
+    return { error: "Invalid input" };
+  }
+
+  const { supabase, user } = await getUserContext();
+
+  if (!user) {
+    return { error: LOGGED_OUT };
+  }
+
+  const { data: list } = await supabase
+    .from("lists")
+    .select("id")
+    .eq("id", listId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (!list) {
+    return { error: NOT_FOUND };
+  }
+
+  const { data: rows, error: readError } = await supabase
+    .from("list_items")
+    .select("id")
+    .eq("list_id", listId)
+    .order("position", { ascending: true });
+
+  if (readError || !rows) {
+    return { error: REORDER_FAILED };
+  }
+
+  const { error } = await supabase.rpc("reorder_list_items", {
+    p_list_id: listId,
+    p_item_ids: mergeItemOrder(
+      rows.map((row) => row.id),
+      parsed.data.itemIds,
+    ),
+  });
+
+  if (error) {
+    return { error: REORDER_FAILED };
   }
 
   await touchList(supabase, listId, user.id);

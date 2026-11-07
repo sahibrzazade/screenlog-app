@@ -778,9 +778,10 @@ or "Top 10 of 2024", and anyone can browse them.
   already on it. A list can be created from the same modal with just a title; the
   title is added to it and the modal stays open. Guests don't see the button;
   season pages don't have it.
-- **Reordering:** the owner drags items on the list page with `@dnd-kit`, with
-  a keyboard alternative. The new order persists on drop; a failed save restores
-  the previous order and shows an error toast.
+- **Reordering:** the owner drags items on the list page with `@dnd-kit`, by a
+  handle on the position badge, with a keyboard alternative. The new order
+  persists on drop; a failed save restores the previous order and shows an error
+  toast.
 - **Design:** the list card, list page and add-to-list modal are designed with
   ui-ux-pro-max and approved by the user in their subtasks.
 - **Out of scope:** private lists, seasons or episodes as items, activity feed
