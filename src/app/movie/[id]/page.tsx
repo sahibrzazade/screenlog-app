@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { tmdbFetch } from "@/lib/tmdb/client";
 import { createClient } from "@/lib/supabase/server";
+import { AddToListButton } from "@/components/add-to-list-button";
 import { LogMovieForm } from "@/components/log-movie-form";
 import { SignInPrompt } from "@/components/sign-in-prompt";
 import { ReviewsSection } from "@/components/reviews-section";
@@ -101,6 +102,9 @@ const MoviePage = async ({ params, searchParams }: MoviePageProps) => {
             />
           ) : (
             <SignInPrompt />
+          )}
+          {user && (
+            <AddToListButton tmdbId={movieId} mediaType="movie" title={movie.title} viewerId={user.id} />
           )}
           <GenreBadges genres={movie.genres} />
         </div>

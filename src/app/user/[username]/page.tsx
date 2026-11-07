@@ -7,6 +7,7 @@ import {
   ChevronRight,
   Film,
   Heart,
+  List as ListIcon,
   Play,
   Settings,
   Trophy,
@@ -21,6 +22,7 @@ import { FollowButton } from "@/components/follow-button";
 import { CopyProfileLinkButton } from "@/components/copy-profile-link-button";
 import { ProfileStats } from "@/components/profile-stats";
 import { getFollowCounts } from "@/lib/follows";
+import { getListCount } from "@/lib/lists";
 import type { MediaCardItem } from "@/components/media-card";
 import type { DiaryEntry } from "@/lib/diary";
 
@@ -39,21 +41,29 @@ const toDiarySectionItem = (entry: DiaryEntry): ProfileSectionItem => ({
   dropped: entry.dropped,
 });
 
-/** Full-width card linking to one of the profile's sub-pages (Stats, Liked reviews). */
+/** Card linking to one of the profile's sub-pages (Stats, Liked reviews, Lists). */
 const ProfileLinkCard = ({
   href,
   icon: Icon,
   title,
   description,
+  className = "",
+  highlighted = false,
 }: {
   href: string;
   icon: LucideIcon;
   title: string;
   description: string;
+  className?: string;
+  highlighted?: boolean;
 }) => (
   <Link
     href={href}
-    className="group flex items-center gap-3 rounded-md border border-border px-4 py-3 transition-colors hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    className={`group flex items-center gap-3 rounded-md border px-4 py-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+      highlighted
+        ? "border-accent/40 bg-accent/10 hover:bg-accent/15"
+        : "border-border hover:bg-surface"
+    } ${className}`}
   >
     <Icon className="size-5 shrink-0 text-accent" aria-hidden />
     <span className="min-w-0 flex-1">
@@ -97,7 +107,7 @@ const PublicProfilePage = async ({ params }: PublicProfilePageProps) => {
 
   const viewer = authResult.data.user;
   const isOwner = viewer?.id === profile.id;
-  const [watchlistItems, isFollowing, followCounts, likedReviewCount] = await Promise.all([
+  const [watchlistItems, isFollowing, followCounts, likedReviewCount, listCount] = await Promise.all([
     getWatchlistItems(supabase, profile.id),
     viewer && !isOwner
       ? supabase
@@ -114,6 +124,7 @@ const PublicProfilePage = async ({ params }: PublicProfilePageProps) => {
       .select("id", { count: "exact", head: true })
       .eq("user_id", profile.id)
       .then(({ count }) => count ?? 0),
+    getListCount(supabase, profile.id),
   ]);
 
   const nowWatchingItems = profile.showcase.nowWatching ? [profile.showcase.nowWatching] : [];
@@ -163,19 +174,27 @@ const PublicProfilePage = async ({ params }: PublicProfilePageProps) => {
         following={followCounts.following}
         viewerId={viewer?.id ?? null}
       />
-      {/* Stacked on phones, side by side from sm up. */}
+      {/* Stacked on phones; from sm up, Stats spans a row above the other two. */}
       <div className="mt-4 grid gap-2 sm:grid-cols-2">
         <ProfileLinkCard
           href={`/user/${profile.username}/stats`}
           icon={ChartColumn}
           title="Stats"
-          description="Watch time, activity and ratings"
+          description="Watch time and ratings"
+          className="sm:col-span-2"
+          highlighted
         />
         <ProfileLinkCard
           href={`/user/${profile.username}/likes`}
           icon={Heart}
           title="Liked reviews"
           description={`${likedReviewCount} ${likedReviewCount === 1 ? "review" : "reviews"}`}
+        />
+        <ProfileLinkCard
+          href={`/user/${profile.username}/lists`}
+          icon={ListIcon}
+          title="Lists"
+          description={`${listCount} ${listCount === 1 ? "list" : "lists"}`}
         />
       </div>
 
