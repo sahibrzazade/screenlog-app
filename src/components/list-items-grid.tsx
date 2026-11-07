@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useOptimistic } from "react";
+import { startTransition, useEffect, useOptimistic, useRef, useState } from "react";
 import {
   DndContext,
   closestCenter,
@@ -22,15 +22,19 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, X } from "lucide-react";
 import { toast } from "sonner";
-import { removeListItem, reorderListItems, restoreListItem } from "@/app/list-actions";
-import { MediaCard } from "@/components/media-card";
+import { addListItem, removeListItem, reorderListItems, restoreListItem } from "@/app/list-actions";
+import { MediaCard, type MediaCardItem } from "@/components/media-card";
+import { EmptySlot } from "@/components/poster-tile";
+import { SearchPickerPanel } from "@/components/search-picker-panel";
 import type { ListItem } from "@/lib/lists";
 
 type ListItemsGridProps = {
   listId: string;
   items: ListItem[];
-  /** Owner view: each poster gets a drag handle and a remove button. */
+  /** Owner view: each poster gets a drag handle and a remove button, and an empty slot adds titles. */
   editable: boolean;
+  /** At the item limit: the owner gets no empty slot. */
+  isFull?: boolean;
 };
 
 type OptimisticChange = { type: "remove"; itemId: string } | { type: "reorder"; itemIds: string[] };
@@ -95,10 +99,24 @@ const SortableListItem = ({ item, position, onRemove }: SortableListItemProps) =
  * the numbers, so the visitor view's badges are hidden from them. Removing and
  * reordering are optimistic: the transition ending puts back a change that
  * failed. Removing has no confirmation, so its toast offers Undo, which also
- * keeps the title's rank.
+ * keeps the title's rank. A title being added shows dimmed, without controls,
+ * until the page has its row.
  */
-export const ListItemsGrid = ({ listId, items, editable }: ListItemsGridProps) => {
+export const ListItemsGrid = ({ listId, items, editable, isFull = false }: ListItemsGridProps) => {
   const [visibleItems, applyOptimistically] = useOptimistic(items, applyChange);
+  const [pendingAdds, showPendingAdd] = useOptimistic<MediaCardItem[], MediaCardItem>([], (current, item) => [
+    ...current,
+    item,
+  ]);
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const [pickerMediaType, setPickerMediaType] = useState<"movie" | "tv">("movie");
+  const pickerRef = useRef<HTMLInputElement>(null);
+  const addSlotRef = useRef<HTMLButtonElement>(null);
+
+  // Focus the search input once it actually mounts (opening is what renders it).
+  useEffect(() => {
+    if (isPickerOpen) pickerRef.current?.focus();
+  }, [isPickerOpen]);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -125,6 +143,28 @@ export const ListItemsGrid = ({ listId, items, editable }: ListItemsGridProps) =
           action: { label: "Undo", onClick: () => void undoRemove(item) },
         });
       }
+    });
+  };
+
+  const closePicker = () => {
+    setIsPickerOpen(false);
+    // The panel holding focus is going away; hand it back to what opened it.
+    addSlotRef.current?.focus();
+  };
+
+  const changePickerMediaType = (mediaType: "movie" | "tv") => {
+    setPickerMediaType(mediaType);
+    pickerRef.current?.focus();
+  };
+
+  const add = (item: MediaCardItem) => {
+    closePicker();
+    startTransition(async () => {
+      showPendingAdd(item);
+      const result = await addListItem(listId, { tmdbId: item.id, mediaType: item.mediaType }).catch(() => ({
+        error: "Failed to add the title. Please try again.",
+      }));
+      if (result.error) toast.error(result.error);
     });
   };
 
@@ -177,22 +217,51 @@ export const ListItemsGrid = ({ listId, items, editable }: ListItemsGridProps) =
     onDragCancel: ({ active }) => `Cancelled. ${titleOf(active.id)} stayed at position ${positionOf(active.id)}.`,
   };
 
+  // A movie and a show can share a TMDB id, so only titles of the searched type count.
+  const pickedIds = [...visibleItems, ...pendingAdds]
+    .filter((item) => item.mediaType === pickerMediaType)
+    .map((item) => item.id);
+
   return (
-    <DndContext
-      // A fixed id keeps its aria attributes the same on the server and the client.
-      id={`list-items-${listId}`}
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragEnd={handleDragEnd}
-      accessibility={{ announcements }}
-    >
-      <SortableContext items={visibleItems.map((item) => item.itemId)} strategy={rectSortingStrategy}>
-        <ol className={GRID_CLASS}>
-          {visibleItems.map((item, index) => (
-            <SortableListItem key={item.itemId} item={item} position={index + 1} onRemove={() => remove(item)} />
-          ))}
-        </ol>
-      </SortableContext>
-    </DndContext>
+    <>
+      <DndContext
+        // A fixed id keeps its aria attributes the same on the server and the client.
+        id={`list-items-${listId}`}
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+        accessibility={{ announcements }}
+      >
+        <SortableContext items={visibleItems.map((item) => item.itemId)} strategy={rectSortingStrategy}>
+          <ol className={GRID_CLASS}>
+            {visibleItems.map((item, index) => (
+              <SortableListItem key={item.itemId} item={item} position={index + 1} onRemove={() => remove(item)} />
+            ))}
+            {pendingAdds.map((item) => (
+              <li key={`${item.mediaType}-${item.id}`} aria-busy className="opacity-50">
+                <MediaCard {...item} />
+              </li>
+            ))}
+            {!isFull && (
+              <li>
+                <EmptySlot ref={addSlotRef} label="Add a title to this list" onClick={() => setIsPickerOpen(true)} />
+              </li>
+            )}
+          </ol>
+        </SortableContext>
+      </DndContext>
+      {isPickerOpen && !isFull && (
+        <div className="mt-4 max-w-md">
+          <SearchPickerPanel
+            ref={pickerRef}
+            mediaType={pickerMediaType}
+            onMediaTypeChange={changePickerMediaType}
+            excludeIds={pickedIds}
+            onSelect={add}
+            onClose={closePicker}
+          />
+        </div>
+      )}
+    </>
   );
 };

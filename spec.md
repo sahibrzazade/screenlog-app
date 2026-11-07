@@ -778,6 +778,11 @@ or "Top 10 of 2024", and anyone can browse them.
   already on it. A list can be created from the same modal with just a title; the
   title is added to it and the modal stays open. Guests don't see the button;
   season pages don't have it.
+- **Add from the list page:** the owner sees an empty poster slot with a "+"
+  after the last title, unless the list is full. It opens a search panel below
+  the grid with a Movies / Shows toggle. Picking a title adds it to the end of
+  the list and closes the panel; it shows dimmed until saved, and a failed save
+  removes it with an error toast. Titles already on the list can't be picked.
 - **Reordering:** the owner drags items on the list page with `@dnd-kit`, by a
   handle on the position badge, with a keyboard alternative. The new order
   persists on drop; a failed save restores the previous order and shows an error

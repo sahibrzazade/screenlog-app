@@ -1,5 +1,6 @@
 "use client";
 
+import { forwardRef } from "react";
 import Image from "next/image";
 import { Plus, X } from "lucide-react";
 import { posterUrl } from "@/lib/tmdb/images";
@@ -60,13 +61,16 @@ type EmptySlotProps = {
 };
 
 /** A dashed-border poster-sized "+" placeholder that opens a picker when clicked. */
-export const EmptySlot = ({ onClick, label }: EmptySlotProps) => (
+export const EmptySlot = forwardRef<HTMLButtonElement, EmptySlotProps>(({ onClick, label }, ref) => (
   <button
+    ref={ref}
     type="button"
     onClick={onClick}
     aria-label={label}
-    className="flex aspect-2/3 w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-md border border-dashed border-border text-muted-foreground transition-colors hover:border-accent hover:text-accent"
+    className="flex aspect-2/3 w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-md border border-dashed border-border text-muted-foreground transition-colors hover:border-accent hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
   >
     <Plus className="size-6" aria-hidden />
   </button>
-);
+));
+
+EmptySlot.displayName = "EmptySlot";
