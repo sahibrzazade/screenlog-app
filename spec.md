@@ -862,8 +862,8 @@ watched".
   headings, type in text rather than colour, review as an icon.
 - **Supersedes:** the `/diary` part of [Diary grid view](#diary-grid-view).
 - **Out of scope:** a public diary, a Movies / Shows filter, showing review
-  text, editing logs from the diary, rewatches, linking Stats chart bars to a
-  month.
+  text, editing logs from the diary, rewatches (added later in
+  [Rewatches](#rewatches)), linking Stats chart bars to a month.
 
 #### Acceptance criteria
 
@@ -875,6 +875,73 @@ watched".
 - [ ] 50 entries load first; "Show more" appends the next 50 with no duplicates or gaps, continuing a split month under one heading; a failed load shows an error and keeps the button.
 - [ ] A title TMDB can't resolve is skipped without breaking the page.
 - [ ] Rows are keyboard reachable with visible focus; everything fits 375px with no horizontal scroll.
+
+### Rewatches
+
+A user can log the same movie or season more than once, one log per watch,
+each with its own date, rating and review. Today every log table allows one
+row per user and title, so logging again overwrites the earlier watch.
+
+- **Scope:** movies and seasons. Show logs stay one per user and show: a show
+  dropped and finished later is the same log, edited (status, date, rating);
+  watching a show again is logged as season rewatches.
+- **Data:** migration `0021_rewatches.sql` drops `movie_logs_user_movie_unique`
+  (0006) and `season_logs_user_show_season_unique` (0008) and adds plain
+  indexes on the same columns. The `rewatch` column already exists on both
+  tables (0002, 0004) and is used as is. RLS doesn't change.
+- **Writes target a log by id.** The rating, review/date, clear-field and
+  delete actions take the log's id instead of finding the row by user and
+  title, and also filter on `user_id`. Creating a log is a plain insert. A
+  title with no log yet behaves as today: clicking a star or saving the form
+  creates the first log.
+- **Title page card (movie and season pages):** shows the latest watch
+  (newest `watched_date`, then newest `created_at`). Its stars, "Edit review"
+  and "Delete" act on that watch.
+  - **"Log again"** under "Edit review", once a log exists, opens the log
+    modal empty: date today, no rating or review, and "I've watched this
+    before" ticked. Saving inserts a new log; rating in this modal is saved
+    with the log instead of on click, since the log doesn't exist yet.
+  - **"I've watched this before"** checkbox in the log modal sets `rewatch`.
+    It is ticked by default when an earlier log exists and can be ticked on a
+    first log too (watched before joining).
+  - **"Watched N times"** line under the card when there are two or more
+    watches. It expands into the list of watches (date, stars or "Watched",
+    rewatch marker), newest first; choosing one opens the log modal for that
+    watch, where it can be edited or deleted.
+- **"Watched" button:** shows watched when any log exists. Unmarking works
+  only when there is exactly one log with no rating or review (today's rule);
+  otherwise watches are deleted from the modal.
+- **"Your rating" everywhere is the latest watch's:** the profile films list
+  and its preview, the show page's season list, Friends who watched (one row
+  per friend, their latest watch).
+- **Reviews:** each watch can have its own review. A title's Reviews section
+  can list several reviews by one user, each with its own likes; review likes
+  already point at a log id.
+- **Stats:** every watch counts toward watch time and the activity and rating
+  charts. The films total counts distinct movies; the shows total is
+  unchanged (distinct shows).
+- **Activity feed:** a log with `rewatch` set reads "**user** rewatched
+  *Title*" (already supported).
+- **Diary:** each watch is its own row (no change), and a rewatch shows a
+  small rewatch icon with "Rewatch" for screen readers.
+- **Design:** "Log again", the checkbox and the "Watched N times" list are
+  designed with ui-ux-pro-max, matching the current card and modal, and
+  approved by the user in their subtask.
+- **Out of scope:** rewatching a whole show as one log, episode logs, a
+  separate page per review, editing watches from the diary, a "Rewatched"
+  filter, importing past watches.
+
+#### Acceptance criteria
+
+- [ ] Migration 0021 removes the one-log-per-title constraints on `movie_logs` and `season_logs`; `show_logs` keeps its own.
+- [ ] On a movie or season page, a signed-in user with a log can add another watch with its own date, rating and review via "Log again"; it is marked as a rewatch unless they untick the box.
+- [ ] The card shows the latest watch; "Watched N times" lists every watch, and each can be edited or deleted on its own without touching the others.
+- [ ] Rating, editing, clearing a field or deleting one watch never changes another watch or another user's log.
+- [ ] Profile lists, the show page's season list and Friends who watched show one entry per title or friend, using the latest watch.
+- [ ] Stats count every watch toward time and charts, and distinct movies toward the films total.
+- [ ] The activity feed says "rewatched" and the diary shows the rewatch icon for rewatches.
+- [ ] Logging a title for the first time, and show logs, work as before.
+- [ ] Controls are keyboard reachable with visible focus and accessible names; everything fits 375px with no horizontal scroll.
 
 ## Open Questions
 
