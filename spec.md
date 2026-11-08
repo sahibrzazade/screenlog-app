@@ -294,6 +294,9 @@ The navbar gains a `Discover` link next to `Search`, visible to guests too.
 
 ### Diary grid view
 
+> `/diary` was later replaced by the [Diary timeline](#diary-timeline); the
+> toggle below now applies to the films and shows pages only.
+
 The diary (`/diary`) and the see-all lists (`/user/[username]/films`,
 `/user/[username]/shows`) gain a **grid / list view toggle**, Letterboxd-style.
 
@@ -807,6 +810,71 @@ or "Top 10 of 2024", and anyone can browse them.
 - [ ] Deleting a list removes its items.
 - [ ] Dragging an item changes the order and survives a reload; the same can be done by keyboard; a failed save restores the previous order with an error toast.
 - [ ] Controls are keyboard reachable with visible focus and accessible names; everything fits 375px with no horizontal scroll.
+
+### Diary timeline
+
+`/diary` today repeats `/user/[username]/films` and `/shows`: the same entries,
+split into Movies and Shows sections, with a grid/list toggle. It becomes a
+real diary instead, answering "when did I watch what": one dated list of every
+log, newest first. The films and shows pages keep answering "what have I
+watched".
+
+- **Who sees it:** only the signed-in user, for their own logs. A guest
+  opening `/diary` is redirected to `/login`. There is no public diary.
+- **Content:** movie, show and season logs in one list, sorted by
+  `watched_date`, newest first; logs on the same date are ordered by
+  `created_at`, newest first. Rewatch support (several logs per title) is a
+  separate, later task; the timeline needs no change when it arrives, since
+  each log is already one row.
+- **Grouping:** a heading per month of `watched_date` ("November 2026"). The
+  heading sticks below the navbar (`top-14`) while its entries scroll. The
+  year is part of the heading, so year changes need no extra marker.
+- **Row:** one link to the entry's title page (movie, show or season page),
+  at least 44px tall, `bg-surface` on hover and a visible focus ring.
+  - Left column: day of month (large) with the weekday below ("07", "Fri"),
+    shown on the first row of each day only; later rows of that day leave the
+    column empty to keep alignment.
+  - Small poster, then the title, truncated with an ellipsis. Seasons read
+    "Show — Season name", as today.
+  - A line under the title with the type in text: "Movie · 2024" (release
+    year, omitted if TMDB has none), "Show", or "Season". Dropped shows add
+    the existing Dropped badge.
+  - Small read-only rating stars, or "Watched" for a log without a rating.
+  - A review icon when the log has a review, with "Has review" for screen
+    readers. The review text itself isn't shown.
+  - From `sm` up, stars and the review icon sit on the right of the row; on
+    phones they move under the type line.
+- **Header:** "Diary" with the total number of entries ("142 entries",
+  "1 entry"). No grid/list toggle and no type filter; `?view=` is ignored.
+  `DiaryGrid` stays in use on the films and shows pages.
+- **Pagination:** 50 entries per page. Today's diary fetches every log and
+  resolves every title from TMDB, which slows down as the diary grows. The
+  first page is server-rendered; "Show more" loads the next 50 below, like the
+  home page Activity feed. The three log tables are merged in the query with a
+  cursor on (`watched_date`, `created_at`, `id`), so pages have no duplicates
+  or gaps. A month split across two pages continues under the same heading.
+  A failed "Show more" shows an inline error and keeps the button.
+- **Missing titles:** a log whose title TMDB can't resolve is left out
+  without breaking the page, as today.
+- **Empty state:** "Nothing logged yet." with a link to `/discover`.
+- **Design:** approved by the user on 2026-11-08 after a ui-ux-pro-max pass:
+  rows instead of a table (no horizontal scroll on phones), sticky month
+  headings, type in text rather than colour, review as an icon.
+- **Supersedes:** the `/diary` part of [Diary grid view](#diary-grid-view).
+- **Out of scope:** a public diary, a Movies / Shows filter, showing review
+  text, editing logs from the diary, rewatches, linking Stats chart bars to a
+  month.
+
+#### Acceptance criteria
+
+- [ ] A guest opening `/diary` is redirected to `/login`.
+- [ ] `/diary` lists the signed-in user's movie, show and season logs in one list, newest watch date first, under month headings that stick below the navbar.
+- [ ] The day and weekday show on the first row of each day only.
+- [ ] Each row shows poster, title, type line, stars or "Watched", a review icon when there's a review, and a Dropped badge for dropped shows, and links to the right page.
+- [ ] The header shows the total entry count; there's no grid/list toggle.
+- [ ] 50 entries load first; "Show more" appends the next 50 with no duplicates or gaps, continuing a split month under one heading; a failed load shows an error and keeps the button.
+- [ ] A title TMDB can't resolve is skipped without breaking the page.
+- [ ] Rows are keyboard reachable with visible focus; everything fits 375px with no horizontal scroll.
 
 ## Open Questions
 
