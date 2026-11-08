@@ -15,7 +15,7 @@ export const getStatsLogs = async (supabase: SupabaseClient, userId: string): Pr
     supabase.from("movie_logs").select("tmdb_movie_id, rating, watched_date").eq("user_id", userId),
     supabase
       .from("season_logs")
-      .select("tmdb_show_id, season_number, rating, watched_date")
+      .select("tmdb_show_id, season_number, rating, watched_date, rewatch")
       .eq("user_id", userId),
     supabase.from("show_logs").select("tmdb_show_id, status, rating, watched_date").eq("user_id", userId),
   ]);
@@ -33,6 +33,7 @@ export const getStatsLogs = async (supabase: SupabaseClient, userId: string): Pr
       seasonNumber: log.season_number,
       rating: toRating(log.rating),
       watchedDate: log.watched_date,
+      rewatch: log.rewatch === true,
     })),
     ...(showLogs ?? []).map((log): StatsLog => ({
       kind: "show",

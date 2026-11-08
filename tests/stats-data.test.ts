@@ -76,7 +76,7 @@ describe("getRuntimes", () => {
     });
 
     const runtimes = await getRuntimes([
-      { kind: "season", tmdbId: 9, seasonNumber: 1, rating: null, watchedDate: "2026-01-01" },
+      { kind: "season", tmdbId: 9, seasonNumber: 1, rating: null, watchedDate: "2026-01-01", rewatch: false },
     ]);
 
     const appendCalls = vi.mocked(tmdbFetch).mock.calls.filter(([, params]) => params);

@@ -18,12 +18,19 @@ const movie = (tmdbId: number, watchedDate: string, rating: number | null = null
   rating,
   watchedDate,
 });
-const season = (tmdbId: number, seasonNumber: number, watchedDate: string, rating: number | null = null): StatsLog => ({
+const season = (
+  tmdbId: number,
+  seasonNumber: number,
+  watchedDate: string,
+  rating: number | null = null,
+  rewatch = false,
+): StatsLog => ({
   kind: "season",
   tmdbId,
   seasonNumber,
   rating,
   watchedDate,
+  rewatch,
 });
 const show = (
   tmdbId: number,
@@ -136,6 +143,40 @@ describe("computeTotals", () => {
     expect(totals.showMinutes).toBe(300);
   });
 
+  it("counts a rewatched movie once in films and every watch in its minutes", () => {
+    const totals = computeTotals([movie(1, "2025-03-02"), movie(1, "2026-01-01")], runtimes);
+    expect(totals.films).toBe(1);
+    expect(totals.movieMinutes).toBe(300);
+  });
+
+  it("counts every watch of a season when there is no completed show log", () => {
+    const logs = [season(1396, 1, "2026-01-01"), season(1396, 1, "2026-06-01"), season(1396, 2, "2026-01-01")];
+    // 300 × 2 + 400
+    expect(computeTotals(logs, runtimes).showMinutes).toBe(1000);
+  });
+
+  it("adds a rewatched season on top of a completed show's seasons", () => {
+    const logs = [season(1396, 1, "2026-01-01"), season(1396, 1, "2026-06-01"), show(1396, "2026-02-01")];
+    // 1200 for the show + 300 for the second watch of season 1
+    expect(computeTotals(logs, runtimes).showMinutes).toBe(1500);
+  });
+
+  it("adds a completed show's only season log when it is marked as a rewatch", () => {
+    const logs = [show(1396, "2026-02-01"), season(1396, 2, "2026-06-01", null, true)];
+    // 1200 for the show + 400 for rewatching season 2
+    expect(computeTotals(logs, runtimes).showMinutes).toBe(1600);
+  });
+
+  it("counts every rewatch-marked log of a completed show's season", () => {
+    const logs = [
+      show(1396, "2026-02-01"),
+      season(1396, 1, "2026-06-01", null, true),
+      season(1396, 1, "2026-09-01", null, true),
+    ];
+    // 1200 + 300 × 2
+    expect(computeTotals(logs, runtimes).showMinutes).toBe(1800);
+  });
+
   it("treats missing runtimes as 0", () => {
     const logs = [movie(999, "2026-01-01"), season(42, 1, "2026-01-01"), season(1396, 9, "2026-01-01")];
     expect(computeTotals(logs, runtimes)).toEqual({ films: 1, shows: 2, hours: 0, movieMinutes: 0, showMinutes: 0 });
@@ -176,6 +217,11 @@ describe("activityBars", () => {
       { label: "2025", count: 0, films: 0, tv: 0 },
       { label: "2026", count: 1, films: 1, tv: 0 },
     ]);
+  });
+
+  it("counts each watch of a rewatched movie as its own entry", () => {
+    const bars = activityBars([movie(1, "2026-01-05"), movie(1, "2026-01-20")], 2026);
+    expect(bars[0]).toEqual({ label: "Jan", count: 2, films: 2, tv: 0 });
   });
 
   it("returns no bars for all time with no logs", () => {

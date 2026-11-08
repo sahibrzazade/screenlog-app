@@ -923,7 +923,9 @@ row per user and title, so logging again overwrites the earlier watch.
   already point at a log id.
 - **Stats:** every watch counts toward watch time and the activity and rating
   charts. The films total counts distinct movies; the shows total is
-  unchanged (distinct shows).
+  unchanged (distinct shows). For a completed show, a season's first log is
+  taken as the watch the show log already counts unless "I've watched this
+  before" is ticked on it; the user ticks it by hand.
 - **Activity feed:** a log with `rewatch` set reads "**user** rewatched
   *Title*" (already supported).
 - **Diary:** each watch is its own row (no change), and a rewatch shows a
