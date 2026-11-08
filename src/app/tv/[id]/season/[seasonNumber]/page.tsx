@@ -10,7 +10,7 @@ import { ReviewsSection } from "@/components/reviews-section";
 import { FriendsWhoWatched } from "@/components/detail/friends-who-watched";
 import { getFriendsWhoWatched } from "@/lib/friends-who-watched";
 import { fetchReviews } from "@/lib/reviews";
-import { fetchOwnLog } from "@/lib/logs/queries";
+import { fetchOwnWatches } from "@/lib/logs/queries";
 import { parseReviewSort } from "@/lib/review-sort";
 import { posterUrl } from "@/lib/tmdb/images";
 import type { TmdbSeasonDetails } from "@/lib/tmdb/types";
@@ -51,7 +51,7 @@ const SeasonPage = async ({ params, searchParams }: SeasonPageProps) => {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const existingLog = await fetchOwnLog(supabase, user, "season_logs", {
+  const watches = await fetchOwnWatches(supabase, user, "season_logs", {
     tmdb_show_id: showId,
     season_number: seasonNumber,
   });
@@ -86,7 +86,7 @@ const SeasonPage = async ({ params, searchParams }: SeasonPageProps) => {
               seasonNumber={seasonNumber}
               seasonName={season.name}
               posterUrl={poster}
-              initialLog={existingLog}
+              watches={watches}
             />
           ) : (
             <SignInPrompt />

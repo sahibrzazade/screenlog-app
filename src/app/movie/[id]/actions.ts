@@ -4,8 +4,8 @@ import {
   clearLogField,
   deleteLog,
   parseTmdbId,
-  saveLog,
   saveRating,
+  saveWatchForm,
   toggleWatched,
   type LogTarget,
   type MutationState,
@@ -45,9 +45,9 @@ export const logMovie = async (
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
-  return saveLog(
+  return saveWatchForm(
     movieTarget(parsed.data.tmdbMovieId),
-    formData.get("logId"),
+    formData,
     parsed.data.review ?? null,
     parsed.data.watchedDate,
   );

@@ -2,6 +2,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getUserContext, type SupabaseServerClient } from "@/lib/supabase/auth";
 import { todayIso } from "@/lib/date";
+import { ratingSchema } from "@/lib/validation/rating";
 
 /**
  * Everything the movie / show / season log mutations need to find the user's
@@ -79,7 +80,7 @@ const writeLog = async (
   userId: string,
   target: LogTarget,
   logId: string | null,
-  values: Record<string, string | number | null>,
+  values: Record<string, string | number | boolean | null>,
 ): Promise<boolean> => {
   const id = logId ?? (await findLatestLogId(supabase, userId, target));
 
@@ -106,7 +107,7 @@ export const saveLog = async (
   rawLogId: FormDataEntryValue | null,
   review: string | null,
   watchedDate: string,
-  extra: Record<string, string> = {},
+  extra: Record<string, string | boolean> = {},
 ): Promise<MutationState> => {
   const logId = parseLogId(rawLogId);
   if (logId === undefined) return { error: INVALID_LOG };
@@ -123,6 +124,63 @@ export const saveLog = async (
 
   revalidatePath(target.revalidate);
   return { success: true };
+};
+
+/**
+ * Adds another watch of a movie or season: always a new log, never an update
+ * (migration 0021). The rating comes with the form, since there's no log yet
+ * for a star click to save to.
+ */
+export const addWatch = async (
+  target: LogTarget,
+  review: string | null,
+  watchedDate: string,
+  rating: number | null,
+  rewatch: boolean,
+): Promise<MutationState> => {
+  const { supabase, user } = await getUserContext();
+  if (!user) return { error: NOT_LOGGED_IN(`log a ${target.entity}`) };
+
+  const { error } = await supabase.from(target.table).insert({
+    user_id: user.id,
+    ...target.match,
+    review,
+    watched_date: watchedDate,
+    rating,
+    rewatch,
+  });
+  if (error) return { error: "Failed to save your log. Please try again." };
+
+  revalidatePath(target.revalidate);
+  return { success: true };
+};
+
+/**
+ * Saves the movie / season log form. A "Log again" form (`newWatch`) adds a
+ * watch with its rating; otherwise the form's log (or the latest) is updated.
+ * Both save the "I've watched this before" checkbox as `rewatch`.
+ */
+export const saveWatchForm = async (
+  target: LogTarget,
+  formData: FormData,
+  review: string | null,
+  watchedDate: string,
+): Promise<MutationState> => {
+  const rewatch = formData.get("rewatch") === "on";
+
+  if (formData.get("newWatch") !== "1") {
+    return saveLog(target, formData.get("logId"), review, watchedDate, { rewatch });
+  }
+
+  const rawRating = formData.get("rating");
+  let rating: number | null = null;
+  if (rawRating !== null && rawRating !== "") {
+    const parsed = ratingSchema.safeParse(rawRating);
+    if (!parsed.success) return { error: "Invalid rating." };
+    rating = parsed.data;
+  }
+
+  return addWatch(target, review, watchedDate, rating, rewatch);
 };
 
 /**

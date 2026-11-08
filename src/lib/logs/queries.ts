@@ -9,37 +9,36 @@ export type OwnLog = {
   watchedDate: string;
 };
 
+/** One watch of a movie or season: its own log row (migration 0021). */
+export type OwnWatch = OwnLog & { rewatch: boolean };
+
 /**
- * The signed-in user's latest watch of a movie or season (newest date, then
- * newest log; migration 0021 allows several), shaped for the log form's
- * `initialLog` prop. Null for guests or when nothing is logged.
+ * Every watch the signed-in user logged of a movie or season, latest first
+ * (newest date, then newest log). The first is the one the log card shows.
+ * Empty for guests or when nothing is logged.
  */
-export const fetchOwnLog = async (
+export const fetchOwnWatches = async (
   supabase: SupabaseServerClient,
   user: User | null,
   table: "movie_logs" | "season_logs",
   match: Record<string, number>,
-): Promise<OwnLog | null> => {
-  if (!user) return null;
+): Promise<OwnWatch[]> => {
+  if (!user) return [];
 
-  let query = supabase.from(table).select("id, rating, review, watched_date").eq("user_id", user.id);
-  for (const [column, value] of Object.entries(match)) {
-    query = query.eq(column, value);
-  }
-  const { data } = await query
+  const { data } = await supabase
+    .from(table)
+    .select("id, rating, review, watched_date, rewatch")
+    .match({ user_id: user.id, ...match })
     .order("watched_date", { ascending: false })
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .order("created_at", { ascending: false });
 
-  if (!data) return null;
-
-  return {
-    id: data.id,
-    rating: data.rating === null ? null : Number(data.rating),
-    review: data.review,
-    watchedDate: data.watched_date,
-  };
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    rating: row.rating === null ? null : Number(row.rating),
+    review: row.review,
+    watchedDate: row.watched_date,
+    rewatch: row.rewatch,
+  }));
 };
 
 /** The signed-in user's show log plus its completed/dropped status (migration 0017). */

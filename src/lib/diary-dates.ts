@@ -13,6 +13,15 @@ export const formatDayOfMonth = (isoDate: string) => isoDate.slice(8, 10);
 export const formatWeekday = (isoDate: string) =>
   atUtcMidnight(isoDate).toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" });
 
+/** "7 Nov 2026" */
+export const formatWatchDate = (isoDate: string) =>
+  atUtcMidnight(isoDate).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+
 export type MonthGroup<Entry> = { key: string; label: string; entries: Entry[] };
 
 /**

@@ -7,6 +7,7 @@ import {
   parseTmdbId,
   saveLog,
   saveRating,
+  saveWatchForm,
   toggleWatched,
   type LogTarget,
   type MutationState,
@@ -146,9 +147,9 @@ export const logSeason = async (
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
-  return saveLog(
+  return saveWatchForm(
     seasonTarget(parsed.data.tmdbShowId, parsed.data.seasonNumber),
-    formData.get("logId"),
+    formData,
     parsed.data.review ?? null,
     parsed.data.watchedDate,
   );

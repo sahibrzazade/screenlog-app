@@ -1,6 +1,14 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { getUserContext } from "@/lib/supabase/auth";
-import { deleteLog, parseLogId, saveLog, saveRating, toggleWatched, type LogTarget } from "@/lib/logs/mutations";
+import {
+  deleteLog,
+  parseLogId,
+  saveLog,
+  saveRating,
+  saveWatchForm,
+  toggleWatched,
+  type LogTarget,
+} from "@/lib/logs/mutations";
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/lib/supabase/auth", () => ({ getUserContext: vi.fn() }));
@@ -137,6 +145,57 @@ describe("saveLog", () => {
     expect(await saveLog(target, LOG_ID, null, "2026-11-01")).toEqual({
       error: "Failed to save your log. Please try again.",
     });
+  });
+});
+
+const form = (fields: Record<string, string>) => {
+  const formData = new FormData();
+  for (const [key, value] of Object.entries(fields)) formData.set(key, value);
+  return formData;
+};
+
+describe("saveWatchForm", () => {
+  it("adds a watch with its rating and rewatch mark from a Log again form", async () => {
+    const ops = useDb({ latestId: LATEST_ID });
+
+    await saveWatchForm(target, form({ newWatch: "1", rating: "3.5", rewatch: "on" }), "Again", "2026-11-08");
+
+    expect(writes(ops)).toEqual([
+      expect.objectContaining({
+        action: "insert",
+        values: {
+          user_id: "user-1",
+          tmdb_movie_id: 438631,
+          review: "Again",
+          watched_date: "2026-11-08",
+          rating: 3.5,
+          rewatch: true,
+        },
+      }),
+    ]);
+  });
+
+  it("updates the form's watch, saving the checkbox", async () => {
+    const ops = useDb();
+
+    await saveWatchForm(target, form({ logId: LOG_ID }), null, "2025-03-02");
+
+    expect(writes(ops)).toEqual([
+      expect.objectContaining({
+        action: "update",
+        values: { review: null, watched_date: "2025-03-02", rewatch: false },
+        eq: { id: LOG_ID },
+      }),
+    ]);
+  });
+
+  it("rejects an invalid rating on a new watch", async () => {
+    const ops = useDb();
+
+    expect(await saveWatchForm(target, form({ newWatch: "1", rating: "7" }), null, "2026-11-08")).toEqual({
+      error: "Invalid rating.",
+    });
+    expect(writes(ops)).toEqual([]);
   });
 });
 

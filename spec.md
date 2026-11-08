@@ -908,6 +908,10 @@ row per user and title, so logging again overwrites the earlier watch.
     watches. It expands into the list of watches (date, stars or "Watched",
     rewatch marker), newest first; choosing one opens the log modal for that
     watch, where it can be edited or deleted.
+  - With two or more watches the card has no "Delete" (it wouldn't say which
+    watch); each is deleted from its modal, and the confirmation names its
+    date. On movies and seasons the modal always shows "New watch" or the
+    edited watch's date ("Watched 7 Nov 2026") under the title.
 - **"Watched" button:** shows watched when any log exists. Unmarking works
   only when there is exactly one log with no rating or review (today's rule);
   otherwise watches are deleted from the modal.
