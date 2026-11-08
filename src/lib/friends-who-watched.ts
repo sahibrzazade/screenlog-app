@@ -18,8 +18,8 @@ type FriendLogRow = {
 };
 
 /**
- * People the viewer follows who logged this title (or season), newest
- * `watched_date` first. Empty for guests. A failed query also comes back empty,
+ * People the viewer follows who logged this title (or season), once each with
+ * their latest watch, newest `watched_date` first. Empty for guests. A failed query also comes back empty,
  * which hides the section instead of breaking the title page.
  */
 export const getFriendsWhoWatched = async (
@@ -57,8 +57,14 @@ export const getFriendsWhoWatched = async (
     logs.map((log) => log.user_id),
   );
 
+  // One tile per friend: rows are newest first, so the first row is their
+  // latest watch (a movie or season can be logged more than once).
+  const seen = new Set<string>();
+
   // Drop users without a username: there is no profile to link the tile to.
   return logs.flatMap((log) => {
+    if (seen.has(log.user_id)) return [];
+    seen.add(log.user_id);
     const profile = profileById.get(log.user_id);
     if (!profile?.username) return [];
     return [

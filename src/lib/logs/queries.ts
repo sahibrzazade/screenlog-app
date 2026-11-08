@@ -3,38 +3,42 @@ import type { SupabaseServerClient } from "@/lib/supabase/auth";
 import type { ShowStatus } from "@/lib/validation/show-log";
 
 export type OwnLog = {
+  id: string;
   rating: number | null;
   review: string | null;
   watchedDate: string;
 };
 
+/** One watch of a movie or season: its own log row (migration 0021). */
+export type OwnWatch = OwnLog & { rewatch: boolean };
+
 /**
- * The signed-in user's own movie/show log for a title, shaped for the log
- * form's `initialLog` prop. Null for guests or when nothing is logged.
+ * Every watch the signed-in user logged of a movie or season, latest first
+ * (newest date, then newest log). The first is the one the log card shows.
+ * Empty for guests or when nothing is logged.
  */
-export const fetchOwnLog = async (
+export const fetchOwnWatches = async (
   supabase: SupabaseServerClient,
   user: User | null,
-  table: "movie_logs" | "show_logs",
-  idColumn: "tmdb_movie_id" | "tmdb_show_id",
-  tmdbId: number,
-): Promise<OwnLog | null> => {
-  if (!user) return null;
+  table: "movie_logs" | "season_logs",
+  match: Record<string, number>,
+): Promise<OwnWatch[]> => {
+  if (!user) return [];
 
   const { data } = await supabase
     .from(table)
-    .select("rating, review, watched_date")
-    .eq("user_id", user.id)
-    .eq(idColumn, tmdbId)
-    .maybeSingle();
+    .select("id, rating, review, watched_date, rewatch")
+    .match({ user_id: user.id, ...match })
+    .order("watched_date", { ascending: false })
+    .order("created_at", { ascending: false });
 
-  if (!data) return null;
-
-  return {
-    rating: data.rating === null ? null : Number(data.rating),
-    review: data.review,
-    watchedDate: data.watched_date,
-  };
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    rating: row.rating === null ? null : Number(row.rating),
+    review: row.review,
+    watchedDate: row.watched_date,
+    rewatch: row.rewatch,
+  }));
 };
 
 /** The signed-in user's show log plus its completed/dropped status (migration 0017). */
@@ -47,7 +51,7 @@ export const fetchOwnShowLog = async (
 
   const { data } = await supabase
     .from("show_logs")
-    .select("rating, review, watched_date, status")
+    .select("id, rating, review, watched_date, status")
     .eq("user_id", user.id)
     .eq("tmdb_show_id", tmdbShowId)
     .maybeSingle();
@@ -55,6 +59,7 @@ export const fetchOwnShowLog = async (
   if (!data) return null;
 
   return {
+    id: data.id,
     rating: data.rating === null ? null : Number(data.rating),
     review: data.review,
     watchedDate: data.watched_date,

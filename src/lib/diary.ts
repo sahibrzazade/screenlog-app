@@ -27,6 +27,20 @@ export const sortDiaryEntries = (entries: DiaryEntry[]): DiaryEntry[] =>
       b.createdAt.localeCompare(a.createdAt),
   );
 
+/**
+ * Keeps one entry per title — the first one, so pass a list sorted newest
+ * first to keep each title's latest watch (a movie or season can be logged
+ * more than once, see migration 0021). `href` identifies the title.
+ */
+export const latestPerTitle = (entries: DiaryEntry[]): DiaryEntry[] => {
+  const seen = new Set<string>();
+  return entries.filter((entry) => {
+    if (seen.has(entry.href)) return false;
+    seen.add(entry.href);
+    return true;
+  });
+};
+
 type MovieTitle = { title: string; posterPath: string | null };
 type ShowTitle = {
   title: string;
@@ -71,6 +85,7 @@ const fetchShowTitles = (ids: number[]): Promise<Map<number, ShowTitle>> =>
     };
   });
 
+/** A user's logged movies and shows/seasons, one entry per title (its latest watch). */
 export const getDiaryData = async (
   supabase: SupabaseClient,
   userId: string,
@@ -164,7 +179,7 @@ export const getDiaryData = async (
   });
 
   return {
-    movies: sortDiaryEntries(movieEntries),
-    shows: sortDiaryEntries([...seasonEntries, ...showEntries]),
+    movies: latestPerTitle(sortDiaryEntries(movieEntries)),
+    shows: latestPerTitle(sortDiaryEntries([...seasonEntries, ...showEntries])),
   };
 };

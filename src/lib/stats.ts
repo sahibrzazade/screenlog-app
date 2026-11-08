@@ -13,6 +13,8 @@ export type StatsLog =
       seasonNumber: number;
       rating: number | null;
       watchedDate: string;
+      /** "I've watched this before" was ticked on this log. */
+      rewatch: boolean;
     }
   | {
       kind: "show";
@@ -79,21 +81,27 @@ const sum = (values: Iterable<number>) => {
 };
 
 /**
- * Films = movie logs; Shows = distinct shows with a season or show log;
- * Hours = movie runtimes + per show either every regular season (completed
- * show log in the period) or only the logged seasons — never a season twice.
+ * Films = distinct movies; Shows = distinct shows with a season or show log.
+ * Hours count every watch (a movie or season can be logged more than once,
+ * migration 0021): each movie log's runtime, plus per show either each
+ * logged season watch, or — with a completed show log in the period — every
+ * regular season once plus a season's rewatches on top. A completed show's
+ * first season log is taken as the watch the show log already covers unless
+ * it is marked as a rewatch, so a season's extra watches are
+ * max(logs − 1, logs marked rewatch).
  */
 export const computeTotals = (logs: StatsLog[], runtimes: Runtimes): StatsTotals => {
   let movieMinutes = 0;
   let showMinutes = 0;
-  let films = 0;
+  const movieIds = new Set<number>();
   const showIds = new Set<number>();
   const completedShows = new Set<number>();
-  const loggedSeasons = new Map<number, Set<number>>();
+  /** Show id → season number → how many times it was logged, and how many of those are marked rewatch. */
+  const seasonWatches = new Map<number, Map<number, { logs: number; rewatches: number }>>();
 
   for (const log of logs) {
     if (log.kind === "movie") {
-      films += 1;
+      movieIds.add(log.tmdbId);
       movieMinutes += runtimes.movies.get(log.tmdbId) ?? 0;
       continue;
     }
@@ -101,26 +109,29 @@ export const computeTotals = (logs: StatsLog[], runtimes: Runtimes): StatsTotals
     if (log.kind === "show") {
       if (log.status === "completed") completedShows.add(log.tmdbId);
     } else {
-      const seasons = loggedSeasons.get(log.tmdbId) ?? new Set<number>();
-      seasons.add(log.seasonNumber);
-      loggedSeasons.set(log.tmdbId, seasons);
+      const seasons = seasonWatches.get(log.tmdbId) ?? new Map();
+      const watches = seasons.get(log.seasonNumber) ?? { logs: 0, rewatches: 0 };
+      seasons.set(log.seasonNumber, {
+        logs: watches.logs + 1,
+        rewatches: watches.rewatches + (log.rewatch ? 1 : 0),
+      });
+      seasonWatches.set(log.tmdbId, seasons);
     }
   }
 
   for (const showId of showIds) {
     const seasonMinutes = runtimes.showSeasons.get(showId);
     if (!seasonMinutes) continue;
-    if (completedShows.has(showId)) {
-      showMinutes += sum(seasonMinutes.values());
-    } else {
-      for (const season of loggedSeasons.get(showId) ?? []) {
-        showMinutes += seasonMinutes.get(season) ?? 0;
-      }
+    const completed = completedShows.has(showId);
+    if (completed) showMinutes += sum(seasonMinutes.values());
+    for (const [season, { logs, rewatches }] of seasonWatches.get(showId) ?? []) {
+      const counted = completed ? Math.max(logs - 1, rewatches) : logs;
+      showMinutes += (seasonMinutes.get(season) ?? 0) * counted;
     }
   }
 
   return {
-    films,
+    films: movieIds.size,
     shows: showIds.size,
     hours: Math.floor((movieMinutes + showMinutes) / 60),
     movieMinutes,

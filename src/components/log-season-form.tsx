@@ -7,13 +7,15 @@ import {
   logSeason,
   setSeasonRating,
 } from "@/app/tv/[id]/actions";
+import type { OwnWatch } from "@/lib/logs/queries";
 
 type LogSeasonFormProps = {
   tmdbShowId: number;
   seasonNumber: number;
   seasonName: string;
   posterUrl: string | null;
-  initialLog: { rating: number | null; review: string | null; watchedDate: string } | null;
+  /** Every watch of the season, latest first; the card shows the first. */
+  watches: OwnWatch[];
 };
 
 export const LogSeasonForm = ({
@@ -21,7 +23,7 @@ export const LogSeasonForm = ({
   seasonNumber,
   seasonName,
   posterUrl,
-  initialLog,
+  watches,
 }: LogSeasonFormProps) => (
   <LogTitleForm
     tmdbId={tmdbShowId}
@@ -34,7 +36,8 @@ export const LogSeasonForm = ({
     posterUrl={posterUrl}
     watchedDateLabel="Date finished"
     submitLabel="Save"
-    initialLog={initialLog}
+    initialLog={watches[0] ?? null}
+    watches={watches}
     actions={{
       log: logSeason,
       deleteLog: deleteSeasonLog,

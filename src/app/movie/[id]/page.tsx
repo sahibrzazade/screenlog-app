@@ -15,7 +15,7 @@ import { FriendsWhoWatched } from "@/components/detail/friends-who-watched";
 import { getFriendsWhoWatched } from "@/lib/friends-who-watched";
 import { fetchReviews } from "@/lib/reviews";
 import { parseReviewSort } from "@/lib/review-sort";
-import { fetchOwnLog, isOnWatchlist } from "@/lib/logs/queries";
+import { fetchOwnWatches, isOnWatchlist } from "@/lib/logs/queries";
 import { backdropUrl, posterUrl } from "@/lib/tmdb/images";
 import type { TmdbMovieDetails } from "@/lib/tmdb/types";
 
@@ -47,13 +47,7 @@ const MoviePage = async ({ params, searchParams }: MoviePageProps) => {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const existingLog = await fetchOwnLog(
-    supabase,
-    user,
-    "movie_logs",
-    "tmdb_movie_id",
-    movieId,
-  );
+  const watches = await fetchOwnWatches(supabase, user, "movie_logs", { tmdb_movie_id: movieId });
 
   const reviews = await fetchReviews(
     supabase,
@@ -98,7 +92,7 @@ const MoviePage = async ({ params, searchParams }: MoviePageProps) => {
               tmdbMovieId={movieId}
               title={movie.title}
               posterUrl={poster}
-              initialLog={existingLog}
+              watches={watches}
             />
           ) : (
             <SignInPrompt />

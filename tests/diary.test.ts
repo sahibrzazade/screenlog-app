@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { getDiaryData, sortDiaryEntries, type DiaryEntry } from "@/lib/diary";
+import { getDiaryData, latestPerTitle, sortDiaryEntries, type DiaryEntry } from "@/lib/diary";
 
 vi.mock("@/lib/tmdb/client", () => ({
   tmdbFetch: vi.fn(async (path: string) =>
@@ -36,6 +36,38 @@ describe("getDiaryData links", () => {
 
     expect(shows.find((e) => e.id === "s")?.href).toBe("/tv/1396/season/2");
     expect(shows.find((e) => e.id === "w")?.href).toBe("/tv/1396");
+  });
+
+  it("lists a rewatched movie or season once, with its latest watch", async () => {
+    const { movies, shows } = await getDiaryData(
+      fakeSupabase({
+        movie_logs: [
+          { ...logRow, id: "m-first", tmdb_movie_id: 550, rating: 3, watched_date: "2025-03-02" },
+          { ...logRow, id: "m-latest", tmdb_movie_id: 550, rating: 5, watched_date: "2026-11-07" },
+        ],
+        season_logs: [
+          { ...logRow, id: "s-first", tmdb_show_id: 1396, season_number: 2, created_at: "2026-01-01T08:00:00Z" },
+          { ...logRow, id: "s-latest", tmdb_show_id: 1396, season_number: 2, created_at: "2026-01-01T09:00:00Z" },
+        ],
+      }),
+      "user",
+    );
+
+    expect(movies.map((e) => [e.id, e.rating])).toEqual([["m-latest", 5]]);
+    expect(shows.map((e) => e.id)).toEqual(["s-latest"]);
+  });
+});
+
+describe("latestPerTitle", () => {
+  it("keeps the first entry per title and different titles apart", () => {
+    const entries = [
+      entry({ id: "dune-2", href: "/movie/1" }),
+      entry({ id: "s1", href: "/tv/9/season/1" }),
+      entry({ id: "dune-1", href: "/movie/1" }),
+      entry({ id: "show", href: "/tv/9" }),
+    ];
+
+    expect(latestPerTitle(entries).map((e) => e.id)).toEqual(["dune-2", "s1", "show"]);
   });
 });
 

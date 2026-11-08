@@ -18,6 +18,8 @@ export type DiaryTimelineEntry = {
   createdAt: string;
   href: string;
   dropped: boolean;
+  /** Movies and seasons: "I've watched this before" was ticked. Always false for shows. */
+  rewatch: boolean;
 };
 
 /** Keyset cursor: the last entry of the previous page. */
@@ -33,6 +35,7 @@ type DiaryLog = DiaryCursor & {
   rating: number | null;
   hasReview: boolean;
   dropped: boolean;
+  rewatch: boolean;
 };
 
 const toMs = (timestamp: string) => new Date(timestamp).getTime();
@@ -79,6 +82,8 @@ type LogRow = {
   review: string | null;
   watched_date: string;
   created_at: string;
+  /** Selected from movie_logs and season_logs only. */
+  rewatch?: boolean;
 };
 
 /**
@@ -103,6 +108,7 @@ const toLog = (
   rating: row.rating === null ? null : Number(row.rating),
   hasReview: Boolean(row.review?.trim()),
   dropped,
+  rewatch: row.rewatch === true,
 });
 
 type MovieTitle = { title: string; posterPath: string | null; year: string | null };
@@ -168,9 +174,9 @@ export const getDiaryPage = async (
   };
 
   const [movieLogs, showLogs, seasonLogs] = await Promise.all([
-    fromLogs("movie_logs", "tmdb_movie_id"),
+    fromLogs("movie_logs", "tmdb_movie_id, rewatch"),
     fromLogs("show_logs", "tmdb_show_id, status"),
-    fromLogs("season_logs", "tmdb_show_id, season_number"),
+    fromLogs("season_logs", "tmdb_show_id, season_number, rewatch"),
   ]);
 
   const { logs, nextCursor } = mergeDiaryLogs(
@@ -207,6 +213,7 @@ export const getDiaryPage = async (
       watchedDate: log.watchedDate,
       createdAt: log.createdAt,
       dropped: log.dropped,
+      rewatch: log.rewatch,
     };
 
     if (log.mediaType === "movie") {

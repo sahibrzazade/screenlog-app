@@ -7,19 +7,21 @@ import {
   logMovie,
   setMovieRating,
 } from "@/app/movie/[id]/actions";
+import type { OwnWatch } from "@/lib/logs/queries";
 
 type LogMovieFormProps = {
   tmdbMovieId: number;
   title: string;
   posterUrl: string | null;
-  initialLog: { rating: number | null; review: string | null; watchedDate: string } | null;
+  /** Every watch of the movie, latest first; the card shows the first. */
+  watches: OwnWatch[];
 };
 
 export const LogMovieForm = ({
   tmdbMovieId,
   title,
   posterUrl,
-  initialLog,
+  watches,
 }: LogMovieFormProps) => (
   <LogTitleForm
     tmdbId={tmdbMovieId}
@@ -30,7 +32,8 @@ export const LogMovieForm = ({
     posterUrl={posterUrl}
     watchedDateLabel="Watched date"
     submitLabel="Save"
-    initialLog={initialLog}
+    initialLog={watches[0] ?? null}
+    watches={watches}
     actions={{
       log: logMovie,
       deleteLog: deleteMovieLog,

@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { MessageSquareText } from "lucide-react";
+import { MessageSquareText, RotateCw } from "lucide-react";
 import { RatingStars } from "@/components/rating-stars";
 import { DroppedBadge } from "@/components/dropped-badge";
 import { loadMoreDiary } from "@/app/diary/actions";
@@ -132,11 +132,23 @@ const DiaryTimelineRow = ({ entry, firstOfDay }: DiaryTimelineRowProps) => {
             ) : (
               <span className="text-xs text-muted-foreground">Watched</span>
             )}
-            {entry.hasReview && (
-              <>
-                <MessageSquareText className="size-4 text-muted-foreground" aria-hidden />
-                <span className="sr-only">Has review</span>
-              </>
+            {/* From sm the markers sit left of the stars so the stars line up at the right edge;
+                on mobile the row is left-aligned, so the stars come first to line up there. */}
+            {(entry.rewatch || entry.hasReview) && (
+              <span className="flex items-center gap-2 sm:order-first">
+                {entry.rewatch && (
+                  <>
+                    <RotateCw className="size-4 text-muted-foreground" aria-hidden />
+                    <span className="sr-only">Rewatch</span>
+                  </>
+                )}
+                {entry.hasReview && (
+                  <>
+                    <MessageSquareText className="size-4 text-muted-foreground" aria-hidden />
+                    <span className="sr-only">Has review</span>
+                  </>
+                )}
+              </span>
             )}
           </span>
         </span>
