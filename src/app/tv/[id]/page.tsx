@@ -58,6 +58,10 @@ const ShowPage = async ({ params, searchParams }: ShowPageProps) => {
         .select("season_number, rating, review, watched_date")
         .eq("user_id", user.id)
         .eq("tmdb_show_id", showId)
+        // Oldest first, so each season's latest watch is the one
+        // Object.fromEntries keeps (a season can be logged more than once).
+        .order("watched_date", { ascending: true })
+        .order("created_at", { ascending: true })
     : { data: null };
 
   const seasonLogsByNumber: Record<number, SeasonLogSummary> =

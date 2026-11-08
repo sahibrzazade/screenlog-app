@@ -100,6 +100,27 @@ describe("getFriendsWhoWatched", () => {
     ]);
   });
 
+  it("shows a friend who watched more than once once, with their latest watch", async () => {
+    const { client } = fakeClient({
+      follows,
+      profiles,
+      logs: {
+        data: [
+          { user_id: "bob", rating: 5 },
+          { user_id: "carol", rating: 4 },
+          { user_id: "bob", rating: 2 },
+        ],
+      },
+    });
+
+    const friends = await getFriendsWhoWatched(client, "movie_logs", { tmdb_movie_id: 550 }, "viewer");
+
+    expect(friends.map((friend) => [friend.username, friend.rating])).toEqual([
+      ["bob", 5],
+      ["carol", 4],
+    ]);
+  });
+
   it("drops users without a username", async () => {
     const { client } = fakeClient({
       follows,
