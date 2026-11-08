@@ -23,6 +23,7 @@ vi.mock("sonner", () => ({
 afterEach(cleanup);
 
 const log = (status: "completed" | "dropped") => ({
+  id: "0b6f2c1e-6a1d-4c2b-9d6e-2f4a8b1c3d5e",
   rating: null,
   review: null,
   watchedDate: "2026-01-01",

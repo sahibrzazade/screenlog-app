@@ -47,13 +47,7 @@ const MoviePage = async ({ params, searchParams }: MoviePageProps) => {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const existingLog = await fetchOwnLog(
-    supabase,
-    user,
-    "movie_logs",
-    "tmdb_movie_id",
-    movieId,
-  );
+  const existingLog = await fetchOwnLog(supabase, user, "movie_logs", { tmdb_movie_id: movieId });
 
   const reviews = await fetchReviews(
     supabase,

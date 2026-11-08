@@ -3,34 +3,39 @@ import type { SupabaseServerClient } from "@/lib/supabase/auth";
 import type { ShowStatus } from "@/lib/validation/show-log";
 
 export type OwnLog = {
+  id: string;
   rating: number | null;
   review: string | null;
   watchedDate: string;
 };
 
 /**
- * The signed-in user's own movie/show log for a title, shaped for the log
- * form's `initialLog` prop. Null for guests or when nothing is logged.
+ * The signed-in user's latest watch of a movie or season (newest date, then
+ * newest log; migration 0021 allows several), shaped for the log form's
+ * `initialLog` prop. Null for guests or when nothing is logged.
  */
 export const fetchOwnLog = async (
   supabase: SupabaseServerClient,
   user: User | null,
-  table: "movie_logs" | "show_logs",
-  idColumn: "tmdb_movie_id" | "tmdb_show_id",
-  tmdbId: number,
+  table: "movie_logs" | "season_logs",
+  match: Record<string, number>,
 ): Promise<OwnLog | null> => {
   if (!user) return null;
 
-  const { data } = await supabase
-    .from(table)
-    .select("rating, review, watched_date")
-    .eq("user_id", user.id)
-    .eq(idColumn, tmdbId)
+  let query = supabase.from(table).select("id, rating, review, watched_date").eq("user_id", user.id);
+  for (const [column, value] of Object.entries(match)) {
+    query = query.eq(column, value);
+  }
+  const { data } = await query
+    .order("watched_date", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(1)
     .maybeSingle();
 
   if (!data) return null;
 
   return {
+    id: data.id,
     rating: data.rating === null ? null : Number(data.rating),
     review: data.review,
     watchedDate: data.watched_date,
@@ -47,7 +52,7 @@ export const fetchOwnShowLog = async (
 
   const { data } = await supabase
     .from("show_logs")
-    .select("rating, review, watched_date, status")
+    .select("id, rating, review, watched_date, status")
     .eq("user_id", user.id)
     .eq("tmdb_show_id", tmdbShowId)
     .maybeSingle();
@@ -55,6 +60,7 @@ export const fetchOwnShowLog = async (
   if (!data) return null;
 
   return {
+    id: data.id,
     rating: data.rating === null ? null : Number(data.rating),
     review: data.review,
     watchedDate: data.watched_date,

@@ -46,7 +46,9 @@ type LogTitleFormProps = {
   droppable?: boolean;
   /** Label on the submit button when creating a log (e.g. "Save"). */
   submitLabel: string;
+  /** The watch the card shows (for movies and seasons, the latest); its id goes with every write. */
   initialLog: {
+    id: string;
     rating: number | null;
     review: string | null;
     watchedDate: string;
@@ -133,6 +135,7 @@ export const LogTitleForm = ({
     for (const [key, value] of Object.entries(extraFields ?? {})) {
       formData.set(key, String(value));
     }
+    if (initialLog) formData.set("logId", initialLog.id);
     return formData;
   };
 
@@ -360,6 +363,7 @@ export const LogTitleForm = ({
 
             <form key={formResetKey} id={formId} action={formAction} className="flex flex-col gap-4">
               <input type="hidden" name={idField} value={tmdbId} />
+              {initialLog && <input type="hidden" name="logId" value={initialLog.id} />}
               {Object.entries(extraFields ?? {}).map(([key, value]) => (
                 <input key={key} type="hidden" name={key} value={value} />
               ))}

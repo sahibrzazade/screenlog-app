@@ -10,6 +10,7 @@ import { ReviewsSection } from "@/components/reviews-section";
 import { FriendsWhoWatched } from "@/components/detail/friends-who-watched";
 import { getFriendsWhoWatched } from "@/lib/friends-who-watched";
 import { fetchReviews } from "@/lib/reviews";
+import { fetchOwnLog } from "@/lib/logs/queries";
 import { parseReviewSort } from "@/lib/review-sort";
 import { posterUrl } from "@/lib/tmdb/images";
 import type { TmdbSeasonDetails } from "@/lib/tmdb/types";
@@ -50,23 +51,10 @@ const SeasonPage = async ({ params, searchParams }: SeasonPageProps) => {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: existingLogRow } = user
-    ? await supabase
-        .from("season_logs")
-        .select("rating, review, watched_date")
-        .eq("user_id", user.id)
-        .eq("tmdb_show_id", showId)
-        .eq("season_number", seasonNumber)
-        .maybeSingle()
-    : { data: null };
-
-  const existingLog = existingLogRow
-    ? {
-        rating: existingLogRow.rating === null ? null : Number(existingLogRow.rating),
-        review: existingLogRow.review,
-        watchedDate: existingLogRow.watched_date,
-      }
-    : null;
+  const existingLog = await fetchOwnLog(supabase, user, "season_logs", {
+    tmdb_show_id: showId,
+    season_number: seasonNumber,
+  });
 
   const reviews = await fetchReviews(
     supabase,

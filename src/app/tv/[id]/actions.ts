@@ -32,7 +32,6 @@ export type DeleteSeasonLogFormState = MutationState;
 const showTarget = (tmdbShowId: number): LogTarget => ({
   table: "show_logs",
   match: { tmdb_show_id: tmdbShowId },
-  onConflict: "tmdb_show_id",
   revalidate: `/tv/${tmdbShowId}`,
   entity: "show",
 });
@@ -40,7 +39,6 @@ const showTarget = (tmdbShowId: number): LogTarget => ({
 const seasonTarget = (tmdbShowId: number, seasonNumber: number): LogTarget => ({
   table: "season_logs",
   match: { tmdb_show_id: tmdbShowId, season_number: seasonNumber },
-  onConflict: "tmdb_show_id,season_number",
   revalidate: `/tv/${tmdbShowId}`,
   entity: "season",
 });
@@ -68,6 +66,7 @@ export const logShow = async (
 
   return saveLog(
     showTarget(parsed.data.tmdbShowId),
+    formData.get("logId"),
     parsed.data.review ?? null,
     parsed.data.watchedDate,
     { status: parsed.data.status },
@@ -88,7 +87,7 @@ export const setShowRating = async (
     return { rating: prevState.rating, error: "Invalid rating." };
   }
 
-  return saveRating(showTarget(tmdbShowId), parsedRating.data, prevState.rating);
+  return saveRating(showTarget(tmdbShowId), formData.get("logId"), parsedRating.data, prevState.rating);
 };
 
 export const toggleShowWatched = async (
@@ -114,7 +113,7 @@ export const clearShowLogField = async (
   const field = formData.get("field");
   if (field !== "rating" && field !== "review") return { error: "Invalid field." };
 
-  return clearLogField(showTarget(tmdbShowId), field);
+  return clearLogField(showTarget(tmdbShowId), formData.get("logId"), field);
 };
 
 export const deleteShowLog = async (
@@ -124,7 +123,7 @@ export const deleteShowLog = async (
   const tmdbShowId = parseTmdbId(formData.get("tmdbShowId"));
   if (tmdbShowId === null) return { error: "Invalid show." };
 
-  return deleteLog(showTarget(tmdbShowId));
+  return deleteLog(showTarget(tmdbShowId), formData.get("logId"));
 };
 
 /* -------------------------------- seasons -------------------------------- */
@@ -149,6 +148,7 @@ export const logSeason = async (
 
   return saveLog(
     seasonTarget(parsed.data.tmdbShowId, parsed.data.seasonNumber),
+    formData.get("logId"),
     parsed.data.review ?? null,
     parsed.data.watchedDate,
   );
@@ -175,6 +175,7 @@ export const setSeasonRating = async (
 
   return saveRating(
     seasonTarget(tmdbShowId, seasonNumber),
+    formData.get("logId"),
     parsedRating.data,
     prevState.rating,
   );
@@ -211,7 +212,7 @@ export const clearSeasonLogField = async (
   const field = formData.get("field");
   if (field !== "rating" && field !== "review") return { error: "Invalid field." };
 
-  return clearLogField(seasonTarget(tmdbShowId, seasonNumber), field);
+  return clearLogField(seasonTarget(tmdbShowId, seasonNumber), formData.get("logId"), field);
 };
 
 export const deleteSeasonLog = async (
@@ -224,5 +225,5 @@ export const deleteSeasonLog = async (
   const seasonNumber = parseSeasonNumber(formData.get("seasonNumber"));
   if (seasonNumber === null) return { error: "Invalid season." };
 
-  return deleteLog(seasonTarget(tmdbShowId, seasonNumber));
+  return deleteLog(seasonTarget(tmdbShowId, seasonNumber), formData.get("logId"));
 };

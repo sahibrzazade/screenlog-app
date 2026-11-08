@@ -14,6 +14,7 @@ type LogShowFormProps = {
   title: string;
   posterUrl: string | null;
   initialLog: {
+    id: string;
     rating: number | null;
     review: string | null;
     watchedDate: string;

@@ -24,7 +24,6 @@ export type DeleteMovieLogFormState = MutationState;
 const movieTarget = (tmdbMovieId: number): LogTarget => ({
   table: "movie_logs",
   match: { tmdb_movie_id: tmdbMovieId },
-  onConflict: "tmdb_movie_id",
   revalidate: `/movie/${tmdbMovieId}`,
   entity: "movie",
 });
@@ -48,6 +47,7 @@ export const logMovie = async (
 
   return saveLog(
     movieTarget(parsed.data.tmdbMovieId),
+    formData.get("logId"),
     parsed.data.review ?? null,
     parsed.data.watchedDate,
   );
@@ -67,7 +67,7 @@ export const setMovieRating = async (
     return { rating: prevState.rating, error: "Invalid rating." };
   }
 
-  return saveRating(movieTarget(tmdbMovieId), parsedRating.data, prevState.rating);
+  return saveRating(movieTarget(tmdbMovieId), formData.get("logId"), parsedRating.data, prevState.rating);
 };
 
 export const toggleMovieWatched = async (
@@ -93,7 +93,7 @@ export const clearMovieLogField = async (
   const field = formData.get("field");
   if (field !== "rating" && field !== "review") return { error: "Invalid field." };
 
-  return clearLogField(movieTarget(tmdbMovieId), field);
+  return clearLogField(movieTarget(tmdbMovieId), formData.get("logId"), field);
 };
 
 export const deleteMovieLog = async (
@@ -103,5 +103,5 @@ export const deleteMovieLog = async (
   const tmdbMovieId = parseTmdbId(formData.get("tmdbMovieId"));
   if (tmdbMovieId === null) return { error: "Invalid movie." };
 
-  return deleteLog(movieTarget(tmdbMovieId));
+  return deleteLog(movieTarget(tmdbMovieId), formData.get("logId"));
 };

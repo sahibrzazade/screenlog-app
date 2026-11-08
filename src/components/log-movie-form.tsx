@@ -12,7 +12,7 @@ type LogMovieFormProps = {
   tmdbMovieId: number;
   title: string;
   posterUrl: string | null;
-  initialLog: { rating: number | null; review: string | null; watchedDate: string } | null;
+  initialLog: { id: string; rating: number | null; review: string | null; watchedDate: string } | null;
 };
 
 export const LogMovieForm = ({
