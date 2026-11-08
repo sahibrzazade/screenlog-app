@@ -420,19 +420,20 @@ export const LogTitleForm = ({
               />
             </button>
             {watchListOpen && (
-              <ul id={watchListId} className="flex flex-col">
+              // The card is only ~168px wide inside, so date and stars sit on two lines.
+              <ul id={watchListId} className="flex flex-col divide-y divide-border border-t border-border">
                 {watches.map((watch) => (
                   <li key={watch.id}>
                     <button
                       type="button"
                       onClick={() => openModal({ watchId: watch.id })}
-                      className="flex min-h-11 w-full cursor-pointer items-center justify-between gap-2 rounded-md px-1 text-left text-sm text-foreground transition-colors hover:bg-surface-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      className="flex min-h-11 w-full cursor-pointer flex-col items-start gap-1 rounded-md px-1 py-2 text-left transition-colors hover:bg-surface-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
-                      <span>
+                      <span className="text-xs text-muted-foreground">
                         <span className="sr-only">Edit watch of </span>
                         {formatWatchDate(watch.watchedDate)}
                       </span>
-                      <span className="flex shrink-0 items-center gap-2">
+                      <span className="flex items-center gap-2">
                         {watch.rating !== null ? (
                           <RatingStars value={watch.rating} readOnly small />
                         ) : (
