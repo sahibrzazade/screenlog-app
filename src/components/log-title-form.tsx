@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { startTransition, useActionState, useEffect, useId, useRef, useState } from "react";
-import { ChevronDown, RotateCcw, X } from "lucide-react";
+import { ChevronDown, RotateCw, X } from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { RatingStars } from "@/components/rating-stars";
@@ -388,7 +388,7 @@ export const LogTitleForm = ({
             onClick={() => openModal("new")}
             className="inline-flex cursor-pointer items-center justify-center gap-1.5 self-stretch rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-surface-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            <RotateCcw className="size-3.5" aria-hidden />
+            <RotateCw className="size-3.5" aria-hidden />
             Log again
           </button>
         )}
@@ -441,7 +441,7 @@ export const LogTitleForm = ({
                         )}
                         {watch.rewatch && (
                           <>
-                            <RotateCcw className="size-3.5 text-muted-foreground" aria-hidden />
+                            <RotateCw className="size-3.5 text-muted-foreground" aria-hidden />
                             <span className="sr-only">Rewatch</span>
                           </>
                         )}
