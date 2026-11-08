@@ -22,6 +22,7 @@ const entry = (id: string, watchedDate: string, overrides: Partial<DiaryTimeline
   createdAt: `${watchedDate}T12:00:00Z`,
   href: `/movie/${id}`,
   dropped: false,
+  rewatch: false,
   ...overrides,
 });
 
@@ -121,6 +122,19 @@ describe("DiaryTimeline", () => {
 
     expect(season).toHaveTextContent("Severance — Season 2");
     expect(season).toHaveTextContent("Season");
+  });
+
+  it("marks rewatches only", () => {
+    render(
+      <DiaryTimeline
+        initialEntries={[entry("again", "2026-11-07", { rewatch: true }), entry("first", "2025-03-02")]}
+        initialCursor={null}
+      />,
+    );
+
+    const [again, first] = screen.getAllByRole("link");
+    expect(again).toHaveTextContent("Rewatch");
+    expect(first).not.toHaveTextContent("Rewatch");
   });
 
   it("appends the next page, continuing a split month under one heading", async () => {

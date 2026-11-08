@@ -86,18 +86,18 @@ describe("getDiaryPage", () => {
   it("mixes the three tables into entries with links, type data and markers", async () => {
     const { entries, nextCursor } = await getDiaryPage(
       fakeSupabase({
-        movie_logs: [{ ...row("m", "2026-11-03"), tmdb_movie_id: 438631, rating: "4.5", review: "Great" }],
+        movie_logs: [{ ...row("m", "2026-11-03"), tmdb_movie_id: 438631, rating: "4.5", review: "Great", rewatch: true }],
         show_logs: [{ ...row("s", "2026-11-02"), tmdb_show_id: 95396, status: "dropped" }],
-        season_logs: [{ ...row("n", "2026-11-01"), tmdb_show_id: 95396, season_number: 2, review: "  " }],
+        season_logs: [{ ...row("n", "2026-11-01"), tmdb_show_id: 95396, season_number: 2, review: "  ", rewatch: false }],
       }),
       "user",
     );
 
     expect(nextCursor).toBeNull();
     expect(entries).toMatchObject([
-      { id: "m", mediaType: "movie", title: "Dune", year: "2021", rating: 4.5, hasReview: true, href: "/movie/438631", dropped: false },
-      { id: "s", mediaType: "show", title: "Severance", year: null, dropped: true, href: "/tv/95396" },
-      { id: "n", mediaType: "season", title: "Severance — Season 2", hasReview: false, href: "/tv/95396/season/2" },
+      { id: "m", mediaType: "movie", title: "Dune", year: "2021", rating: 4.5, hasReview: true, href: "/movie/438631", dropped: false, rewatch: true },
+      { id: "s", mediaType: "show", title: "Severance", year: null, dropped: true, href: "/tv/95396", rewatch: false },
+      { id: "n", mediaType: "season", title: "Severance — Season 2", hasReview: false, href: "/tv/95396/season/2", rewatch: false },
     ]);
   });
 
