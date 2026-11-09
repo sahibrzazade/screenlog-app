@@ -18,6 +18,11 @@ describe("isPublicRoute", () => {
     expect(isPublicRoute("/tv/1399")).toBe(true);
   });
 
+  it("treats actor pages as public", () => {
+    expect(isPublicRoute("/actor/287")).toBe(true);
+    expect(isPublicRoute("/actors-editor")).toBe(false);
+  });
+
   it("treats public profile routes as public", () => {
     expect(isPublicRoute("/user/example")).toBe(true);
     expect(isPublicRoute("/user/example/films")).toBe(true);
