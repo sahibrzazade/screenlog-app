@@ -337,9 +337,9 @@ describe("SearchPage", () => {
     expect(screen.getByText(/search for a movie or tv show/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Titles" })).toHaveAttribute("aria-pressed", "true");
 
-    fireEvent.click(screen.getByRole("button", { name: "Cast" }));
+    fireEvent.click(screen.getByRole("button", { name: "Actors" }));
     expect(screen.getByText(/search for an actor by name/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Cast" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Actors" })).toHaveAttribute("aria-pressed", "true");
 
     fireEvent.click(screen.getByRole("button", { name: "Members" }));
     expect(screen.getByText(/search for a user by username/i)).toBeInTheDocument();
@@ -387,7 +387,7 @@ describe("SearchPage", () => {
     });
   });
 
-  describe("Cast", () => {
+  describe("Actors", () => {
     const mockPeople = (results: unknown[]) =>
       vi.spyOn(global, "fetch").mockImplementation(
         async () => new Response(JSON.stringify({ page: 1, results }), { status: 200 }),
@@ -405,7 +405,7 @@ describe("SearchPage", () => {
       ]);
 
       render(<SearchPage />);
-      fireEvent.click(screen.getByRole("button", { name: "Cast" }));
+      fireEvent.click(screen.getByRole("button", { name: "Actors" }));
       fireEvent.change(screen.getByLabelText("Search"), { target: { value: "pitt" } });
 
       const link = await screen.findByRole("link", { name: /brad pitt/i });
@@ -422,39 +422,39 @@ describe("SearchPage", () => {
       ]);
 
       render(<SearchPage />);
-      fireEvent.click(screen.getByRole("button", { name: "Cast" }));
+      fireEvent.click(screen.getByRole("button", { name: "Actors" }));
       fireEvent.change(screen.getByLabelText("Search"), { target: { value: "some" } });
 
       expect(await screen.findByText("Some Actor")).toBeInTheDocument();
       expect(screen.queryByText("Some Director")).not.toBeInTheDocument();
     });
 
-    it("syncs mode=cast into the URL", async () => {
+    it("syncs mode=actors into the URL", async () => {
       mockPeople([]);
 
       render(<SearchPage />);
-      fireEvent.click(screen.getByRole("button", { name: "Cast" }));
+      fireEvent.click(screen.getByRole("button", { name: "Actors" }));
       fireEvent.change(screen.getByLabelText("Search"), { target: { value: "pitt" } });
 
       await waitFor(() =>
-        expect(replaceMock).toHaveBeenCalledWith("/search?q=pitt&mode=cast", { scroll: false }),
+        expect(replaceMock).toHaveBeenCalledWith("/search?q=pitt&mode=actors", { scroll: false }),
       );
     });
 
-    it("starts in Cast when the URL has mode=cast", () => {
+    it.each(["actors", "cast"])("starts in Actors when the URL has mode=%s", (mode) => {
       mockPeople([]);
-      window.history.replaceState(null, "", "/search?q=pitt&mode=cast");
+      window.history.replaceState(null, "", `/search?q=pitt&mode=${mode}`);
 
       render(<SearchPage />);
 
-      expect(screen.getByRole("button", { name: "Cast" })).toHaveAttribute("aria-pressed", "true");
+      expect(screen.getByRole("button", { name: "Actors" })).toHaveAttribute("aria-pressed", "true");
     });
 
     it("shows a no-actors message when nothing matches", async () => {
       mockPeople([]);
 
       render(<SearchPage />);
-      fireEvent.click(screen.getByRole("button", { name: "Cast" }));
+      fireEvent.click(screen.getByRole("button", { name: "Actors" }));
       fireEvent.change(screen.getByLabelText("Search"), { target: { value: "zzzz" } });
 
       expect(await screen.findByText(/no actors found/i)).toBeInTheDocument();
