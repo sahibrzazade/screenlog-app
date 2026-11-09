@@ -81,6 +81,22 @@ export type TmdbSeasonDetails = {
   episodes: TmdbEpisode[];
 };
 
+/** One result of `/search/person`. */
+export type TmdbPersonSearchResult = {
+  id: number;
+  name: string;
+  profile_path: string | null;
+  known_for_department?: string;
+  known_for?: { title?: string; name?: string }[];
+};
+
+export type TmdbPersonSearchResponse = {
+  page: number;
+  results: TmdbPersonSearchResult[];
+  total_pages: number;
+  total_results: number;
+};
+
 /** One acting credit from `/person/{id}?append_to_response=combined_credits`. */
 export type TmdbPersonCastCredit = {
   id: number;

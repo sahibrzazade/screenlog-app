@@ -47,7 +47,7 @@ export const ActivityFeed = ({ initialItems, initialCursor }: ActivityFeedProps)
     return (
       <p className="mt-4 text-sm text-muted-foreground">
         Nothing here yet.{" "}
-        <Link href="/search?mode=people" className="text-accent hover:text-accent-hover">
+        <Link href="/search?mode=members" className="text-accent hover:text-accent-hover">
           Find people to follow
         </Link>{" "}
         to see what they&apos;re watching.

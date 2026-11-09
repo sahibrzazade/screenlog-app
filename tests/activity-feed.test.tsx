@@ -164,11 +164,11 @@ describe("ActivityFeed", () => {
     });
   });
 
-  it("shows the empty state with a link to people search", () => {
+  it("shows the empty state with a link to member search", () => {
     render(<ActivityFeed initialItems={[]} initialCursor={null} />);
     expect(screen.getByRole("link", { name: "Find people to follow" })).toHaveAttribute(
       "href",
-      "/search?mode=people",
+      "/search?mode=members",
     );
   });
 
