@@ -10,7 +10,7 @@ const PUBLIC_ROUTE_EXACT = [
   "/search",
   "/discover",
 ];
-const PUBLIC_ROUTE_PREFIXES = ["/movie/", "/tv/", "/user/"];
+const PUBLIC_ROUTE_PREFIXES = ["/movie/", "/tv/", "/actor/", "/user/"];
 const CHOOSE_USERNAME_ROUTE = "/choose-username";
 
 export const isPublicRoute = (pathname: string): boolean =>
