@@ -4,22 +4,35 @@ import Image from "next/image";
 import Link from "next/link";
 import { Suspense, useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { User } from "lucide-react";
 import { SearchBar } from "@/components/search-bar";
 import { MediaCard, type MediaCardItem } from "@/components/media-card";
 import { createClient } from "@/lib/supabase/client";
+import { profileUrl } from "@/lib/tmdb/images";
 import { toMediaCardItem } from "@/lib/tmdb/to-media-card-item";
-import type { TmdbSearchResponse } from "@/lib/tmdb/types";
+import type { TmdbPersonSearchResponse, TmdbSearchResponse } from "@/lib/tmdb/types";
 
 type PersonResult = { id: string; username: string; avatarUrl: string | null };
+type ActorResult = { id: number; name: string; photo: string | null; knownFor: string[] };
+
+type SearchMode = "titles" | "cast" | "members";
+
+const MODES: { value: SearchMode; label: string }[] = [
+  { value: "titles", label: "Titles" },
+  { value: "cast", label: "Cast" },
+  { value: "members", label: "Members" },
+];
+
+/** `?mode=people` is the Members tab's old name; links to it keep working. */
+const parseMode = (value: string | null): SearchMode =>
+  value === "cast" ? "cast" : value === "members" || value === "people" ? "members" : "titles";
 
 const SearchPageContent = () => {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const [mode, setMode] = useState<"titles" | "people">(() =>
-    searchParams.get("mode") === "people" ? "people" : "titles",
-  );
+  const [mode, setMode] = useState<SearchMode>(() => parseMode(searchParams.get("mode")));
   const [query, setQuery] = useState(() => searchParams.get("q") ?? "");
   const [results, setResults] = useState<MediaCardItem[]>([]);
   const [searchedQuery, setSearchedQuery] = useState<string | null>(null);
@@ -28,6 +41,9 @@ const SearchPageContent = () => {
 
   const [personResults, setPersonResults] = useState<PersonResult[]>([]);
   const [searchedPeopleQuery, setSearchedPeopleQuery] = useState<string | null>(null);
+
+  const [actorResults, setActorResults] = useState<ActorResult[]>([]);
+  const [searchedActorQuery, setSearchedActorQuery] = useState<string | null>(null);
 
   const trimmedQuery = query.trim();
 
@@ -76,7 +92,7 @@ const SearchPageContent = () => {
     const timeout = setTimeout(async () => {
       const params = new URLSearchParams();
       params.set("q", trimmedQuery);
-      if (mode === "people") params.set("mode", "people");
+      if (mode !== "titles") params.set("mode", mode);
       router.replace(`${pathname}?${params.toString()}`, { scroll: false });
 
       if (mode === "titles") {
@@ -123,6 +139,35 @@ const SearchPageContent = () => {
             setSearchedQuery(trimmedQuery);
           }
         }
+      } else if (mode === "cast") {
+        try {
+          const response = await fetch(
+            `/api/tmdb/search?q=${encodeURIComponent(trimmedQuery)}&type=person`,
+            { signal: controller.signal },
+          );
+          const data: TmdbPersonSearchResponse = await response.json();
+
+          // Actor pages show acting credits only, so only actors are listed.
+          setActorResults(
+            (data.results ?? [])
+              .filter((person) => person.known_for_department === "Acting")
+              .map((person) => ({
+                id: person.id,
+                name: person.name,
+                photo: profileUrl(person.profile_path),
+                knownFor: (person.known_for ?? [])
+                  .map((title) => title.title ?? title.name)
+                  .filter((title): title is string => Boolean(title))
+                  .slice(0, 3),
+              })),
+          );
+          setSearchedActorQuery(trimmedQuery);
+        } catch (error) {
+          if ((error as Error).name !== "AbortError") {
+            setActorResults([]);
+            setSearchedActorQuery(trimmedQuery);
+          }
+        }
       } else {
         const supabase = createClient();
         const { data } = await supabase
@@ -157,33 +202,30 @@ const SearchPageContent = () => {
   const showNoPeopleResults = !showPrompt && !isPeoplePending && personResults.length === 0;
   const showPeopleResults = !showPrompt && !isPeoplePending && personResults.length > 0;
 
+  const isActorPending = !showPrompt && searchedActorQuery !== trimmedQuery;
+  const showNoActorResults = !showPrompt && !isActorPending && actorResults.length === 0;
+  const showActorResults = !showPrompt && !isActorPending && actorResults.length > 0;
+
   return (
     <main className="mx-auto max-w-5xl px-4 py-6">
       <h1 className="text-2xl font-semibold">Search</h1>
 
       <div className="mt-4 flex gap-1 rounded-md border border-border bg-surface p-1 w-fit">
-        <button
-          type="button"
-          onClick={() => setMode("titles")}
-          className={`cursor-pointer rounded px-3 py-1 text-sm transition-colors ${
-            mode === "titles"
-              ? "bg-accent text-accent-foreground"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          Titles
-        </button>
-        <button
-          type="button"
-          onClick={() => setMode("people")}
-          className={`cursor-pointer rounded px-3 py-1 text-sm transition-colors ${
-            mode === "people"
-              ? "bg-accent text-accent-foreground"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          People
-        </button>
+        {MODES.map(({ value, label }) => (
+          <button
+            key={value}
+            type="button"
+            aria-pressed={mode === value}
+            onClick={() => setMode(value)}
+            className={`cursor-pointer rounded px-3 py-1 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+              mode === value
+                ? "bg-accent text-accent-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
       <div className="mt-4 max-w-md">
@@ -193,7 +235,9 @@ const SearchPageContent = () => {
           placeholder={
             mode === "titles"
               ? "Search movies and TV shows..."
-              : "Search by username..."
+              : mode === "cast"
+                ? "Search actors by name..."
+                : "Search by username..."
           }
         />
       </div>
@@ -225,6 +269,48 @@ const SearchPageContent = () => {
                 />
               ))}
             </div>
+          )}
+        </>
+      ) : mode === "cast" ? (
+        <>
+          {showPrompt && (
+            <p className="mt-4 text-muted-foreground">
+              Search for an actor by name to get started.
+            </p>
+          )}
+          {isActorPending && <p className="mt-4 text-muted-foreground">Searching…</p>}
+          {showNoActorResults && (
+            <p className="mt-4 text-muted-foreground">
+              No actors found for &ldquo;{trimmedQuery}&rdquo;.
+            </p>
+          )}
+          {showActorResults && (
+            <ul className="mt-4 flex max-w-md flex-col gap-1">
+              {actorResults.map((actor) => (
+                <li key={actor.id}>
+                  <Link
+                    href={`/actor/${actor.id}`}
+                    className="flex items-center gap-3 rounded-md p-2 transition-colors hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <div className="relative flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface text-subtle-foreground">
+                      {actor.photo ? (
+                        <Image src={actor.photo} alt="" fill sizes="40px" className="object-cover" />
+                      ) : (
+                        <User className="size-5" aria-hidden />
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <span className="block truncate font-medium">{actor.name}</span>
+                      {actor.knownFor.length > 0 && (
+                        <span className="block truncate text-sm text-muted-foreground">
+                          {actor.knownFor.join(", ")}
+                        </span>
+                      )}
+                    </div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
           )}
         </>
       ) : (

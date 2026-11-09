@@ -38,6 +38,22 @@ describe("GET /api/tmdb/search", () => {
     expect(await response.json()).toEqual(mockResponse);
   });
 
+  it("searches TMDB people for type=person", async () => {
+    const fetchSpy = vi
+      .spyOn(global, "fetch")
+      .mockResolvedValue(new Response(JSON.stringify({ page: 1, results: [] }), { status: 200 }));
+
+    const { GET } = await import("@/app/api/tmdb/search/route");
+    const response = await GET(
+      new NextRequest("http://localhost/api/tmdb/search?q=pitt&type=person"),
+    );
+
+    expect(response.status).toBe(200);
+    const url = new URL(String(fetchSpy.mock.calls[0][0]));
+    expect(url.pathname).toBe("/3/search/person");
+    expect(url.searchParams.get("query")).toBe("pitt");
+  });
+
   it("returns 502 when TMDB request fails", async () => {
     vi.spyOn(global, "fetch").mockResolvedValue(new Response("", { status: 500 }));
 

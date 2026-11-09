@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 import { tmdbFetch } from "@/lib/tmdb/client";
-import type { TmdbSearchResponse } from "@/lib/tmdb/types";
+import type { TmdbPersonSearchResponse, TmdbSearchResponse } from "@/lib/tmdb/types";
 
 export const GET = async (request: NextRequest) => {
   const query = request.nextUrl.searchParams.get("q");
@@ -10,12 +10,14 @@ export const GET = async (request: NextRequest) => {
     return Response.json({ error: "Missing required query param: q" }, { status: 400 });
   }
 
-  if (type !== "movie" && type !== "tv") {
-    return Response.json({ error: "type must be 'movie' or 'tv'" }, { status: 400 });
+  if (type !== "movie" && type !== "tv" && type !== "person") {
+    return Response.json({ error: "type must be 'movie', 'tv' or 'person'" }, { status: 400 });
   }
 
   try {
-    const data = await tmdbFetch<TmdbSearchResponse>(`/search/${type}`, { query });
+    const data = await tmdbFetch<TmdbSearchResponse | TmdbPersonSearchResponse>(`/search/${type}`, {
+      query,
+    });
     return Response.json(data);
   } catch {
     return Response.json({ error: "Failed to fetch search results from TMDB" }, { status: 502 });

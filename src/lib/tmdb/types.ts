@@ -81,6 +81,47 @@ export type TmdbSeasonDetails = {
   episodes: TmdbEpisode[];
 };
 
+/** One result of `/search/person`. */
+export type TmdbPersonSearchResult = {
+  id: number;
+  name: string;
+  profile_path: string | null;
+  known_for_department?: string;
+  known_for?: { title?: string; name?: string }[];
+};
+
+export type TmdbPersonSearchResponse = {
+  page: number;
+  results: TmdbPersonSearchResult[];
+  total_pages: number;
+  total_results: number;
+};
+
+/** One acting credit from `/person/{id}?append_to_response=combined_credits`. */
+export type TmdbPersonCastCredit = {
+  id: number;
+  media_type: TmdbMediaType;
+  title?: string;
+  name?: string;
+  release_date?: string;
+  first_air_date?: string;
+  poster_path: string | null;
+  character: string | null;
+  vote_count: number;
+  genre_ids: number[];
+};
+
+export type TmdbPersonDetails = {
+  id: number;
+  name: string;
+  biography: string;
+  birthday: string | null;
+  deathday: string | null;
+  place_of_birth: string | null;
+  profile_path: string | null;
+  combined_credits: { cast: TmdbPersonCastCredit[] };
+};
+
 export type TmdbShowDetails = {
   id: number;
   name: string;
