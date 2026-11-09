@@ -993,7 +993,8 @@ Cast members on movie and show pages are names only today. Each one links
 to a person page that shows who they are and what they've acted in, and,
 for a signed-in user, which of those titles they've already watched.
 
-- **Route:** `/person/[id]`, the TMDB person id. A server component like the
+- **Route:** `/actor/[id]`, the TMDB person id (named for what the page
+  shows, acting credits; code keeps TMDB's "person"). A server component like the
   movie and show pages: one `tmdbFetch` of `/person/{id}` with
   `append_to_response: "combined_credits"`. An invalid id or a TMDB error
   renders `notFound()`. Public, guests included.
@@ -1029,7 +1030,7 @@ for a signed-in user, which of those titles they've already watched.
     people whose `known_for_department` is "Acting" are listed, since person
     pages show acting credits only. Each result is a row like the Members
     results: round photo (placeholder when none), name, and up to three of
-    their `known_for` titles; it links to `/person/[id]`.
+    their `known_for` titles; it links to `/actor/[id]`.
   - **Members** is today's "People" tab, renamed; it still searches
     usernames. `?mode=people` keeps opening it, so existing links work; the
     tab writes `?mode=members` from now on.
@@ -1051,7 +1052,7 @@ for a signed-in user, which of those titles they've already watched.
 
 #### Acceptance criteria
 
-- [ ] Clicking a cast member on a movie or show page opens `/person/[id]` for them.
+- [ ] Clicking a cast member on a movie or show page opens `/actor/[id]` for them.
 - [ ] The person page shows photo, name, birth (and death) details and a biography with "Read more", hiding any part TMDB doesn't have.
 - [ ] Known for shows the 8 most-voted acting credits, and is hidden for people with 8 or fewer credits.
 - [ ] The filmography lists every acting credit once, newest first with undated credits last, without talk or news show appearances, and each card links to its title.

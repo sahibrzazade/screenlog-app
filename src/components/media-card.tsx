@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Eye } from "lucide-react";
 import { WatchlistButton } from "@/components/watchlist-button";
 import { posterUrl } from "@/lib/tmdb/images";
 
@@ -15,6 +16,8 @@ type MediaCardProps = MediaCardItem & {
   showWatchlistButton?: boolean;
   initialInWatchlist?: boolean;
   onWatchlistToggle?: (inWatchlist: boolean) => void;
+  /** Shows a watched badge on the poster's top-left. */
+  watched?: boolean;
 };
 
 export const MediaCard = ({
@@ -26,6 +29,7 @@ export const MediaCard = ({
   showWatchlistButton = false,
   initialInWatchlist = false,
   onWatchlistToggle,
+  watched = false,
 }: MediaCardProps) => {
   const poster = posterUrl(posterPath);
 
@@ -48,6 +52,12 @@ export const MediaCard = ({
             <div className="flex h-full w-full items-center justify-center text-center text-xs text-subtle-foreground">
               No poster
             </div>
+          )}
+          {watched && (
+            <span className="absolute top-1.5 left-1.5 flex size-6 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-md shadow-black/40">
+              <Eye className="size-3.5" aria-hidden />
+              <span className="sr-only">Watched</span>
+            </span>
           )}
         </div>
         <p className="mt-2 truncate text-sm font-medium">{title}</p>
