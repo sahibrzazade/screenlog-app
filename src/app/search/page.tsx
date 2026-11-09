@@ -15,17 +15,21 @@ import type { TmdbPersonSearchResponse, TmdbSearchResponse } from "@/lib/tmdb/ty
 type PersonResult = { id: string; username: string; avatarUrl: string | null };
 type ActorResult = { id: number; name: string; photo: string | null; knownFor: string[] };
 
-type SearchMode = "titles" | "cast" | "members";
+type SearchMode = "titles" | "actors" | "members";
 
 const MODES: { value: SearchMode; label: string }[] = [
   { value: "titles", label: "Titles" },
-  { value: "cast", label: "Cast" },
+  { value: "actors", label: "Actors" },
   { value: "members", label: "Members" },
 ];
 
-/** `?mode=people` is the Members tab's old name; links to it keep working. */
+/** Old tab names keep working in links: `?mode=cast` (Actors) and `?mode=people` (Members). */
 const parseMode = (value: string | null): SearchMode =>
-  value === "cast" ? "cast" : value === "members" || value === "people" ? "members" : "titles";
+  value === "actors" || value === "cast"
+    ? "actors"
+    : value === "members" || value === "people"
+      ? "members"
+      : "titles";
 
 const SearchPageContent = () => {
   const router = useRouter();
@@ -139,7 +143,7 @@ const SearchPageContent = () => {
             setSearchedQuery(trimmedQuery);
           }
         }
-      } else if (mode === "cast") {
+      } else if (mode === "actors") {
         try {
           const response = await fetch(
             `/api/tmdb/search?q=${encodeURIComponent(trimmedQuery)}&type=person`,
@@ -235,7 +239,7 @@ const SearchPageContent = () => {
           placeholder={
             mode === "titles"
               ? "Search movies and TV shows..."
-              : mode === "cast"
+              : mode === "actors"
                 ? "Search actors by name..."
                 : "Search by username..."
           }
@@ -271,7 +275,7 @@ const SearchPageContent = () => {
             </div>
           )}
         </>
-      ) : mode === "cast" ? (
+      ) : mode === "actors" ? (
         <>
           {showPrompt && (
             <p className="mt-4 text-muted-foreground">

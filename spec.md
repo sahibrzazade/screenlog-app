@@ -1027,20 +1027,23 @@ for a signed-in user, which of those titles they've already watched.
 - **Cast list:** each cast member on movie and show pages becomes a link to
   their person page, with a visible focus ring. The row itself is unchanged
   (first 10, photo, name, character).
-- **Cast search:** `/search` gets three tabs: **Titles | Cast | Members**.
-  - **Cast** (`?mode=cast`) searches TMDB people through the existing
+- **Actor search:** `/search` gets three tabs: **Titles | Actors | Members**.
+  - **Actors** (`?mode=actors`) searches TMDB people through the existing
     `/api/tmdb/search` route, which now also accepts `type=person`. Only
     people whose `known_for_department` is "Acting" are listed, since person
     pages show acting credits only. Each result is a row like the Members
     results: round photo (placeholder when none), name, and up to three of
-    their `known_for` titles; it links to `/actor/[id]`.
+    their `known_for` titles; it links to `/actor/[id]`. The tab first
+    shipped as "Cast" (`?mode=cast`) and was renamed to match the `/actor/`
+    page; `?mode=cast` still opens it. Title pages keep their "Cast" section,
+    which is that title's cast.
   - **Members** is today's "People" tab, renamed; it still searches
     usernames. `?mode=people` keeps opening it, so existing links work; the
     tab writes `?mode=members` from now on.
   - Same debounce, URL syncing and prompt / "Searching…" / no-results states
     as the other tabs.
 - **Design:** the person header, the watched mark on `MediaCard`, the
-  "Known for" row and the Cast search results are designed with
+  "Known for" row and the actor search results are designed with
   ui-ux-pro-max, matching the title pages' and search page's layout and
   tokens, and approved by the user in their subtask.
 - **No data changes:** no migration, no new tables, no RLS changes.
@@ -1048,10 +1051,10 @@ for a signed-in user, which of those titles they've already watched.
   duplicate titles, sort order, Known for selection and its hiding rule), the
   watched-ids lookup, the cast list links, the search route's `type=person`
   validation, and the search tabs (mode from the URL, including the old
-  `?mode=people`). The person page itself is checked by hand.
+  `?mode=people` and `?mode=cast`). The person page itself is checked by hand.
 - **Out of scope:** crew/director pages and crew search, a "Full cast" view,
   filtering or sorting the filmography, following or favouriting people,
-  person links anywhere outside the cast list and Cast search.
+  person links anywhere outside the cast list and actor search.
 
 #### Acceptance criteria
 
@@ -1061,7 +1064,7 @@ for a signed-in user, which of those titles they've already watched.
 - [ ] The filmography lists every acting credit once, newest first with undated credits last, without talk or news show appearances, and each card links to its title.
 - [ ] A signed-in user sees watched marks on titles they've logged and their watched count, share and progress bar; a guest sees only the title count.
 - [ ] An unknown or invalid person id shows the not-found page.
-- [ ] The search page has Titles, Cast and Members tabs; Cast finds actors by name and each result opens their person page.
+- [ ] The search page has Titles, Actors and Members tabs; Actors finds actors by name and each result opens their person page; old `?mode=cast` links open Actors.
 - [ ] Members searches usernames as "People" did, and old `?mode=people` links open the Members tab.
 - [ ] Controls are keyboard reachable with visible focus and accessible names; everything fits 375px with no horizontal scroll.
 
