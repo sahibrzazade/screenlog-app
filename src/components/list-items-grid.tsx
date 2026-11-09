@@ -124,18 +124,22 @@ export const ListItemsGrid = ({ listId, items, editable, isFull = false }: ListI
   );
 
   const undoRemove = async (item: ListItem) => {
+    // Unlike a returned error, a lost connection throws.
     const result = await restoreListItem(listId, {
       tmdbId: item.id,
       mediaType: item.mediaType,
       position: item.position,
-    });
+    }).catch(() => ({ error: "Couldn't restore the title. Please try again." }));
     if (result.error) toast.error(result.error);
   };
 
   const remove = (item: ListItem) => {
     startTransition(async () => {
       applyOptimistically({ type: "remove", itemId: item.itemId });
-      const result = await removeListItem(listId, item.itemId);
+      // Unlike a returned error, a lost connection throws.
+      const result = await removeListItem(listId, item.itemId).catch(() => ({
+        error: "Couldn't remove the title. Please try again.",
+      }));
       if (result.error) {
         toast.error(result.error);
       } else {
