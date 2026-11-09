@@ -987,6 +987,80 @@ in line with it.
 - [ ] A lost connection while saving any of these, or while removing a list title or undoing a removal, shows an error toast instead of an error page.
 - [ ] Successful changes behave as today, including the success toasts.
 
+### Person pages
+
+Cast members on movie and show pages are names only today. Each one links
+to a person page that shows who they are and what they've acted in, and,
+for a signed-in user, which of those titles they've already watched.
+
+- **Route:** `/person/[id]`, the TMDB person id. A server component like the
+  movie and show pages: one `tmdbFetch` of `/person/{id}` with
+  `append_to_response: "combined_credits"`. An invalid id or a TMDB error
+  renders `notFound()`. Public, guests included.
+- **Header:** profile photo in the left column (where the poster sits on
+  title pages, placeholder when there is none), name, birth date and place,
+  death date when there is one. The biography is clamped to a few lines with
+  a "Read more" toggle; no biography, no section.
+- **Credits used:** acting credits only (`combined_credits.cast`). Crew
+  credits are not shown, and crew names (directors, creators) stay unlinked.
+  Excluded: TV credits with the Talk (10767) or News (10763) genre, so talk
+  show and news appearances don't flood the list. A title that appears more
+  than once (several characters, mostly TV) is one entry, its characters
+  joined with " / ".
+- **Known for:** a row of the person's 8 acting credits with the highest
+  TMDB `vote_count`, shown above the full filmography. Hidden when the person
+  has 8 or fewer credits, since the filmography already shows them all.
+- **Filmography:** every acting credit in a poster grid, newest first by
+  release / first air date; credits with no date go last. Each card is the
+  existing `MediaCard` (links to the title) with the character name under it.
+  No pagination: images are lazy-loaded by `next/image`.
+- **Watched marks (signed-in only):** cards the viewer has logged carry a
+  watched mark, and the filmography heading reads "You've watched X of Y".
+  A movie counts as watched with any `movie_logs` row; a show with a
+  `show_logs` row or any `season_logs` row. Looked up with three queries
+  filtered to the user and the page's TMDB ids, run in parallel. Guests see
+  no marks and no counter.
+- **Cast list:** each cast member on movie and show pages becomes a link to
+  their person page, with a visible focus ring. The row itself is unchanged
+  (first 10, photo, name, character).
+- **Cast search:** `/search` gets three tabs: **Titles | Cast | Members**.
+  - **Cast** (`?mode=cast`) searches TMDB people through the existing
+    `/api/tmdb/search` route, which now also accepts `type=person`. Only
+    people whose `known_for_department` is "Acting" are listed, since person
+    pages show acting credits only. Each result is a row like the Members
+    results: round photo (placeholder when none), name, and up to three of
+    their `known_for` titles; it links to `/person/[id]`.
+  - **Members** is today's "People" tab, renamed; it still searches
+    usernames. `?mode=people` keeps opening it, so existing links work; the
+    tab writes `?mode=members` from now on.
+  - Same debounce, URL syncing and prompt / "Searching…" / no-results states
+    as the other tabs.
+- **Design:** the person header, the watched mark on `MediaCard`, the
+  "Known for" row and the Cast search results are designed with
+  ui-ux-pro-max, matching the title pages' and search page's layout and
+  tokens, and approved by the user in their subtask.
+- **No data changes:** no migration, no new tables, no RLS changes.
+- **Testing:** unit tests for the credit shaping (exclusions, merging
+  duplicate titles, sort order, Known for selection and its hiding rule), the
+  watched-ids lookup, the cast list links, the search route's `type=person`
+  validation, and the search tabs (mode from the URL, including the old
+  `?mode=people`). The person page itself is checked by hand.
+- **Out of scope:** crew/director pages and crew search, a "Full cast" view,
+  filtering or sorting the filmography, following or favouriting people,
+  person links anywhere outside the cast list and Cast search.
+
+#### Acceptance criteria
+
+- [ ] Clicking a cast member on a movie or show page opens `/person/[id]` for them.
+- [ ] The person page shows photo, name, birth (and death) details and a biography with "Read more", hiding any part TMDB doesn't have.
+- [ ] Known for shows the 8 most-voted acting credits, and is hidden for people with 8 or fewer credits.
+- [ ] The filmography lists every acting credit once, newest first with undated credits last, without talk or news show appearances, and each card links to its title.
+- [ ] A signed-in user sees watched marks on titles they've logged and "You've watched X of Y"; a guest sees neither.
+- [ ] An unknown or invalid person id shows the not-found page.
+- [ ] The search page has Titles, Cast and Members tabs; Cast finds actors by name and each result opens their person page.
+- [ ] Members searches usernames as "People" did, and old `?mode=people` links open the Members tab.
+- [ ] Controls are keyboard reachable with visible focus and accessible names; everything fits 375px with no horizontal scroll.
+
 ## Open Questions
 
 - Should a show status (`watching` / `dropped` / `completed`) be part of MVP, or should it be inferred purely from season logs? → To be resolved in the Plan phase.
