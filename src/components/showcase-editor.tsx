@@ -1,7 +1,6 @@
 "use client";
 
-import { startTransition, useActionState, useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
+import { startTransition, useEffect, useOptimistic, useRef, useState } from "react";
 import {
   DndContext,
   closestCenter,
@@ -22,7 +21,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { EmptySlot, PosterTile } from "@/components/poster-tile";
 import { SearchPickerPanel } from "@/components/search-picker-panel";
 import type { MediaCardItem } from "@/components/media-card";
-import type { UpdateShowcaseState } from "@/app/settings/actions";
+import { saveShowcase, type ShowcaseAction } from "@/lib/save-showcase";
 
 const SHOWCASE_LIMIT = 4;
 
@@ -54,18 +53,18 @@ const SortableThumb = ({ item, onRemove }: SortableThumbProps) => {
 type ShowcaseEditorProps = {
   mediaType: "movie" | "tv";
   label: string;
+  /** The saved titles, in order; revalidated after each successful save. */
   initialItems: MediaCardItem[];
-  action: (
-    state: UpdateShowcaseState,
-    formData: FormData,
-  ) => Promise<UpdateShowcaseState>;
+  action: ShowcaseAction;
 };
 
 /**
  * Editable top-4 showcase: always renders 4 cells — filled ones are
  * drag-to-reorder posters (mouse/touch/keyboard, via dnd-kit), empty ones are
  * "+" placeholders that open a closable search panel. Every change persists
- * immediately (matches the rest of the app's save-on-change forms).
+ * immediately (matches the rest of the app's save-on-change forms) and shows
+ * optimistically: if saving fails, the transition ending puts the saved
+ * titles back.
  */
 export const ShowcaseEditor = ({
   mediaType,
@@ -73,17 +72,9 @@ export const ShowcaseEditor = ({
   initialItems,
   action,
 }: ShowcaseEditorProps) => {
-  const [items, setItems] = useState(initialItems);
+  const [items, setOptimisticItems] = useOptimistic(initialItems);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
-  const [state, formAction] = useActionState<UpdateShowcaseState, FormData>(
-    action,
-    undefined,
-  );
   const pickerRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (state && "success" in state) toast.success(`${label} updated`);
-  }, [state, label]);
 
   // Focus the search input once it actually mounts (opening is what renders it).
   useEffect(() => {
@@ -96,10 +87,12 @@ export const ShowcaseEditor = ({
   );
 
   const persist = (next: MediaCardItem[]) => {
-    setItems(next);
     const formData = new FormData();
     formData.set("ids", JSON.stringify(next.map((item) => item.id)));
-    startTransition(() => formAction(formData));
+    startTransition(async () => {
+      setOptimisticItems(next);
+      await saveShowcase(action, formData, `${label} updated`);
+    });
   };
 
   const handleSelect = (item: MediaCardItem) => {
@@ -153,12 +146,6 @@ export const ShowcaseEditor = ({
           />
         ))}
       </div>
-
-      {state && "error" in state && (
-        <p role="alert" className="text-sm text-destructive">
-          {state.error}
-        </p>
-      )}
 
       {isPickerOpen && emptySlots > 0 && (
         <SearchPickerPanel
