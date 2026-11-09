@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom/vitest";
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, screen, cleanup, fireEvent } from "@testing-library/react";
-import { Filmography, KnownForRow } from "@/components/person/person-credits";
+import { Filmography, KnownForRow, watchedShare } from "@/components/person/person-credits";
 import { PersonBio } from "@/components/person/person-bio";
 import type { PersonCreditItem } from "@/lib/tmdb/person-credits";
 
@@ -20,10 +20,14 @@ const credits: PersonCreditItem[] = [
 ];
 
 describe("Filmography", () => {
-  it("shows the watched count and marks watched titles for a signed-in viewer", () => {
+  it("shows the watched share and marks watched titles for a signed-in viewer", () => {
     render(<Filmography credits={credits} watchedKeys={new Set(["movie-550", "tv-1396"])} />);
 
-    expect(screen.getByText(/You’ve watched/)).toHaveTextContent("You’ve watched 2 of 3");
+    expect(screen.getByRole("heading", { name: "Filmography 3" })).toBeInTheDocument();
+    expect(screen.getByText(/watched ·/)).toHaveTextContent("2 / 3 watched · 67%");
+    const progress = screen.getByRole("progressbar", { name: "Watched 2 of 3 titles" });
+    expect(progress).toHaveAttribute("aria-valuenow", "2");
+    expect(progress).toHaveAttribute("aria-valuemax", "3");
     expect(screen.getAllByText("Watched")).toHaveLength(2);
     expect(screen.getByRole("link", { name: /Fight Club/ })).toHaveAccessibleName(expect.stringContaining("Watched"));
     expect(screen.getByRole("link", { name: /Same Id Show/ })).not.toHaveAccessibleName(
@@ -31,12 +35,19 @@ describe("Filmography", () => {
     );
   });
 
-  it("shows a title count and no marks for guests", () => {
+  it("shows only the title count, no progress or marks, for guests", () => {
     render(<Filmography credits={credits} watchedKeys={null} />);
 
-    expect(screen.queryByText(/You’ve watched/)).not.toBeInTheDocument();
-    expect(screen.getByText(/titles/)).toHaveTextContent("3 titles");
+    expect(screen.getByRole("heading", { name: "Filmography 3" })).toBeInTheDocument();
+    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+    expect(screen.queryByText(/watched ·/)).not.toBeInTheDocument();
     expect(screen.queryByText("Watched")).not.toBeInTheDocument();
+  });
+
+  it("still shows the counts and an empty bar when nothing is watched", () => {
+    render(<Filmography credits={credits} watchedKeys={new Set()} />);
+    expect(screen.getByText(/watched ·/)).toHaveTextContent("0 / 3 watched · 0%");
+    expect(screen.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "0");
   });
 
   it("shows each character under its card and links cards to their titles", () => {
@@ -50,7 +61,23 @@ describe("Filmography", () => {
   it("says so when there are no acting credits", () => {
     render(<Filmography credits={[]} watchedKeys={new Set()} />);
     expect(screen.getByText("No acting credits yet.")).toBeInTheDocument();
-    expect(screen.queryByText(/You’ve watched/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+  });
+});
+
+describe("watchedShare", () => {
+  it("rounds to a whole percent", () => {
+    expect(watchedShare(6, 138)).toEqual({ label: "4%", barWidth: (6 / 138) * 100 });
+    expect(watchedShare(3, 3)).toEqual({ label: "100%", barWidth: 100 });
+  });
+
+  it("says <1% and keeps a 1% bar for a tiny share", () => {
+    expect(watchedShare(1, 150)).toEqual({ label: "<1%", barWidth: 1 });
+  });
+
+  it("is 0% with an empty bar when nothing is watched", () => {
+    expect(watchedShare(0, 138)).toEqual({ label: "0%", barWidth: 0 });
+    expect(watchedShare(0, 0)).toEqual({ label: "0%", barWidth: 0 });
   });
 });
 

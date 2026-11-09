@@ -1016,7 +1016,10 @@ for a signed-in user, which of those titles they've already watched.
   existing `MediaCard` (links to the title) with the character name under it.
   No pagination: images are lazy-loaded by `next/image`.
 - **Watched marks (signed-in only):** cards the viewer has logged carry a
-  watched mark, and the filmography heading reads "You've watched X of Y".
+  watched mark, and the filmography heading shows "6 / 138 watched · 4%"
+  over a thin accent progress bar (a `progressbar` named "Watched 6 of 138
+  titles"; "<1%" for a tiny share). Everyone sees the title count next to the
+  "Filmography" heading.
   A movie counts as watched with any `movie_logs` row; a show with a
   `show_logs` row or any `season_logs` row. Looked up with three queries
   filtered to the user and the page's TMDB ids, run in parallel. Guests see
@@ -1056,7 +1059,7 @@ for a signed-in user, which of those titles they've already watched.
 - [ ] The person page shows photo, name, birth (and death) details and a biography with "Read more", hiding any part TMDB doesn't have.
 - [ ] Known for shows the 8 most-voted acting credits, and is hidden for people with 8 or fewer credits.
 - [ ] The filmography lists every acting credit once, newest first with undated credits last, without talk or news show appearances, and each card links to its title.
-- [ ] A signed-in user sees watched marks on titles they've logged and "You've watched X of Y"; a guest sees neither.
+- [ ] A signed-in user sees watched marks on titles they've logged and their watched count, share and progress bar; a guest sees only the title count.
 - [ ] An unknown or invalid person id shows the not-found page.
 - [ ] The search page has Titles, Cast and Members tabs; Cast finds actors by name and each result opens their person page.
 - [ ] Members searches usernames as "People" did, and old `?mode=people` links open the Members tab.
