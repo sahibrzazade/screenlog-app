@@ -949,6 +949,44 @@ row per user and title, so logging again overwrites the earlier watch.
 - [ ] Logging a title for the first time, and show logs, work as before.
 - [ ] Controls are keyboard reachable with visible focus and accessible names; everything fits 375px with no horizontal scroll.
 
+### Showcase save recovery
+
+The `/settings` showcase editors apply a change on screen before it is saved
+and never take it back. When saving fails, the screen shows an order or a
+title that isn't stored; when the connection is lost, the thrown error isn't
+caught at all. List reordering already handles both (see
+[Custom lists](#custom-lists)); this brings the other save-on-change controls
+in line with it.
+
+- **Top 4 movies / Top 4 shows** (`ShowcaseEditor`): adding, removing and
+  reordering are optimistic (`useOptimistic` over the saved items, as in
+  `ListItemsGrid`). If the save returns an error or throws, the editor goes
+  back to the saved items and an error toast is shown. On success the page's
+  revalidated items take over, and the "… updated" toast stays.
+- **Currently watching** (`NowWatchingPicker`): the same for picking,
+  changing and clearing the show.
+- **List page** (`ListItemsGrid`): removing a title (✕) and the toast's Undo
+  also catch a lost connection and show an error toast, like reordering and
+  adding already do.
+- **Messages:** a returned error keeps its text ("Failed to save. Please try
+  again."); a lost connection shows "Couldn't save your changes. Please try
+  again." Errors are toasts, replacing the editors' inline error line, to
+  match their success toasts and the list page.
+- **No data changes:** no migration, no server action changes.
+- **Testing:** unit tests cover a returned error (the screen goes back, the
+  toast shows). A thrown action isn't unit tested — in jsdom the rejection
+  resurfaces in testing-library's cleanup — so a lost connection is checked by
+  hand.
+- **Out of scope:** retrying automatically, saving several changes as one,
+  other forms on `/settings`.
+
+#### Acceptance criteria
+
+- [ ] When saving a Top 4 change fails, the editor shows the saved titles in the saved order again, with an error toast.
+- [ ] When saving the Currently watching show fails, the picker shows the saved show again, with an error toast.
+- [ ] A lost connection while saving any of these, or while removing a list title or undoing a removal, shows an error toast instead of an error page.
+- [ ] Successful changes behave as today, including the success toasts.
+
 ## Open Questions
 
 - Should a show status (`watching` / `dropped` / `completed`) be part of MVP, or should it be inferred purely from season logs? → To be resolved in the Plan phase.
