@@ -96,18 +96,52 @@ const ShowPage = async ({ params, searchParams }: ShowPageProps) => {
   const similar = show.recommendations.results.slice(0, 12);
   const poster = posterUrl(show.poster_path);
 
+  // Rendered beside the poster on phones and atop the main column from `sm` up.
+  const header = (
+    <>
+      <h1 className="text-xl font-semibold text-balance sm:text-2xl">{show.name}</h1>
+      {show.tagline && (
+        <p className="mt-1 max-w-2xl text-sm text-muted-foreground italic">
+          {show.tagline}
+        </p>
+      )}
+      <p className="mt-2 flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
+        <span>
+          {show.first_air_date?.slice(0, 4)}
+          {show.number_of_seasons
+            ? ` · ${show.number_of_seasons} season${show.number_of_seasons === 1 ? "" : "s"}`
+            : ""}
+        </span>
+        <TmdbRating
+          voteAverage={show.vote_average}
+          voteCount={show.vote_count}
+        />
+      </p>
+      {creators && (
+        <p className="mt-2 text-sm text-muted-foreground">
+          Created by <span className="text-foreground">{creators}</span>
+        </p>
+      )}
+    </>
+  );
+
   return (
     <main className="mx-auto max-w-5xl px-4 py-6">
       <DetailBackdrop url={backdropUrl(show.backdrop_path)} />
       <div className="flex flex-col gap-4 sm:flex-row sm:gap-6">
-        <div className="flex w-48 shrink-0 flex-col gap-4 self-center sm:sticky sm:top-20 sm:self-start">
-          <DetailPoster
-            url={poster}
-            alt={show.name}
-            watchlist={
-              user ? { tmdbId: showId, mediaType: "tv", inWatchlist } : undefined
-            }
-          />
+        <div className="flex flex-col gap-4 sm:sticky sm:top-20 sm:w-48 sm:shrink-0 sm:self-start">
+          <div className="flex items-start gap-4">
+            <div className="w-32 shrink-0 sm:w-full">
+              <DetailPoster
+                url={poster}
+                alt={show.name}
+                watchlist={
+                  user ? { tmdbId: showId, mediaType: "tv", inWatchlist } : undefined
+                }
+              />
+            </div>
+            <div className="min-w-0 flex-1 sm:hidden">{header}</div>
+          </div>
           {user ? (
             <LogShowForm
               tmdbShowId={showId}
@@ -124,30 +158,8 @@ const ShowPage = async ({ params, searchParams }: ShowPageProps) => {
           <GenreBadges genres={show.genres} />
         </div>
         <div className="min-w-0 flex-1">
-          <h1 className="text-2xl font-semibold">{show.name}</h1>
-          {show.tagline && (
-            <p className="mt-1 max-w-2xl text-sm text-muted-foreground italic">
-              {show.tagline}
-            </p>
-          )}
-          <p className="mt-2 flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
-            <span>
-              {show.first_air_date?.slice(0, 4)}
-              {show.number_of_seasons
-                ? ` · ${show.number_of_seasons} season${show.number_of_seasons === 1 ? "" : "s"}`
-                : ""}
-            </span>
-            <TmdbRating
-              voteAverage={show.vote_average}
-              voteCount={show.vote_count}
-            />
-          </p>
-          {creators && (
-            <p className="mt-2 text-sm text-muted-foreground">
-              Created by <span className="text-foreground">{creators}</span>
-            </p>
-          )}
-          <p className="mt-3 max-w-2xl">{show.overview}</p>
+          <div className="hidden sm:block">{header}</div>
+          <p className="max-w-2xl sm:mt-3">{show.overview}</p>
 
           <CastList cast={cast} />
 

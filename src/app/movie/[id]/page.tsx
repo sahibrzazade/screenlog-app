@@ -73,20 +73,52 @@ const MoviePage = async ({ params, searchParams }: MoviePageProps) => {
   const similar = movie.recommendations.results.slice(0, 12);
   const poster = posterUrl(movie.poster_path);
 
+  // Rendered beside the poster on phones and atop the main column from `sm` up.
+  const header = (
+    <>
+      <h1 className="text-xl font-semibold text-balance sm:text-2xl">{movie.title}</h1>
+      {movie.tagline && (
+        <p className="mt-1 max-w-2xl text-sm text-muted-foreground italic">
+          {movie.tagline}
+        </p>
+      )}
+      <p className="mt-2 flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
+        <span>
+          {movie.release_date?.slice(0, 4)}
+          {movie.runtime ? ` · ${movie.runtime} min` : ""}
+        </span>
+        <TmdbRating
+          voteAverage={movie.vote_average}
+          voteCount={movie.vote_count}
+        />
+      </p>
+      {directors && (
+        <p className="mt-2 text-sm text-muted-foreground">
+          Directed by <span className="text-foreground">{directors}</span>
+        </p>
+      )}
+    </>
+  );
+
   return (
     <main className="mx-auto max-w-5xl px-4 py-6">
       <DetailBackdrop url={backdropUrl(movie.backdrop_path)} />
       <div className="flex flex-col gap-4 sm:flex-row sm:gap-6">
-        <div className="flex w-48 shrink-0 flex-col gap-4 self-center sm:sticky sm:top-20 sm:self-start">
-          <DetailPoster
-            url={poster}
-            alt={movie.title}
-            watchlist={
-              user
-                ? { tmdbId: movieId, mediaType: "movie", inWatchlist }
-                : undefined
-            }
-          />
+        <div className="flex flex-col gap-4 sm:sticky sm:top-20 sm:w-48 sm:shrink-0 sm:self-start">
+          <div className="flex items-start gap-4">
+            <div className="w-32 shrink-0 sm:w-full">
+              <DetailPoster
+                url={poster}
+                alt={movie.title}
+                watchlist={
+                  user
+                    ? { tmdbId: movieId, mediaType: "movie", inWatchlist }
+                    : undefined
+                }
+              />
+            </div>
+            <div className="min-w-0 flex-1 sm:hidden">{header}</div>
+          </div>
           {user ? (
             <LogMovieForm
               tmdbMovieId={movieId}
@@ -103,28 +135,8 @@ const MoviePage = async ({ params, searchParams }: MoviePageProps) => {
           <GenreBadges genres={movie.genres} />
         </div>
         <div className="min-w-0 flex-1">
-          <h1 className="text-2xl font-semibold">{movie.title}</h1>
-          {movie.tagline && (
-            <p className="mt-1 max-w-2xl text-sm text-muted-foreground italic">
-              {movie.tagline}
-            </p>
-          )}
-          <p className="mt-2 flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
-            <span>
-              {movie.release_date?.slice(0, 4)}
-              {movie.runtime ? ` · ${movie.runtime} min` : ""}
-            </span>
-            <TmdbRating
-              voteAverage={movie.vote_average}
-              voteCount={movie.vote_count}
-            />
-          </p>
-          {directors && (
-            <p className="mt-2 text-sm text-muted-foreground">
-              Directed by <span className="text-foreground">{directors}</span>
-            </p>
-          )}
-          <p className="mt-3 max-w-2xl">{movie.overview}</p>
+          <div className="hidden sm:block">{header}</div>
+          <p className="max-w-2xl sm:mt-3">{movie.overview}</p>
 
           <CastList cast={cast} />
 
