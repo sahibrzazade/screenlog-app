@@ -50,8 +50,8 @@ const PersonPage = async ({ params }: PersonPageProps) => {
   return (
     <main className="mx-auto max-w-5xl px-4 py-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:gap-6">
-        <div className="w-48 shrink-0 self-center sm:sticky sm:top-20 sm:self-start">
-          <div className="overflow-hidden rounded-md bg-surface">
+        <div className="flex items-start gap-4 sm:sticky sm:top-20 sm:w-48 sm:shrink-0 sm:flex-col sm:gap-3 sm:self-start">
+          <div className="w-32 shrink-0 overflow-hidden rounded-md bg-surface sm:w-full">
             {photo ? (
               <Image
                 src={photo}
@@ -67,16 +67,16 @@ const PersonPage = async ({ params }: PersonPageProps) => {
               </div>
             )}
           </div>
-          {/* Inside the sticky column so the name stays in view while scrolling the credits. */}
-          <h1 className="mt-3 text-center text-xl font-semibold text-balance sm:text-left">
-            {person.name}
-          </h1>
-          {(born || died) && (
-            <div className="mt-1 space-y-0.5 text-center text-sm text-muted-foreground sm:text-left">
-              {born && <p>{born}</p>}
-              {died && <p>{died}</p>}
-            </div>
-          )}
+          {/* Beside the photo on phones; inside the sticky column from `sm` up so the name stays in view while scrolling the credits. */}
+          <div className="min-w-0 flex-1">
+            <h1 className="text-xl font-semibold text-balance">{person.name}</h1>
+            {(born || died) && (
+              <div className="mt-1 space-y-0.5 text-sm text-muted-foreground">
+                {born && <p>{born}</p>}
+                {died && <p>{died}</p>}
+              </div>
+            )}
+          </div>
         </div>
         <div className="min-w-0 flex-1 sm:[&>*:first-child]:mt-0">
           <PersonBio biography={person.biography ?? ""} />
