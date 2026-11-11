@@ -346,9 +346,9 @@ export const LogTitleForm = ({
       <div className="flex flex-col items-start gap-3 rounded-md border border-border bg-surface p-3">
         {watchedControl}
 
-        <div>
+        <div className="self-stretch sm:self-auto">
           <span className="mb-1 block text-xs font-medium text-muted-foreground">Your Rating</span>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2 sm:gap-1">
             <RatingStars
               name={`rating-card-${tmdbId}`}
               value={rating}
@@ -356,15 +356,18 @@ export const LogTitleForm = ({
               hideClearButton
               compact
             />
-            {hasRating && (
+            {hasRating ? (
               <button
                 type="button"
                 onClick={() => clearRating(initialLog)}
                 aria-label="Remove rating"
-                className="cursor-pointer rounded p-0.5 text-muted-foreground transition-colors hover:text-destructive"
+                className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded text-muted-foreground transition-colors hover:text-destructive sm:size-auto sm:p-0.5"
               >
                 <X className="size-3.5" />
               </button>
+            ) : (
+              // Keeps the phone-width stars from shifting when the remove button appears.
+              <span aria-hidden className="size-11 shrink-0 sm:hidden" />
             )}
           </div>
           {ratingErrorMessage && (
@@ -377,7 +380,7 @@ export const LogTitleForm = ({
         <button
           type="button"
           onClick={() => openModal("current")}
-          className="cursor-pointer self-stretch rounded-md bg-accent px-3 py-1.5 text-center text-sm text-accent-foreground transition-colors hover:bg-accent-hover"
+          className="min-h-11 cursor-pointer self-stretch rounded-md bg-accent px-3 py-1.5 text-center text-sm text-accent-foreground transition-colors hover:bg-accent-hover sm:min-h-0"
         >
           {initialLog ? "Edit review" : "Rate & review"}
         </button>
@@ -386,7 +389,7 @@ export const LogTitleForm = ({
           <button
             type="button"
             onClick={() => openModal("new")}
-            className="inline-flex cursor-pointer items-center justify-center gap-1.5 self-stretch rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-surface-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="inline-flex min-h-11 cursor-pointer items-center justify-center gap-1.5 self-stretch rounded-md border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-surface-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:min-h-0"
           >
             <RotateCw className="size-3.5" aria-hidden />
             Log again
@@ -398,7 +401,7 @@ export const LogTitleForm = ({
           <button
             type="button"
             onClick={() => setDeleteTarget(initialLog)}
-            className="cursor-pointer self-stretch rounded-md border border-destructive px-3 py-1.5 text-center text-sm text-destructive"
+            className="min-h-11 cursor-pointer self-stretch rounded-md border border-destructive px-3 py-1.5 text-center text-sm text-destructive sm:min-h-0"
           >
             Delete
           </button>
