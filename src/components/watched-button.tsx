@@ -26,15 +26,15 @@ type WatchedButtonProps =
       initialIsWatched: boolean;
     };
 
-const ON_CLASS =
-  "flex cursor-pointer items-center gap-1.5 rounded-full border border-accent/40 bg-accent/10 px-3 py-1.5 text-sm text-accent transition-colors hover:border-accent hover:bg-accent/20 disabled:cursor-not-allowed disabled:opacity-50";
+// On phones a full-width, 44px-tall button matching the log card's other actions; a pill from `sm` up.
+const BASE_CLASS =
+  "flex min-h-11 w-full cursor-pointer items-center justify-center gap-1.5 rounded-md border px-3 py-1.5 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-0 sm:w-auto sm:justify-start sm:rounded-full";
+const ON_CLASS = `${BASE_CLASS} border-accent/40 bg-accent/10 text-accent hover:border-accent hover:bg-accent/20`;
 // Dropped is a state, not an error or an achievement: neither red nor gold.
 // Same pressed anatomy as ON_CLASS (tinted border + fill + text), in the
 // neutral foreground colour, so it still reads as selected.
-const DROPPED_CLASS =
-  "flex cursor-pointer items-center gap-1.5 rounded-full border border-foreground/40 bg-foreground/10 px-3 py-1.5 text-sm text-foreground transition-colors hover:border-foreground hover:bg-foreground/20 disabled:cursor-not-allowed disabled:opacity-50";
-const OFF_CLASS =
-  "flex cursor-pointer items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:border-accent/60 hover:text-accent disabled:cursor-not-allowed disabled:opacity-50";
+const DROPPED_CLASS = `${BASE_CLASS} border-foreground/40 bg-foreground/10 text-foreground hover:border-foreground hover:bg-foreground/20`;
+const OFF_CLASS = `${BASE_CLASS} border-border text-muted-foreground hover:border-accent/60 hover:text-accent`;
 
 export const WatchedButton = (props: WatchedButtonProps) => {
   const { tmdbId, mediaType, initialIsWatched } = props;
@@ -93,7 +93,7 @@ export const WatchedButton = (props: WatchedButtonProps) => {
   const className = !isWatched ? OFF_CLASS : dropped ? DROPPED_CLASS : ON_CLASS;
 
   return (
-    <form action={formAction} className="flex flex-col gap-1 self-start">
+    <form action={formAction} className="flex flex-col gap-1 self-stretch sm:self-start">
       <input
         type="hidden"
         name={mediaType === "movie" ? "tmdbMovieId" : "tmdbShowId"}

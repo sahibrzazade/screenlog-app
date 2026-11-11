@@ -9,7 +9,10 @@ type RatingStarsProps = {
   onChange?: (value: number | null) => void;
   readOnly?: boolean;
   hideClearButton?: boolean;
-  /** Smaller interactive stars (24px) for tight spaces, e.g. a sidebar card. */
+  /**
+   * Interactive stars for a sidebar card: 24px from `sm` up. On phones the row
+   * fills its container and each star gets a 44px-tall tap cell around a 32px icon.
+   */
   compact?: boolean;
   /** Tiny read-only stars (14px) for dense layouts, e.g. under a grid poster. */
   small?: boolean;
@@ -26,15 +29,36 @@ export const RatingStars = ({
 }: RatingStarsProps) => {
   const [hoveredValue, setHoveredValue] = useState<number | null>(null);
   const displayValue = hoveredValue ?? value;
-  const starSizeClass = small ? "h-3.5 w-3.5" : readOnly || compact ? "h-6 w-6" : "h-12 w-12";
-  const gapClass = small ? "gap-0.5" : compact && !readOnly ? "gap-1" : "gap-2";
+  const touchCompact = compact && !readOnly;
+  const starSizeClass = small
+    ? "h-3.5 w-3.5"
+    : readOnly
+      ? "h-6 w-6"
+      : compact
+        ? "h-8 w-8 sm:h-6 sm:w-6"
+        : "h-12 w-12";
+  const gapClass = small ? "gap-0.5" : touchCompact ? "sm:gap-1" : "gap-2";
+  // The tap cell (holds the half-star radio labels) vs. the visible star inside it.
+  const cellClass = touchCompact
+    ? "relative flex h-11 flex-1 items-center justify-center rounded sm:inline-block sm:h-6 sm:w-6 sm:flex-none"
+    : `relative inline-block ${starSizeClass} rounded`;
 
   return (
-    <div className={`inline-flex items-center ${gapClass}`}>
+    <div
+      className={
+        touchCompact
+          ? "flex flex-1 items-center sm:inline-flex sm:flex-none"
+          : `inline-flex items-center ${gapClass}`
+      }
+    >
       <div
         role={readOnly ? "img" : "radiogroup"}
         aria-label={readOnly ? `${value} out of 5 stars` : "Rating"}
-        className={`inline-flex flex-wrap ${gapClass}`}
+        className={
+          touchCompact
+            ? `flex flex-1 sm:inline-flex sm:flex-none ${gapClass}`
+            : `inline-flex flex-wrap ${gapClass}`
+        }
         onMouseLeave={readOnly ? undefined : () => setHoveredValue(null)}
       >
         {Array.from({ length: 5 }, (_, i) => {
@@ -53,21 +77,23 @@ export const RatingStars = ({
               className={
                 readOnly
                   ? `relative inline-block ${starSizeClass}`
-                  : `relative inline-block ${starSizeClass} rounded has-focus-visible:ring-2 has-focus-visible:ring-ring`
+                  : `${cellClass} has-focus-visible:ring-2 has-focus-visible:ring-ring`
               }
             >
-              <Star
-                aria-hidden
-                className={`pointer-events-none absolute inset-0 text-muted-foreground ${starSizeClass}`}
-              />
-              {fillLevel > 0 && (
-                <span
-                  className="pointer-events-none absolute inset-0 overflow-hidden"
-                  style={{ width: fillLevel === 1 ? "100%" : "50%" }}
-                >
-                  <Star className={`fill-accent text-accent ${starSizeClass}`} />
-                </span>
-              )}
+              <span className={`pointer-events-none relative block ${starSizeClass}`}>
+                <Star
+                  aria-hidden
+                  className={`absolute inset-0 text-muted-foreground ${starSizeClass}`}
+                />
+                {fillLevel > 0 && (
+                  <span
+                    className="absolute inset-0 overflow-hidden"
+                    style={{ width: fillLevel === 1 ? "100%" : "50%" }}
+                  >
+                    <Star className={`fill-accent text-accent ${starSizeClass}`} />
+                  </span>
+                )}
+              </span>
               {!readOnly &&
                 [starIndex - 0.5, starIndex].map((starValue) => (
                   <label
