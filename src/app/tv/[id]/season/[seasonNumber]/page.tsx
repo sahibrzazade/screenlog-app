@@ -72,14 +72,31 @@ const SeasonPage = async ({ params, searchParams }: SeasonPageProps) => {
 
   const poster = posterUrl(season.poster_path);
 
+  // Rendered beside the poster on phones and atop the main column from `sm` up.
+  const header = (
+    <>
+      <h1 className="text-xl font-semibold text-balance sm:text-2xl">{season.name}</h1>
+      <p className="mt-1 text-sm text-muted-foreground">
+        {show.name}
+        {season.air_date ? ` · ${season.air_date.slice(0, 4)}` : ""}
+        {` · ${season.episodes.length} episode${season.episodes.length === 1 ? "" : "s"}`}
+      </p>
+    </>
+  );
+
   return (
     <main className="mx-auto max-w-5xl px-4 py-6">
       <Link href={`/tv/${showId}`} className="text-sm text-accent hover:text-accent-hover">
         ← {show.name}
       </Link>
       <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:gap-6">
-        <div className="flex w-48 shrink-0 flex-col gap-4 self-center sm:sticky sm:top-20 sm:self-start">
-          <DetailPoster url={poster} alt={season.name} />
+        <div className="flex flex-col gap-4 sm:sticky sm:top-20 sm:w-48 sm:shrink-0 sm:self-start">
+          <div className="flex items-start gap-4">
+            <div className="w-32 shrink-0 sm:w-full">
+              <DetailPoster url={poster} alt={season.name} />
+            </div>
+            <div className="min-w-0 flex-1 sm:hidden">{header}</div>
+          </div>
           {user ? (
             <LogSeasonForm
               tmdbShowId={showId}
@@ -93,13 +110,8 @@ const SeasonPage = async ({ params, searchParams }: SeasonPageProps) => {
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <h1 className="text-2xl font-semibold">{season.name}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {show.name}
-            {season.air_date ? ` · ${season.air_date.slice(0, 4)}` : ""}
-            {` · ${season.episodes.length} episode${season.episodes.length === 1 ? "" : "s"}`}
-          </p>
-          {season.overview && <p className="mt-3 max-w-2xl">{season.overview}</p>}
+          <div className="hidden sm:block">{header}</div>
+          {season.overview && <p className="max-w-2xl sm:mt-3">{season.overview}</p>}
 
           <section className="mt-6">
             <h2 className="text-lg font-semibold">Episodes</h2>
