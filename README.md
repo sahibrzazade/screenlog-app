@@ -93,6 +93,9 @@ Open [http://localhost:3000](http://localhost:3000).
 | `npm run lint`      | ESLint                              |
 | `npm test`          | Vitest unit/component tests         |
 | `npm run test:e2e`  | Playwright end-to-end tests         |
+| `npm run db:start`  | Start local Supabase (Docker)       |
+| `npm run db:stop`   | Stop local Supabase                 |
+| `npm run db:reset`  | Recreate local DB from migrations   |
 
 ## Project Structure
 
@@ -127,6 +130,29 @@ spec.md                     Full product spec
   and individual components.
 - **E2E** (`npm run test:e2e`) — critical flows: auth, search, creating a log,
   season ratings, watchlist, public reviews.
+
+### E2E setup
+
+E2E tests run against a **local** Supabase, never the hosted project. They need
+Docker.
+
+1. `npm run db:start` — starts the local stack and applies `supabase/migrations`.
+   Emails (signup confirmation etc.) are caught by Mailpit at
+   http://127.0.0.1:54324 and are never delivered.
+2. Create `.env.test` with the values printed by `npx supabase status`:
+
+   ```
+   NEXT_PUBLIC_SUPABASE_URL=<API_URL>
+   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<PUBLISHABLE_KEY>
+   SUPABASE_SERVICE_ROLE_KEY=<SERVICE_ROLE_KEY>
+   ```
+
+3. `npm run test:e2e` — Playwright starts its own dev server on port 3100.
+   Other variables (`TMDB_API_KEY`) still come from `.env.local`.
+
+`playwright.config.ts` refuses to run if any Supabase variable is missing from
+`.env.test` or if the URL is not `localhost`/`127.0.0.1`. Stop `npm run dev`
+first: Next.js allows only one dev server per project.
 
 ## Deployment
 
