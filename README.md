@@ -147,12 +147,13 @@ Docker.
    SUPABASE_SERVICE_ROLE_KEY=<SERVICE_ROLE_KEY>
    ```
 
-3. `npm run test:e2e` — Playwright starts its own dev server on port 3100.
-   Other variables (`TMDB_API_KEY`) still come from `.env.local`.
+3. `npm run test:e2e` — Playwright builds the app and serves it with
+   `next start` on port 3100 (`npm run dev` can stay open). Other variables
+   (`TMDB_API_KEY`) still come from `.env.local`.
 
 `playwright.config.ts` refuses to run if any Supabase variable is missing from
-`.env.test` or if the URL is not `localhost`/`127.0.0.1`. Stop `npm run dev`
-first: Next.js allows only one dev server per project.
+`.env.test` or if the URL is not `localhost`/`127.0.0.1`. Shared login, user and
+log helpers live in `e2e/helpers.ts`.
 
 ## Deployment
 
