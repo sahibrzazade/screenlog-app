@@ -1,17 +1,17 @@
 import { test, expect } from "@playwright/test";
-import { createClient } from "@supabase/supabase-js";
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
-const adminClient = createClient(supabaseUrl, serviceRoleKey, {
-  auth: { autoRefreshToken: false, persistSession: false },
-});
+import {
+  PASSWORD,
+  adminClient,
+  createTestUser,
+  deleteTestUser,
+  logIn,
+  logInAndWait,
+  uniqueId,
+} from "./helpers";
 
 test("collects a username at signup and saves it to the new profile", async ({ page }) => {
-  const email = `e2e-${Date.now()}@example.com`;
-  const password = "correct-horse-battery-staple";
-  const username = `e2esu_${Date.now()}`;
+  const email = `e2e-${uniqueId()}@example.com`;
+  const username = `e2esu_${uniqueId()}`;
 
   let userId: string | undefined;
 
@@ -19,9 +19,11 @@ test("collects a username at signup and saves it to the new profile", async ({ p
     await page.goto("/signup");
     await page.getByLabel("Username").fill(username);
     await page.getByLabel("Email").fill(email);
-    await page.getByLabel("Password").fill(password);
+    await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
+    await page.getByLabel("Confirm password").fill(PASSWORD);
     await page.getByRole("button", { name: "Sign up" }).click();
 
+    // The confirmation email goes to local Mailpit, never out.
     await expect(page.getByRole("heading", { name: "Check your email" })).toBeVisible();
 
     const { data: profile, error } = await adminClient
@@ -38,49 +40,28 @@ test("collects a username at signup and saves it to the new profile", async ({ p
 });
 
 test("rejects signup with a username that's already taken", async ({ page }) => {
-  const takenUsername = `e2etk_${Date.now()}`;
-  const existingEmail = `e2e-${Date.now()}@example.com`;
-
-  const { data, error } = await adminClient.auth.admin.createUser({
-    email: existingEmail,
-    password: "correct-horse-battery-staple",
-    email_confirm: true,
-    user_metadata: { username: takenUsername },
-  });
-  if (error) throw error;
-  const userId = data.user.id;
+  const existing = await createTestUser({ username: `e2etk_${uniqueId()}` });
 
   try {
     await page.goto("/signup");
-    await page.getByLabel("Username").fill(takenUsername);
-    await page.getByLabel("Email").fill(`e2e-new-${Date.now()}@example.com`);
-    await page.getByLabel("Password").fill("correct-horse-battery-staple");
+    await page.getByLabel("Username").fill(existing.username!);
+    await page.getByLabel("Email").fill(`e2e-new-${uniqueId()}@example.com`);
+    await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
+    await page.getByLabel("Confirm password").fill(PASSWORD);
     await page.getByRole("button", { name: "Sign up" }).click();
 
     await expect(page.getByText("That username is already taken.")).toBeVisible();
   } finally {
-    await adminClient.auth.admin.deleteUser(userId);
+    await deleteTestUser(existing);
   }
 });
 
 test("gates a user without a username to /choose-username, and setting one unlocks the app", async ({ page }) => {
-  const email = `e2e-${Date.now()}@example.com`;
-  const password = "correct-horse-battery-staple";
-  const username = `e2ech_${Date.now()}`;
-
-  const { data, error } = await adminClient.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,
-  });
-  if (error) throw error;
-  const userId = data.user.id;
+  const user = await createTestUser({ username: null });
+  const username = `e2ech_${uniqueId()}`;
 
   try {
-    await page.goto("/login");
-    await page.getByLabel("Email").fill(email);
-    await page.getByLabel("Password").fill(password);
-    await page.getByRole("button", { name: "Log in" }).click();
+    await logIn(page, user.email);
 
     await expect(page).toHaveURL(/\/choose-username$/);
     await expect(page.getByRole("heading", { name: "Choose a username" })).toBeVisible();
@@ -94,40 +75,27 @@ test("gates a user without a username to /choose-username, and setting one unloc
     const { data: profile, error: profileError } = await adminClient
       .from("profiles")
       .select("username")
-      .eq("id", userId)
+      .eq("id", user.id)
       .single();
     if (profileError) throw profileError;
     expect(profile.username).toBe(username);
   } finally {
-    await adminClient.auth.admin.deleteUser(userId);
+    await deleteTestUser(user);
   }
 });
 
 test("lets a logged-in user change their username from /settings", async ({ page }) => {
-  const email = `e2e-${Date.now()}@example.com`;
-  const password = "correct-horse-battery-staple";
-  const initialUsername = `e2eb4_${Date.now()}`;
-  const newUsername = `e2eaf_${Date.now()}`;
-
-  const { data, error } = await adminClient.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,
-    user_metadata: { username: initialUsername },
-  });
-  if (error) throw error;
-  const userId = data.user.id;
+  const user = await createTestUser({ username: `e2eb4_${uniqueId()}` });
+  const newUsername = `e2eaf_${uniqueId()}`;
 
   try {
-    await page.goto("/login");
-    await page.getByLabel("Email").fill(email);
-    await page.getByLabel("Password").fill(password);
-    await page.getByRole("button", { name: "Log in" }).click();
-    await expect(page.getByRole("button", { name: "Log out" })).toBeVisible();
+    await logInAndWait(page, user.email);
 
     await page.goto("/settings");
-    await expect(page.getByLabel("Username")).toHaveValue(initialUsername);
+    await expect(page.getByLabel("Username")).toHaveValue(user.username!);
 
+    // The saved username sits behind an Edit button.
+    await page.getByRole("button", { name: "Edit", exact: true }).click();
     await page.getByLabel("Username").fill(newUsername);
     await page.getByRole("button", { name: "Save" }).click();
 
@@ -136,11 +104,11 @@ test("lets a logged-in user change their username from /settings", async ({ page
     const { data: profile, error: profileError } = await adminClient
       .from("profiles")
       .select("username")
-      .eq("id", userId)
+      .eq("id", user.id)
       .single();
     if (profileError) throw profileError;
     expect(profile.username).toBe(newUsername);
   } finally {
-    await adminClient.auth.admin.deleteUser(userId);
+    await deleteTestUser(user);
   }
 });

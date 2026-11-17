@@ -1,12 +1,11 @@
 import { test, expect } from "@playwright/test";
-import { createClient } from "@supabase/supabase-js";
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
-const adminClient = createClient(supabaseUrl, serviceRoleKey, {
-  auth: { autoRefreshToken: false, persistSession: false },
-});
+import {
+  createTestUser,
+  deleteLogFromCard,
+  deleteTestUser,
+  logInAndWait,
+  logViaModal,
+} from "./helpers";
 
 const THE_MATRIX_TMDB_ID = 603;
 
@@ -14,38 +13,16 @@ test("a logged-in user's review is publicly visible to a guest, and labeled You 
   page,
   browser,
 }) => {
-  const email = `e2e-${Date.now()}@example.com`;
-  const password = "correct-horse-battery-staple";
-  const username = `e2e-user-${Date.now()}`;
-
-  const { data, error } = await adminClient.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,
-  });
-  if (error) throw error;
-  const userId = data.user.id;
-
-  const { error: profileError } = await adminClient
-    .from("profiles")
-    .update({ username })
-    .eq("id", userId);
-  if (profileError) throw profileError;
+  const user = await createTestUser();
 
   try {
-    await page.goto("/login");
-    await page.getByLabel("Email").fill(email);
-    await page.getByLabel("Password").fill(password);
-    await page.getByRole("button", { name: "Log in" }).click();
-    await expect(page.getByRole("button", { name: "Log out" })).toBeVisible();
+    await logInAndWait(page, user.email);
 
     await page.goto(`/movie/${THE_MATRIX_TMDB_ID}`);
-    await page.getByLabel("Rate 4 out of 5 stars", { exact: true }).check({ force: true });
-    await page.getByLabel("Watched date").fill("2020-01-01");
-    await page.getByLabel("Review (optional)").fill("Public review text.");
-    await page.getByRole("button", { name: "Save", exact: true }).click();
-    await expect(page.getByText("Saved", { exact: true })).toBeVisible();
+    await logViaModal(page, { date: "2020-01-01", review: "Public review text.", rating: 4 });
 
+    // The reviews list is server-rendered; reload so it includes the new one.
+    await page.reload();
     const reviewsSection = page
       .locator("section")
       .filter({ has: page.getByRole("heading", { name: "Reviews" }) });
@@ -60,17 +37,15 @@ test("a logged-in user's review is publicly visible to a guest, and labeled You 
       const guestReviewsSection = guestPage
         .locator("section")
         .filter({ has: guestPage.getByRole("heading", { name: "Reviews" }) });
-      await expect(guestReviewsSection.getByText(username)).toBeVisible();
+      await expect(guestReviewsSection.getByText(user.username!)).toBeVisible();
       await expect(guestReviewsSection.getByText("Public review text.")).toBeVisible();
       await expect(guestReviewsSection.getByText("You", { exact: true })).not.toBeVisible();
     } finally {
       await guestContext.close();
     }
 
-    page.on("dialog", (dialog) => dialog.accept());
-    await page.getByRole("button", { name: "Delete", exact: true }).click();
-    await expect(page.getByText("Deleted", { exact: true })).toBeVisible();
+    await deleteLogFromCard(page);
   } finally {
-    await adminClient.auth.admin.deleteUser(userId);
+    await deleteTestUser(user);
   }
 });

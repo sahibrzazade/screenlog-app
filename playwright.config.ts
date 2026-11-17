@@ -32,6 +32,10 @@ if (!["localhost", "127.0.0.1"].includes(supabaseHost)) {
 // A port of its own, never reused: an already running `npm run dev` on :3000
 // is wired to production and must not serve the tests.
 const PORT = 3100;
+
+// Tests run against a production build: `next dev` compiles each route on its
+// first request, and parallel workers hitting cold routes time out. A build
+// also lives in .next (dev uses .next/dev), so `npm run dev` can stay open.
 const baseURL = `http://localhost:${PORT}`;
 
 export default defineConfig({
@@ -40,6 +44,9 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   reporter: "list",
+  // Server actions call local Supabase and the live TMDB API; with parallel
+  // workers a login or save can take longer than the 5s default.
+  expect: { timeout: 15_000 },
   use: {
     baseURL,
     trace: "on-first-retry",
@@ -48,8 +55,9 @@ export default defineConfig({
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },
   ],
   webServer: {
-    command: `npx next dev --port ${PORT}`,
+    command: `npx next build && npx next start --port ${PORT}`,
     url: baseURL,
     reuseExistingServer: false,
+    timeout: 300_000,
   },
 });

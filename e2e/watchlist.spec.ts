@@ -1,35 +1,13 @@
 import { test, expect } from "@playwright/test";
-import { createClient } from "@supabase/supabase-js";
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
-const adminClient = createClient(supabaseUrl, serviceRoleKey, {
-  auth: { autoRefreshToken: false, persistSession: false },
-});
+import { adminClient, createTestUser, deleteTestUser, logInAndWait } from "./helpers";
 
 const THE_MATRIX_TMDB_ID = 603;
 
 test("adds and removes a movie from the watchlist end-to-end", async ({ page }) => {
-  const email = `e2e-${Date.now()}@example.com`;
-  const password = "correct-horse-battery-staple";
-
-  const { data, error } = await adminClient.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,
-    user_metadata: { username: `e2e_user_${Date.now()}` },
-  });
-  if (error) throw error;
-  const userId = data.user.id;
+  const user = await createTestUser();
 
   try {
-    await page.goto("/login");
-    await page.getByLabel("Email").fill(email);
-    await page.getByLabel("Password").fill(password);
-    await page.getByRole("button", { name: "Log in" }).click();
-
-    await expect(page.getByRole("button", { name: "Log out" })).toBeVisible();
+    await logInAndWait(page, user.email);
 
     await page.goto(`/movie/${THE_MATRIX_TMDB_ID}`);
     await expect(page.getByRole("heading", { name: "The Matrix" })).toBeVisible();
@@ -41,7 +19,7 @@ test("adds and removes a movie from the watchlist end-to-end", async ({ page }) 
     const { data: added, error: selectError } = await adminClient
       .from("watchlist")
       .select("id")
-      .eq("user_id", userId)
+      .eq("user_id", user.id)
       .eq("tmdb_id", THE_MATRIX_TMDB_ID)
       .eq("media_type", "movie")
       .single();
@@ -60,12 +38,12 @@ test("adds and removes a movie from the watchlist end-to-end", async ({ page }) 
     const { data: removed } = await adminClient
       .from("watchlist")
       .select("id")
-      .eq("user_id", userId)
+      .eq("user_id", user.id)
       .eq("tmdb_id", THE_MATRIX_TMDB_ID)
       .eq("media_type", "movie")
       .maybeSingle();
     expect(removed).toBeNull();
   } finally {
-    await adminClient.auth.admin.deleteUser(userId);
+    await deleteTestUser(user);
   }
 });
