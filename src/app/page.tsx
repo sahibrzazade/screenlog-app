@@ -9,7 +9,6 @@ import { MediaRow } from "@/components/media-row";
 import { ActivityFeed } from "@/components/activity-feed";
 import { getActivityFeed } from "@/lib/activity";
 import { toMediaCardItem } from "@/lib/tmdb/to-media-card-item";
-import { backdropUrl } from "@/lib/tmdb/images";
 import { fetchPopularMovies, fetchPopularShows } from "@/lib/tmdb/discover";
 
 /**
@@ -25,8 +24,7 @@ const Home = async () => {
 
   const [popularMovies, popularShows, watchlistItems, diaryData, profile, activity] =
     await Promise.all([
-      // Fetched for signed-in users too: the hero backdrop comes from it.
-      fetchPopularMovies(),
+      user ? Promise.resolve(null) : fetchPopularMovies(),
       user ? Promise.resolve(null) : fetchPopularShows(),
       user ? getWatchlistItems(supabase, user.id) : Promise.resolve([]),
       user
@@ -49,11 +47,7 @@ const Home = async () => {
   );
   const continueWatchlistItems = watchlistItems.slice(0, 6);
 
-  const heroBackdrop = backdropUrl(
-    popularMovies.results.find((result) => result.backdrop_path)?.backdrop_path,
-  );
-
-  const movieItems = popularMovies.results
+  const movieItems = (popularMovies?.results ?? [])
     .slice(0, 12)
     .map((result) => toMediaCardItem(result, "movie"));
   const showItems = (popularShows?.results ?? [])
@@ -63,18 +57,7 @@ const Home = async () => {
   return (
     <main>
       <section className="relative flex min-h-[70vh] items-center justify-center overflow-hidden border-b border-border">
-        {heroBackdrop && (
-          <>
-            <Image
-              src={heroBackdrop}
-              alt=""
-              fill
-              priority
-              className="object-cover opacity-40"
-            />
-            <div className="absolute inset-0 bg-linear-to-t from-background via-background/80 to-background/30" />
-          </>
-        )}
+        <div aria-hidden="true" className="hero-backdrop pointer-events-none absolute inset-0" />
 
         <div className="relative mx-auto max-w-xl px-4 py-24 text-center">
           {profile?.username ? (
