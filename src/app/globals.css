@@ -58,3 +58,18 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
+
+/*
+ * Home hero backdrop: a faint gold glow from the top plus a dot grid that
+ * fades out toward the edges. Pure CSS, no image request.
+ */
+.hero-backdrop {
+  background:
+    radial-gradient(
+      ellipse 60% 55% at 50% 0%,
+      color-mix(in oklab, var(--accent) 14%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(var(--border) 1px, transparent 1px) 0 0 / 24px 24px;
+  mask-image: radial-gradient(ellipse 75% 70% at 50% 35%, black 30%, transparent 100%);
+}
