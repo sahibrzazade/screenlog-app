@@ -65,13 +65,19 @@ describe("profiles", () => {
     expect(data).toEqual([ORIGINAL()]);
   });
 
-  it("does not let a signed-in user read columns outside the public set", async () => {
-    const { error } = await bob.client
-      .from("profiles")
-      .select("created_at")
-      .eq("id", alice.id);
+  it.each([
+    ["a guest", () => guestClient()],
+    ["a signed-in user", () => bob.client],
+  ])("does not let %s read columns outside the public set", async (_, client) => {
+    for (const select of ["created_at", "updated_at", "*"]) {
+      const { error } = await client()
+        .from("profiles")
+        .select(select)
+        .eq("id", alice.id);
 
-    expectRlsViolation(error);
+      // Column-level grants only (0014, 0022): permission denied, not RLS.
+      expect(error?.code, `select("${select}")`).toBe("42501");
+    }
   });
 
   it.each([
