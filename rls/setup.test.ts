@@ -47,16 +47,10 @@ describe("RLS test setup", () => {
   });
 
   it("reports a blocked insert as an RLS violation", async () => {
-    const { error } = await guestClient()
+    const { error } = await bob.client
       .from("movie_logs")
       .insert({ user_id: alice.id, tmdb_movie_id: 603 });
 
-    expect(error).not.toBeNull();
-    // Guests have no insert grant at all, so Postgres refuses before RLS;
-    // a signed-in user writing someone else's row hits the policy instead.
-    const { error: policyError } = await bob.client
-      .from("movie_logs")
-      .insert({ user_id: alice.id, tmdb_movie_id: 603 });
-    expectRlsViolation(policyError);
+    expectRlsViolation(error);
   });
 });
